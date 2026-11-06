@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/icon.png">
 </head>
 <body>
 <header class="bar" id="bar" hidden>
@@ -75,10 +76,13 @@
     <button role="tab" data-vtab="photo" aria-selected="true" data-i18n="view.tabPhoto"></button>
     <button role="tab" data-vtab="meta" aria-selected="false">META</button>
   </div>
-  <div class="vimg" id="vbox"><img id="vpic" alt=""><span class="vwait" id="vwait" hidden></span><p class="vmsg" id="vmsg"></p></div>
-  <div class="metapane" id="vmeta" hidden></div>
+  <div class="vbody">
+    <div class="vimg" id="vbox"><img id="vpic" alt=""><span class="vwait" id="vwait" hidden></span><p class="vmsg" id="vmsg"></p></div>
+    <div class="metapane side" id="vmeta" hidden></div>
+  </div>
   <div class="vcap">
     <div class="vtitle"><b id="vname"></b><span id="vsrc"></span></div>
+    <button class="quiet" id="vmetaBtn" aria-pressed="false">META</button>
     <button class="quiet" id="vsel"></button>
     <button class="quiet" id="vfull" data-i18n="view.full"></button>
   </div>

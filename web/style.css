@@ -177,10 +177,18 @@ body.split .tray{right:var(--vw)}
 /* metadati e ricetta */
 .filmsel{font:inherit;font-size:14px;color:var(--ink);background:var(--board);border:1px solid rgba(255,255,255,.28);border-radius:6px;padding:6px 8px;max-width:220px}
 .filmsel.on{background:var(--paper);color:#222;border-color:var(--paper)}
+/* le voci del menu: nella finestra GNOME (WebKitGTK) il menu nativo e' chiaro, quindi testo scuro su chiaro */
+.filmsel option{background:#fbfaf6;color:#1d1d1b}
+.filmsel option:checked{background:var(--pencil);color:#fff}
 .cap .film{display:block;flex-basis:100%;color:var(--ink-soft);font-size:12px;margin-top:-2px;min-height:1em}
 .cap{flex-wrap:wrap}
 .kind.meta{margin-left:auto;letter-spacing:.06em}
-.vtabs{display:flex;gap:4px;margin:-4px 0 12px;border-bottom:1px solid rgba(255,255,255,.18)}
+.vtabs{display:none}
+/* META affiancato alla foto: il pannello si allarga e la griglia si restringe */
+.vbody{flex:1;min-height:0;display:flex;gap:16px}
+.vbody .vimg{flex:1;min-width:0}
+body.metaon{--vw:min(76vw,calc(100vw - 220px))}
+#vmetaBtn[aria-pressed=true]{background:var(--paper);border-color:var(--paper);color:#222}
 .vtabs button{background:none;border:0;border-bottom:2px solid transparent;padding:6px 12px 8px;color:var(--ink-soft);font-weight:600;letter-spacing:.03em}
 .vtabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--pencil)}
 .metapane{flex:1;min-height:0;overflow:auto;padding-right:6px}

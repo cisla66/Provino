@@ -33,7 +33,7 @@ sys.path.insert(0, HERE)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc17"   # lettore di schede SD
+APP_VERSION = "1.0.0-rc17"   # lettore di schede SD, META affiancato, filtro che non toglie le scelte
 
 
 def iso_to_text(d):
@@ -382,7 +382,7 @@ class App:
         if self.abort:
             return
         if k == "device":
-            self.log.info("USB: dispositivo %s" % ev.get("name"))
+            self.log.info("%s: %s" % ("Scheda" if self.choice.get("method") == "card" else "USB: dispositivo", ev.get("name")))
         elif k in ("opening", "session"):
             with self.state_lock:
                 self.camera_name = (ev.get("name") or self.camera_name)
@@ -1425,7 +1425,8 @@ def make_handler(app):
                       "/index.html": ("index.html", "text/html; charset=utf-8"),
                       "/style.css": ("style.css", "text/css; charset=utf-8"),
                       "/app.js": ("app.js", "text/javascript; charset=utf-8"),
-                      "/i18n.js": ("i18n.js", "text/javascript; charset=utf-8")}
+                      "/i18n.js": ("i18n.js", "text/javascript; charset=utf-8"),
+                      "/icon.png": ("icon.png", "image/png")}
             if self.path in static:
                 name, ctype = static[self.path]
                 with open(os.path.join(HERE, "web", name), "rb") as fh:

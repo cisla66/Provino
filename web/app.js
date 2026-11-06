@@ -194,7 +194,12 @@ function paint(){
   const speed = (S.choice||{}).method==="card" ? 40 : (S.choice||{}).method==="cable" ? 20 : 1.1;   // MB/s indicativi
   const secs = bytes / (speed*1048576);
   const eta = secs < 90 ? t("dl.eta.s",{n:Math.max(1,Math.round(secs))}) : t("dl.eta.m",{n:Math.round(secs/60)});
-  $("#go").innerHTML = n? `${t("dl.btnN",{n})}${known&&bytes? `<small>${fmtSize(bytes)}, ${eta}</small>`:""}` : t("dl.btn");
+  const shown = new Set(); for(const g of groups()) for(const f of wanted(g)) shown.add(f.handle);
+  const hid = [...picked].filter(h=>!shown.has(h)).length;
+  const hidTxt = hid ? t(hid===1? "dl.hidden1" : "dl.hidden", {n:hid}) : "";
+  const small = [known&&bytes? `${fmtSize(bytes)}, ${eta}` : "", hidTxt].filter(Boolean).join(" · ");
+  $("#go").innerHTML = n? `${t("dl.btnN",{n})}${small? `<small>${small}</small>`:""}` : t("dl.btn");
+  $("#go").title = hid ? t("dl.hidden.title") : "";
 }
 
 function setFilter(f){
@@ -223,7 +228,7 @@ document.addEventListener("click", e=>{
   if(mc){ openMeta(mc.dataset.meta); return; }
   const k = e.target.closest(".kind");
   if(k){
-    // selezione per il download: si fa sui bollini JPG / RAF (Maiusc+clic = una serie dello stesso tipo)
+    // selezione per il download: si fa sulle etichette JPG / RAF (Maiusc+clic = una serie dello stesso tipo)
     const h=+k.dataset.h, f=S.files.find(x=>x.handle===h), base=k.closest(".frame").dataset.b;
     const order = groups().filter(g=>wanted(g).length).map(g=>g.base);
     if(e.shiftKey && kAnchor && f && order.includes(kAnchor)){
@@ -233,17 +238,18 @@ document.addEventListener("click", e=>{
     kAnchor = base; paint(); return; }
   const p = e.target.closest(".photo");
   if(p){
-    // clic sulla foto = guardarla (a destra se la vista divisa e' attiva, altrimenti a schermo intero)
+    // clic sulla foto = guardarla accanto alla griglia (apre la vista divisa); doppio clic = schermo intero.
+    // Su una finestra stretta, dove la vista divisa non c'e', il clic apre lo schermo intero.
     if(suppressClick){ suppressClick=false; return; }
     setCur(p.dataset.b);
-    if(!splitActive()) openFull();
+    if(!split && innerWidth > 900){ split = true; layout(); loadBig(); }
+    else if(!splitActive()) openFull();
     return; }
   const all = e.target.closest("[data-all]");
   if(all){ selectAll(all.dataset.all); return; }
   const sb = e.target.closest(".fmtseg button");
-  if(sb){ setFilter(sb.dataset.f);
-    const keep = new Set(); for(const g of groups()){ const any=Object.values(g.files).some(f=>picked.has(f.handle)); if(any) wanted(g).forEach(f=>keep.add(f.handle)); }
-    picked = keep; paint(); return; }
+  // il filtro cambia solo cosa si vede: le scelte restano (quelle nascoste si contano accanto a Scarica)
+  if(sb){ setFilter(sb.dataset.f); paint(); return; }
 });
 document.addEventListener("keydown", e=>{
   if(!S || S.status!=="ready" || document.querySelector("dialog[open]")) return;
@@ -551,6 +557,7 @@ function layout(){
 addEventListener("resize", ()=>{ layout(); zoomFit($("#vbox")); zoomFit($("#fbox")); });
 $("#viewToggle").onclick = ()=>{
   split = !split;
+  if(!split) document.body.classList.remove("metaon"); else if(vtab==="meta") document.body.classList.add("metaon");
   layout(); if(split) loadBig();
 };
 
@@ -766,22 +773,27 @@ function filmOptions(){
 document.addEventListener("change", e=>{
   if(e.target.id!=="filmSel") return;
   filmFilter = e.target.value;
-  const keep = new Set(); for(const g of groups()) for(const f of wanted(g)) if(picked.has(f.handle)) keep.add(f.handle);
-  picked = keep; filmOptions(); paint();
+  filmOptions(); paint();
 });
 
 let vtab = "photo", fmetaOn = false;
 function openMeta(base){
   setCur(base);
+  if(!split && innerWidth > 900){ split = true; layout(); loadBig(); }
   if(splitActive()){ setTab("meta"); }
   else { fmetaOn = true; openFull(); }
 }
 function setTab(tb){
+  // "meta" = ricetta accanto alla foto (niente piu' schede Foto/META: si vedono insieme)
   vtab = tb;
-  document.querySelectorAll("[data-vtab]").forEach(b=>b.setAttribute("aria-selected", b.dataset.vtab===tb));
-  $("#vbox").hidden = tb!=="photo"; $("#vmeta").hidden = tb!=="meta";
+  const on = tb==="meta";
+  $("#vmeta").hidden = !on;
+  $("#vmetaBtn").setAttribute("aria-pressed", on);
+  document.body.classList.toggle("metaon", on && splitActive());
   renderMeta();
+  requestAnimationFrame(()=>zoomFit($("#vbox")));
 }
+$("#vmetaBtn").onclick = ()=>setTab(vtab==="meta" ? "photo" : "meta");
 document.addEventListener("click", e=>{
   const tb = e.target.closest("[data-vtab]"); if(tb){ setTab(tb.dataset.vtab); return; }
   if(e.target.closest("#fmetaBtn")){ fmetaOn = !fmetaOn; renderMeta(); return; }
