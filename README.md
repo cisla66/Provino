@@ -1,5 +1,14 @@
 # Provino
 
+Provino nasce dalla mia passione per la fotografia e per il mondo Fujifilm, e da un bisogno molto semplice: scaricare le foto sul computer in modo agevole, con il cavo o in rete, senza dover aprire programmi di ritocco fotografico solo per copiarle.
+Credo nell'open source, per questo metto a disposizione i sorgenti di Provino insieme alle app pronte per macOS e Linux (Fedora e Ubuntu), sperando che possa essere utile anche ad altri fotografi.
+— Marco Cislaghi
+
+*Provino grew out of my passion for photography and for the Fujifilm world, and out of a simple need: getting photos onto my computer easily, by cable or over the network, without opening a photo editing program just to copy them.
+I believe in open source, so I'm sharing Provino's source code along with ready-to-use apps for macOS and Linux (Fedora and Ubuntu), hoping other photographers find it useful too.*
+
+---
+
 **Scegli dal computer le foto della tua Fujifilm X-Pro3 o X100VI e scarica solo quelle.**
 Via Wi-Fi o con il cavo USB, su Mac e Linux. Provino legge soltanto: non tocca mai la scheda.
 
