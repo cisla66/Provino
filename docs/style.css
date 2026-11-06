@@ -123,7 +123,8 @@ dialog img{border-radius:10px;max-height:90vh;width:auto}
   .wrap{padding:0 16px}
   .show{padding:0 16px}
   .grid{grid-template-columns:1fr}
-  th,td{padding:12px 12px}
+  th,td{padding:10px 8px;font-size:13px}
+  table{display:block;overflow-x:auto}
   .hero{padding-top:60px}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
