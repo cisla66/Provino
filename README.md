@@ -32,7 +32,7 @@ Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touche
 **Stato / Status:** versione di prova `1.0.0-rc`, la 1.0 arriverà come app da installare (`.dmg` per Mac, AppImage per Linux).
 Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac, AppImage for Linux).
 
-[Italiano](#italiano) · [English](#english)
+[Italiano](#italiano) · [English](#english) · Guida completa / Full guide: `docs/guida.html` (online con la 1.0)
 
 ---
 
@@ -53,6 +53,8 @@ Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac,
 | **Cavo USB** | sì | sì | JPG, RAF e video, entrambe le schede |
 | **Wi-Fi di casa** | sì | no | JPG e RAF |
 | **Wi-Fi diretto** | sì | no | solo JPG, solo scheda 1 (limite della fotocamera) |
+
+**Firmware provati:** X-Pro3 2.00 · X100VI 1.31. Con altre versioni dovrebbe funzionare, ma non è stato provato.
 
 **Cavo:** sulla fotocamera imposta prima la modalità LETTORE SCHEDA USB, poi collega il cavo. Sulla X100VI l'alimentazione USB va su AUTO.
 **Wi-Fi di casa**, la prima volta: MENU/OK › chiave › IMPOSTAZIONI CONNESSIONE › IMP. SALV.AUT. PC › IMPOSTAZIONE MANUALE › SELEZ. LISTA RETI. Provino registra il computer da solo. Per scaricare: PLAY › MENU/OK › menu riproduzione › SALVAT. AUTOM. PC.
@@ -86,6 +88,8 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 | **USB cable** | yes | yes | JPG, RAF and video, both cards |
 | **Home Wi-Fi** | yes | no | JPG and RAF |
 | **Direct Wi-Fi** | yes | no | JPG only, card 1 only (camera limit) |
+
+**Tested firmware:** X-Pro3 2.00 · X100VI 1.31. Other versions should work but haven't been tested.
 
 **Cable:** on the camera set USB CARD READER mode first, then plug in the cable. On the X100VI set USB power supply to AUTO.
 **Home Wi-Fi**, first time: MENU/OK › wrench › CONNECTION SETTING › PC AUTO SAVE SETTING › MANUAL SETUP › SELECT FROM NETWORK LIST. Provino registers the computer by itself. To download: PLAY › MENU/OK › playback menu › PC AUTO SAVE.

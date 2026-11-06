@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="it" data-lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guida · Provino</title>
+<meta name="description" content="Guida di Provino: come collegare X-Pro3 e X100VI, scegliere le foto, leggere la ricetta e scaricare solo quello che vuoi.">
+<link rel="icon" href="img/favicon-64.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav aria-label="Principale">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/favicon-64.png" alt="" width="30" height="30">Provino</a>
+    <div class="links">
+      <a href="index.html#funzioni"><span lang="it">Funzioni</span><span lang="en">Features</span></a>
+      <a href="guida.html" aria-current="page" style="color:var(--ink)"><span lang="it">Guida</span><span lang="en">Guide</span></a>
+      <a href="https://github.com/cisla66/Provino">GitHub</a>
+    </div>
+    <div class="lang" role="group" aria-label="Lingua / Language">
+      <button type="button" data-set="it" aria-pressed="true">IT</button>
+      <button type="button" data-set="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</nav>
+
+<header class="wrap g-hero">
+  <p class="eyebrow"><span lang="it">Guida</span><span lang="en">Guide</span></p>
+  <h1><span lang="it">Come si usa Provino</span><span lang="en">How to use Provino</span></h1>
+  <p class="tag"><span lang="it">Dalla fotocamera al computer in pochi passi: collegare, scegliere, scaricare. Tutto quello che serve, per la X-Pro3 e la X100VI.</span><span lang="en">From camera to computer in a few steps: connect, pick, download. Everything you need, for the X-Pro3 and the X100VI.</span></p>
+</header>
+
+<div class="wrap g-layout">
+  <aside class="toc" aria-label="Indice">
+    <p><span lang="it">In questa guida</span><span lang="en">In this guide</span></p>
+    <ol>
+      <li><a href="#installare"><span lang="it">1. Installare</span><span lang="en">1. Install</span></a></li>
+      <li><a href="#collegare"><span lang="it">2. Collegare la fotocamera</span><span lang="en">2. Connect the camera</span></a></li>
+      <li><a href="#scegliere"><span lang="it">3. Scegliere le foto</span><span lang="en">3. Pick your photos</span></a></li>
+      <li><a href="#foto"><span lang="it">4. Foto grande e ricetta</span><span lang="en">4. Large photo and recipe</span></a></li>
+      <li><a href="#scaricare"><span lang="it">5. Scaricare</span><span lang="en">5. Download</span></a></li>
+      <li><a href="#preferenze"><span lang="it">6. Preferenze</span><span lang="en">6. Preferences</span></a></li>
+      <li><a href="#tasti"><span lang="it">7. Scorciatoie</span><span lang="en">7. Shortcuts</span></a></li>
+      <li><a href="#problemi"><span lang="it">8. Se qualcosa non va</span><span lang="en">8. Troubleshooting</span></a></li>
+    </ol>
+  </aside>
+
+  <main class="g-body">
+
+    <section id="installare">
+      <h2><span lang="it">1. Installare</span><span lang="en">1. Install</span></h2>
+      <div class="cams">
+        <div class="panel">
+          <h3>macOS</h3>
+          <ol class="steps">
+            <li><b><span lang="it">Scarica il file .dmg</span><span lang="en">Download the .dmg file</span></b><span lang="it">Dalla pagina delle versioni su GitHub.</span><span lang="en">From the releases page on GitHub.</span></li>
+            <li><b><span lang="it">Trascina Provino in Applicazioni</span><span lang="en">Drag Provino to Applications</span></b><span lang="it">Come per ogni app del Mac.</span><span lang="en">Like any Mac app.</span></li>
+            <li><b><span lang="it">Al primo avvio</span><span lang="en">On first launch</span></b><span lang="it">Se il Mac avvisa che l'app viene da uno sviluppatore non identificato: Impostazioni di Sistema › Privacy e sicurezza › Apri comunque.</span><span lang="en">If your Mac warns the app is from an unidentified developer: System Settings › Privacy &amp; Security › Open Anyway.</span></li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h3>Linux</h3>
+          <ol class="steps">
+            <li><b><span lang="it">Scarica il file AppImage</span><span lang="en">Download the AppImage file</span></b><span lang="it">Dalla stessa pagina delle versioni.</span><span lang="en">From the same releases page.</span></li>
+            <li><b><span lang="it">Rendilo eseguibile</span><span lang="en">Make it executable</span></b><span lang="it">Clic destro › Proprietà › «Esegui come programma».</span><span lang="en">Right-click › Properties › "Run as a program".</span></li>
+            <li><b><span lang="it">Doppio clic per aprirlo</span><span lang="en">Double-click to open it</span></b><span lang="it">Pensato per Fedora e Ubuntu con GNOME.</span><span lang="en">Made for Fedora and Ubuntu with GNOME.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="collegare">
+      <h2><span lang="it">2. Collegare la fotocamera</span><span lang="en">2. Connect the camera</span></h2>
+      <p><span lang="it">All'avvio scegli la fotocamera e il modo di collegarla. Provino ti mostra i passi sullo schermo; eccoli anche qui.</span><span lang="en">At launch, choose the camera and how to connect it. Provino shows the steps on screen; here they are too.</span></p>
+      <div class="callout info"><b><span lang="it">Firmware provati:</span><span lang="en">Tested firmware:</span></b> X-Pro3 <strong>2.00</strong> · X100VI <strong>1.31</strong>. <span lang="it">Con altre versioni Provino dovrebbe funzionare, ma non è stato provato. Il firmware della tua fotocamera lo vedi in Fotocamera › Informazioni fotocamera.</span><span lang="en">Other versions should work but haven't been tested. You can see your camera's firmware in Camera › Camera info.</span></div>
+
+      <h3><span lang="it">Cavo USB · X-Pro3</span><span lang="en">USB cable · X-Pro3</span></h3>
+      <p><span lang="it">Il modo più veloce: un RAF arriva in pochi secondi, e vedi JPG, RAF e video di tutte e due le schede.</span><span lang="en">The fastest way: a RAF arrives in a few seconds, and you see JPGs, RAFs and videos from both cards.</span></p>
+      <ol class="steps">
+        <li><b><span lang="it">Imposta la fotocamera come lettore di schede</span><span lang="en">Set the camera as a card reader</span></b>
+          <span class="path" lang="it"><span>MENU/OK</span><i>›</i><span>IMPOSTAZIONI</span><i>›</i><span>IMPOSTAZIONI CONNESSIONE</span><i>›</i><span>MODALITÀ CONNESSIONE</span><i>›</i><span>LETTORE SCHEDA USB</span></span>
+          <span class="path" lang="en"><span>MENU/OK</span><i>›</i><span>SET UP</span><i>›</i><span>CONNECTION SETTING</span><i>›</i><span>CONNECTION MODE</span><i>›</i><span>USB CARD READER</span></span></li>
+        <li><b><span lang="it">Solo ora collega il cavo USB-C</span><span lang="en">Only now connect the USB-C cable</span></b><span lang="it">Lascia la fotocamera accesa: Provino la trova da solo.</span><span lang="en">Keep the camera on: Provino finds it by itself.</span></li>
+      </ol>
+
+      <h3><span lang="it">Cavo USB · X100VI</span><span lang="en">USB cable · X100VI</span></h3>
+      <ol class="steps">
+        <li><b><span lang="it">Imposta la fotocamera come lettore di schede</span><span lang="en">Set the camera as a card reader</span></b>
+          <span class="path" lang="it"><span>MENU/OK</span><i>›</i><span>IMPOSTAZIONE NETWORK/USB</span><i>›</i><span>MODALITÀ CONNESSIONE</span><i>›</i><span>LETTORE SCHEDA USB</span></span>
+          <span class="path" lang="en"><span>MENU/OK</span><i>›</i><span>NETWORK/USB SETTING</span><i>›</i><span>CONNECTION MODE</span><i>›</i><span>USB CARD READER</span></span></li>
+        <li><b><span lang="it">Controlla l'alimentazione USB</span><span lang="en">Check USB power</span></b><span lang="it">Nello stesso menu, IMPOSTAZ. USB ALIMENTAZ./COM. su <strong>AUTO</strong>. Con ALIMENTAZIONE ON/COM. OFF i dati non passano.</span><span lang="en">In the same menu, set USB POWER SUPPLY/COMM SETTING to <strong>AUTO</strong>. With POWER SUPPLY ON/COMM OFF no data goes through.</span></li>
+        <li><b><span lang="it">Solo ora collega il cavo USB-C</span><span lang="en">Only now connect the USB-C cable</span></b><span lang="it">Lascia la fotocamera accesa.</span><span lang="en">Keep the camera on.</span></li>
+      </ol>
+
+      <h3><span lang="it">Wi-Fi di casa · X-Pro3</span><span lang="en">Home Wi-Fi · X-Pro3</span></h3>
+      <p><span lang="it">Senza fili e con il computer che resta su internet. Vedi JPG e RAF; un RAF arriva in circa mezzo minuto.</span><span lang="en">No wires, and your computer stays online. You see JPGs and RAFs; a RAF takes about half a minute.</span></p>
+      <div class="callout info"><b><span lang="it">La prima volta, registra il computer nella fotocamera.</span><span lang="en">The first time, register your computer in the camera.</span></b>
+        <span class="path" lang="it"><span>MENU/OK</span><i>›</i><span>IMPOSTAZIONI</span><i>›</i><span>IMPOSTAZIONI CONNESSIONE</span><i>›</i><span>IMP. SALV.AUT. PC</span><i>›</i><span>IMPOSTAZIONE MANUALE</span><i>›</i><span>SELEZ. LISTA RETI</span></span>
+        <span class="path" lang="en"><span>MENU/OK</span><i>›</i><span>SET UP</span><i>›</i><span>CONNECTION SETTING</span><i>›</i><span>PC AUTO SAVE SETTING</span><i>›</i><span>MANUAL SETUP</span><i>›</i><span>SELECT FROM NETWORK LIST</span></span><br>
+        <span lang="it">Scegli la rete di casa e inserisci la password: con Provino aperto, la fotocamera trova il computer e Provino lo registra da solo. Usa l'impostazione manuale, non quella semplice che chiede il tasto WPS del router.</span><span lang="en">Pick your home network and enter the password: with Provino open, the camera finds the computer and Provino registers it by itself. Use manual setup, not the simple one that asks for the router's WPS button.</span></div>
+      <ol class="steps">
+        <li><b><span lang="it">Il computer è sulla rete Wi-Fi di casa</span><span lang="en">Your computer is on your home Wi-Fi</span></b><span lang="it">La stessa a cui si collega la fotocamera.</span><span lang="en">The same one the camera connects to.</span></li>
+        <li><b><span lang="it">Accendi la fotocamera e premi PLAY</span><span lang="en">Turn the camera on and press PLAY</span></b><span lang="it">Compaiono le foto.</span><span lang="en">Your photos appear.</span></li>
+        <li><b><span lang="it">Avvia il salvataggio automatico sul PC</span><span lang="en">Start PC auto save</span></b>
+          <span class="path" lang="it"><span>MENU/OK</span><i>›</i><span>MENU RIPRODUZIONE</span><i>›</i><span>SALVAT. AUTOM. PC</span></span>
+          <span class="path" lang="en"><span>MENU/OK</span><i>›</i><span>PLAY BACK MENU</span><i>›</i><span>PC AUTO SAVE</span></span><br>
+          <span lang="it">La fotocamera si collega e Provino mostra le miniature.</span><span lang="en">The camera connects and Provino shows the thumbnails.</span></li>
+      </ol>
+
+      <h3><span lang="it">Wi-Fi diretto · X-Pro3</span><span lang="en">Direct Wi-Fi · X-Pro3</span></h3>
+      <p><span lang="it">Senza router, ovunque tu sia. La fotocamera in questo modo mostra solo i JPG della scheda 1.</span><span lang="en">No router, wherever you are. In this mode the camera only shows the JPGs on card 1.</span></p>
+      <ol class="steps">
+        <li><b><span lang="it">Avvia la comunicazione wireless</span><span lang="en">Start wireless communication</span></b>
+          <span class="path" lang="it"><span>PLAY</span><i>›</i><span>MENU/OK</span><i>›</i><span>MENU RIPRODUZIONE</span><i>›</i><span>COMUNIC. WIRELESS</span></span>
+          <span class="path" lang="en"><span>PLAY</span><i>›</i><span>MENU/OK</span><i>›</i><span>PLAY BACK MENU</span><i>›</i><span>WIRELESS COMMUNICATION</span></span></li>
+        <li><b><span lang="it">Collega il computer alla rete della fotocamera</span><span lang="en">Join the camera's network</span></b><span lang="it">Dall'icona Wi-Fi scegli la rete FUJIFILM-…. Finché sei collegato, il computer resta senza internet.</span><span lang="en">From the Wi-Fi icon, choose the FUJIFILM-… network. While connected, your computer is offline.</span></li>
+        <li><b><span lang="it">Se la fotocamera chiede conferma, premi OK</span><span lang="en">If the camera asks for confirmation, press OK</span></b></li>
+      </ol>
+      <div class="callout"><b><span lang="it">X100VI e Wi-Fi:</span><span lang="en">X100VI and Wi-Fi:</span></b> <span lang="it">per ora solo cavo. Dal firmware 1.30 il Wi-Fi della X100VI passa dal Bluetooth, e Provino non lo supporta ancora.</span><span lang="en">cable only for now. Since firmware 1.30 the X100VI's Wi-Fi goes through Bluetooth, which Provino doesn't support yet.</span></div>
+    </section>
+
+    <section id="scegliere">
+      <h2><span lang="it">3. Scegliere le foto</span><span lang="en">3. Pick your photos</span></h2>
+      <p><span lang="it">Provino mostra tutti gli scatti della scheda, divisi per giorno. Il RAW e il JPG dello stesso scatto stanno in un solo provino, con le loro etichette.</span><span lang="en">Provino shows every shot on the card, grouped by day. The RAW and JPG of each shot share one frame, each with its own label.</span></p>
+      <ul>
+        <li><span lang="it"><strong>Clic su JPG o RAF</strong> per sceglierli. Blu vuol dire scelto, verde vuol dire già scaricato. Lo scatto scelto ha il segno rosso, come a matita.</span><span lang="en"><strong>Click JPG or RAF</strong> to pick them. Blue means picked, green means already downloaded. A picked shot gets the red pencil mark.</span></li>
+        <li><span lang="it"><strong>Maiusc+clic</strong> su un'etichetta: sceglie tutta la serie dello stesso tipo fino a lì.</span><span lang="en"><strong>Shift+click</strong> a label: picks the whole run of that type up to there.</span></li>
+        <li><span lang="it"><strong>Trascina</strong> sulla griglia per scegliere con un riquadro.</span><span lang="en"><strong>Drag</strong> across the grid to pick with a box.</span></li>
+        <li><span lang="it"><strong>Da scaricare</strong>, nella barra: «Tutti i JPG», «Tutti i RAF», «Tutti i video», «Solo quelli non ancora scaricati», «Deseleziona tutto». Accanto vedi quanti file e quanti MB hai scelto.</span><span lang="en"><strong>To download</strong>, in the toolbar: "All JPGs", "All RAFs", "All videos", "Only not downloaded yet", "Deselect all". Next to it you see how many files and MB you picked.</span></li>
+        <li><span lang="it"><strong>Mostra</strong>: Tutto, JPG, RAF o Video, e il menu delle simulazioni pellicola. I filtri cambiano solo cosa vedi: quello che hai già scelto resta scelto, e Provino ti dice quanti file scelti sono nascosti.</span><span lang="en"><strong>Show</strong>: All, JPG, RAF or Video, plus the film simulation menu. Filters only change what you see: what you picked stays picked, and Provino tells you how many picked files are hidden.</span></li>
+      </ul>
+      <img class="g-shot" src="img/gnome-selezione.webp" alt="Provino su GNOME con il filtro RAF e il contatore dei file nascosti" width="1920" height="1200" loading="lazy">
+      <p class="g-cap"><span lang="it">Filtro RAF attivo: 3 file scelti, 1 nascosto dal filtro.</span><span lang="en">RAF filter on: 3 files picked, 1 hidden by the filter.</span></p>
+    </section>
+
+    <section id="foto">
+      <h2><span lang="it">4. Foto grande e ricetta</span><span lang="en">4. Large photo and recipe</span></h2>
+      <ul>
+        <li><span lang="it"><strong>Clic su una foto</strong>: si apre accanto alla griglia, in grande. <strong>Doppio clic</strong> o <kbd>F</kbd>: a tutto schermo.</span><span lang="en"><strong>Click a photo</strong>: it opens large next to the grid. <strong>Double-click</strong> or <kbd>F</kbd>: full screen.</span></li>
+        <li><span lang="it"><strong>Clic sulla foto grande</strong> o <kbd>F</kbd>: zoom al 100%. Trascina per spostarti, <kbd>Esc</kbd> per tornare alla griglia.</span><span lang="en"><strong>Click the large photo</strong> or <kbd>F</kbd>: 100% zoom. Drag to move around, <kbd>Esc</kbd> to go back to the grid.</span></li>
+        <li><span lang="it"><kbd>←</kbd> <kbd>→</kbd> per scorrere, <kbd>Spazio</kbd> per scegliere JPG e RAF dello scatto che stai guardando.</span><span lang="en"><kbd>←</kbd> <kbd>→</kbd> to browse, <kbd>Space</kbd> to pick the JPG and RAF of the shot you're viewing.</span></li>
+        <li><span lang="it"><strong>META</strong>: la ricetta completa (simulazione pellicola, grana, Color Chrome, bilanciamento del bianco, gamma dinamica, luci e ombre, colore e nitidezza) e i dati di scatto (obiettivo, tempo, diaframma, ISO, data e ora, scheda). Con <strong>Copia ricetta</strong> la copi come testo, da incollare dove vuoi.</span><span lang="en"><strong>META</strong>: the full recipe (film simulation, grain, Color Chrome, white balance, dynamic range, highlights and shadows, color and sharpness) and the shooting data (lens, shutter, aperture, ISO, date and time, card). <strong>Copy recipe</strong> copies it as text to paste anywhere.</span></li>
+      </ul>
+      <img class="g-shot" src="img/mac-scuro-meta.webp" alt="Provino su macOS in tema scuro, con foto grande e ricetta" width="1920" height="1236" loading="lazy">
+      <div class="callout info"><span lang="it">Per un RAF senza JPG, la foto grande è l'anteprima contenuta nel RAF. I video non hanno anteprima: scaricali e aprili sul computer.</span><span lang="en">For a RAF without a JPG, the large photo is the preview embedded in the RAF. Videos have no preview: download them and open them on your computer.</span></div>
+    </section>
+
+    <section id="scaricare">
+      <h2><span lang="it">5. Scaricare</span><span lang="en">5. Download</span></h2>
+      <ol class="steps">
+        <li><b><span lang="it">Premi Scarica</span><span lang="en">Press Download</span></b><span lang="it">Si apre la finestra con la cartella e le sottocartelle.</span><span lang="en">A window opens with the folder and subfolders.</span></li>
+        <li><b><span lang="it">Controlla dove finiscono</span><span lang="en">Check where they go</span></b><span lang="it">Una cartella per ogni giorno di scatto (per esempio 2026-11-05) e, se vuoi, le sottocartelle RAF, JPG e VIDEO, solo per i tipi che scarichi. L'anteprima ti mostra il percorso di ogni file prima di partire.</span><span lang="en">One folder per shooting day (for example 2026-11-05) and, if you like, RAF, JPG and VIDEO subfolders, only for the types you download. The preview shows each file's path before you start.</span></li>
+        <li><b><span lang="it">Scarica</span><span lang="en">Download</span></b><span lang="it">L'avanzamento è nella barra: file per file, con velocità e tempo che manca, e «Apri cartella» alla fine.</span><span lang="en">Progress shows in the toolbar: file by file, with speed and time left, and "Open folder" at the end.</span></li>
+      </ol>
+      <img class="g-shot" src="img/mac-scarica.webp" alt="Il foglio Scarica su macOS con l'anteprima delle cartelle" width="1920" height="1236" loading="lazy">
+
+      <h3><span lang="it">Se un file è già nella cartella</span><span lang="en">If a file is already in the folder</span></h3>
+      <p><span lang="it">Provino confronta dimensione e data di scatto e ti dice se è <strong>lo stesso file</strong> già scaricato oppure <strong>un'altra foto con lo stesso nome</strong>. Per ognuno scegli: Non scaricare, Sovrascrivi, oppure Salva come con un nome nuovo (per esempio DSF0150_1.JPG). Senza la tua scelta non sovrascrive mai niente.</span><span lang="en">Provino compares size and shooting date and tells you whether it's <strong>the same file</strong> already downloaded or <strong>another photo with the same name</strong>. For each one choose: Don't download, Overwrite, or Save as with a new name (for example DSF0150_1.JPG). Without your choice it never overwrites anything.</span></p>
+      <img class="g-shot" src="img/gnome-gia-presenti.webp" alt="Su GNOME: due file già nella cartella, uno identico e uno diverso" width="1920" height="1200" loading="lazy">
+
+      <h3><span lang="it">Se il collegamento cade</span><span lang="en">If the connection drops</span></h3>
+      <p><span lang="it">Se il cavo si stacca o il Wi-Fi si interrompe, nella cartella non resta nessun file a metà. Quando ricolleghi, i file mancanti tornano selezionati: premi Scarica per riprendere. In Wi-Fi di casa, basta riavviare SALVAT. AUTOM. PC sulla fotocamera e i download in coda ripartono da soli.</span><span lang="en">If the cable comes out or Wi-Fi drops, no half-written file is left in the folder. When you reconnect, the missing files are selected again: press Download to resume. On home Wi-Fi, just restart PC AUTO SAVE on the camera and queued downloads resume by themselves.</span></p>
+    </section>
+
+    <section id="preferenze">
+      <h2><span lang="it">6. Preferenze</span><span lang="en">6. Preferences</span></h2>
+      <p><span lang="it">Su Mac: Provino › Impostazioni (<kbd>⌘</kbd><kbd>,</kbd>). Su GNOME: menu principale <kbd>☰</kbd> › Preferenze.</span><span lang="en">On Mac: Provino › Settings (<kbd>⌘</kbd><kbd>,</kbd>). On GNOME: main menu <kbd>☰</kbd> › Preferences.</span></p>
+      <ul>
+        <li><span lang="it"><strong>Cartella</strong> dove scaricare, e se chiedere ogni volta prima del download.</span><span lang="en"><strong>Folder</strong> to download into, and whether to ask every time before downloading.</span></li>
+        <li><span lang="it"><strong>Una cartella per ogni giorno</strong> e <strong>Separa per tipo</strong> (RAF, JPG, VIDEO).</span><span lang="en"><strong>One folder per day</strong> and <strong>Split by type</strong> (RAF, JPG, VIDEO).</span></li>
+        <li><span lang="it"><strong>Lingua</strong> dell'app: automatica, italiano o inglese.</span><span lang="en">App <strong>language</strong>: automatic, Italian or English.</span></li>
+        <li><span lang="it"><strong>Fotocamere registrate</strong> e i loro collegamenti.</span><span lang="en"><strong>Registered cameras</strong> and their connections.</span></li>
+        <li><span lang="it"><strong>Tema</strong> chiaro, scuro o automatico: su Mac in Vista › Aspetto, su GNOME nel menu principale.</span><span lang="en"><strong>Theme</strong> light, dark or automatic: on Mac in View › Appearance, on GNOME in the main menu.</span></li>
+      </ul>
+    </section>
+
+    <section id="tasti">
+      <h2><span lang="it">7. Scorciatoie</span><span lang="en">7. Shortcuts</span></h2>
+      <p><span lang="it">Su Linux, al posto di <kbd>⌘</kbd> usa <kbd>Ctrl</kbd>.</span><span lang="en">On Linux, use <kbd>Ctrl</kbd> instead of <kbd>⌘</kbd>.</span></p>
+      <table class="keys">
+        <tbody>
+          <tr><td><span lang="it">Clic su una foto</span><span lang="en">Click a photo</span></td><td><span lang="it">Foto grande accanto alla griglia</span><span lang="en">Large photo next to the grid</span></td></tr>
+          <tr><td><span lang="it">Doppio clic</span><span lang="en">Double-click</span> · <kbd>F</kbd></td><td><span lang="it">Schermo intero; nella foto intera, <kbd>F</kbd> alterna 100% e foto intera</span><span lang="en">Full screen; in full screen, <kbd>F</kbd> toggles 100% and fit</span></td></tr>
+          <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td><span lang="it">Scatto precedente / successivo</span><span lang="en">Previous / next shot</span></td></tr>
+          <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td><span lang="it">Riga sopra / sotto nella griglia</span><span lang="en">Row above / below in the grid</span></td></tr>
+          <tr><td><kbd>Spazio</kbd></td><td><span lang="it">Sceglie o toglie JPG e RAF dello scatto</span><span lang="en">Picks or unpicks the shot's JPG and RAF</span></td></tr>
+          <tr><td><span lang="it">Maiusc+clic</span><span lang="en">Shift+click</span></td><td><span lang="it">Sceglie una serie</span><span lang="en">Picks a run</span></td></tr>
+          <tr><td><kbd>⌘</kbd><kbd>A</kbd></td><td><span lang="it">Sceglie tutto quello che vedi</span><span lang="en">Picks everything you see</span></td></tr>
+          <tr><td><kbd>Esc</kbd></td><td><span lang="it">Esce dallo schermo intero; nella griglia toglie tutte le scelte</span><span lang="en">Leaves full screen; in the grid clears all picks</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="problemi" class="faq">
+      <h2><span lang="it">8. Se qualcosa non va</span><span lang="en">8. Troubleshooting</span></h2>
+      <details><summary><span lang="it">Con il cavo la fotocamera non viene trovata</span><span lang="en">The camera isn't found over the cable</span></summary>
+        <p><span lang="it">Imposta prima LETTORE SCHEDA USB e solo dopo collega il cavo. Se era già collegato: scollegalo, cambia l'impostazione e ricollegalo. Sulla X100VI controlla che l'alimentazione USB sia su AUTO. Usa un cavo USB-C che trasferisce dati, non solo di ricarica.</span><span lang="en">Set USB CARD READER first, then connect the cable. If it was already plugged in: unplug, change the setting and plug it back. On the X100VI check USB power is set to AUTO. Use a USB-C cable that carries data, not a charge-only one.</span></p></details>
+      <details><summary><span lang="it">Sul Mac si apre FUJIFILM X Acquire</span><span lang="en">FUJIFILM X Acquire opens on the Mac</span></summary>
+        <p><span lang="it">Chiudilo: occupa la fotocamera. Provino te lo propone da solo.</span><span lang="en">Quit it: it holds the camera. Provino offers to do it for you.</span></p></details>
+      <details><summary><span lang="it">In Wi-Fi diretto non vedo i RAF</span><span lang="en">I can't see RAFs on direct Wi-Fi</span></summary>
+        <p><span lang="it">È un limite della fotocamera: in questo modo la X-Pro3 mostra solo i JPG della scheda 1. Per i RAF usa il Wi-Fi di casa o il cavo.</span><span lang="en">It's a camera limit: in this mode the X-Pro3 only shows the JPGs on card 1. For RAFs use home Wi-Fi or the cable.</span></p></details>
+      <details><summary><span lang="it">Il Wi-Fi di casa non si collega</span><span lang="en">Home Wi-Fi doesn't connect</span></summary>
+        <p><span lang="it">Controlla che computer e fotocamera siano sulla stessa rete, poi sulla fotocamera esci e avvia di nuovo SALVAT. AUTOM. PC. Se è una rete nuova, registra di nuovo il computer (vedi il punto 2).</span><span lang="en">Check computer and camera are on the same network, then exit and start PC AUTO SAVE again on the camera. On a new network, register the computer again (see step 2).</span></p></details>
+      <details><summary><span lang="it">La fotocamera si spegne a metà</span><span lang="en">The camera turns off halfway</span></summary>
+        <p><span lang="it">Allunga lo spegnimento automatico: IMPOSTAZIONI › GESTIONE ALIMENTAZIONE › SPEGNIMENTO AUTOMATICO. I file non finiti non restano nella cartella.</span><span lang="en">Extend auto power off: SET UP › POWER MANAGEMENT › AUTO POWER OFF. Unfinished files are not left in the folder.</span></p></details>
+      <details><summary><span lang="it">Provino può cancellare le foto dalla scheda?</span><span lang="en">Can Provino delete photos from the card?</span></summary>
+        <p><span lang="it">No. Provino legge soltanto: non cancella, non modifica e non formatta mai nulla sulla scheda.</span><span lang="en">No. Provino only reads: it never deletes, changes or formats anything on the card.</span></p></details>
+      <details><summary><span lang="it">Come segnalo un problema?</span><span lang="en">How do I report a problem?</span></summary>
+        <p><span lang="it">Apri una segnalazione su <a href="https://github.com/cisla66/Provino/issues">GitHub</a> e allega il file di log dell'ultimo avvio: Provino ne salva uno a ogni avvio, ed è quello che serve per capire cosa è successo.</span><span lang="en">Open an issue on <a href="https://github.com/cisla66/Provino/issues">GitHub</a> and attach the log file of the last run: Provino saves one each time it starts, and it's what explains what happened.</span></p></details>
+      <p class="g-cap"><span lang="it">Alcuni nomi dei menu in italiano possono cambiare leggermente in base al firmware della fotocamera.</span><span lang="en">Some menu names may differ slightly depending on the camera firmware.</span></p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p><b style="color:var(--ink)">Provino</b> · <span lang="it">open source, licenza MIT</span><span lang="en">open source, MIT license</span> · <a href="https://github.com/cisla66/Provino">GitHub</a></p>
+      <p><span lang="it">Protocollo Wi-Fi basato sul lavoro open source di</span><span lang="en">Wi-Fi protocol based on the open-source work of</span> <a href="https://github.com/petabyt/libfuji">libfuji</a> (petabyt).</p>
+    </div>
+    <div>
+      <p><span lang="it">Progetto indipendente, non affiliato a FUJIFILM Corporation.</span><span lang="en">Independent project, not affiliated with FUJIFILM Corporation.</span></p>
+      <p><span lang="it">Fujifilm, X-Pro3 e X100VI sono marchi dei rispettivi proprietari.</span><span lang="en">Fujifilm, X-Pro3 and X100VI are trademarks of their respective owners.</span></p>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
