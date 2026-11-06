@@ -185,14 +185,12 @@
       "methods": [
         "home",
         "direct",
-        "cable",
-        "card"
+        "cable"
       ],
       "verified": {
         "home": "2026-11-01",
         "direct": "2026-11-01",
-        "cable": "2026-11-01",
-        "card": "2026-11-06"
+        "cable": "2026-11-01"
       },
       "steps": {
         "cable": [
@@ -229,8 +227,7 @@
     "X100VI": {
       "usb_hint": "x100vi",
       "methods": [
-        "cable",
-        "card"
+        "cable"
       ],
       "verified": {
         "cable": "2026-11-01"
