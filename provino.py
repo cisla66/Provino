@@ -33,7 +33,7 @@ sys.path.insert(0, HERE)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc16"   # finestra GNOME, sottocartelle solo dei tipi scelti
+APP_VERSION = "1.0.0-rc17"   # lettore di schede SD
 
 
 def iso_to_text(d):
@@ -295,6 +295,7 @@ class App:
                 "version": APP_VERSION,
                 "choice": self.choice,
                 "settings": self.settings,
+                "card": os.path.basename((getattr(self.usb, "vol", None) or "").rstrip("/")) if self.choice.get("method") == "card" else "",
             }
 
     # ------------------------------------------------------------ collegamento
@@ -318,6 +319,11 @@ class App:
             self.abort = False
             self.set_status("waiting", "")
             threading.Thread(target=self._connect_usb, args=(camera,), daemon=True).start()
+            return
+        if method == "card":
+            self.abort = False
+            self.set_status("waiting", "")
+            threading.Thread(target=self._connect_card, daemon=True).start()
             return
         self.wireless = (method == "direct")
         self.abort = False
@@ -353,6 +359,23 @@ class App:
             self.set_status("cable", "usb_failed", detail=e)
         finally:
             self.usb_starting = False
+
+    # ------------------------------------------------------------ lettore di schede (macOS e Linux)
+    def _connect_card(self):
+        """La scheda nel lettore: si legge come un disco, in sola lettura (fuji_sd)."""
+        import fuji_sd
+        if self.usb:
+            try:
+                self.usb.stop()
+            except Exception:
+                pass
+            self.usb = None
+        self._usb_files = []
+        self.thumb_tries = {}
+        sess = fuji_sd.CardSession(HERE, "", self.log, self._usb_event, dest_dir=self.dest)
+        sess.start()
+        self.usb = sess
+        self.set_status("waiting", "")
 
     def _usb_event(self, ev):
         k = ev.get("event")
@@ -399,7 +422,7 @@ class App:
                     el = max(time.time() - self.current.get("t0", time.time()), 0.001)
                     self.current.update({"got": got, "speed": got / el})
         elif k in ("removed", "exited"):
-            if self.choice.get("method") == "cable" and self.status in ("ready", "connecting", "waiting"):
+            if self.choice.get("method") in ("cable", "card") and self.status in ("ready", "connecting", "waiting"):
                 with self.state_lock:
                     # download in sospeso: li ricordo per nome e li riseleziono quando torna il cavo
                     pend = ([self.current["name"]] if self.current else []) + [q["name"] for q in self.queue]
@@ -412,13 +435,17 @@ class App:
                     self.files = []
                     self.thumbs = {}
                 self._usb_files = []
-                self.set_status("waiting", "usb_unplugged")
+                card = self.choice.get("method") == "card"
+                if k == "exited" and card:
+                    return
+                self.set_status("waiting", "card_removed" if card else "usb_unplugged")
                 if k == "exited" and not self.stop and not self.abort:
                     self.usb = None
                     threading.Thread(target=lambda: (time.sleep(2), self._connect_usb(self.choice.get("camera", ""))),
                                      daemon=True).start()
         elif k == "error":
-            self.set_status("waiting", "usb_error", detail=ev.get("message"))
+            self.set_status("waiting", "card_error" if self.choice.get("method") == "card" else "usb_error",
+                            detail=ev.get("message"))
 
     def _publish_usb_files(self):
         files = sorted(self._usb_files, key=lambda f: (f["date"], f["base"], f["kind"]), reverse=True)
@@ -440,11 +467,12 @@ class App:
         tmp = os.path.join(d, tmp_name)
         _remove_quiet(tmp)
         fuji_usb = _usb_module()
+        import fuji_sd
         try:
             got = self.usb.download(f["handle"], d, tmp_name, True, lambda: self.cancel)
             if got != tmp and os.path.exists(got):
                 os.replace(got, tmp)
-        except fuji_usb.UsbError as e:
+        except (fuji_usb.UsbError, fuji_sd.CardError) as e:
             _remove_quiet(tmp)
             raise fw.FujiError(str(e))
         size = os.path.getsize(tmp) if os.path.exists(tmp) else -1
@@ -455,7 +483,8 @@ class App:
         if os.path.exists(path) and action != "overwrite":
             path = os.path.join(d, self._free_name(name, set(), d))   # mai sovrascrivere senza permesso
         os.replace(tmp, path)
-        self.log.info("Scaricato via cavo %s (%s in %.1f s)" % (path, fw.human(f.get("size") or 0), time.time() - t0))
+        self.log.info("Scaricato %s %s (%s in %.1f s)" % ("dalla scheda" if self.choice.get("method") == "card" else "via cavo",
+                      path, fw.human(f.get("size") or 0), time.time() - t0))
         return path, False
 
     def tr(self, it, en):
@@ -1205,7 +1234,7 @@ class App:
                     self.queue = []
             except Exception as e:  # noqa: BLE001
                 self.log.info("Download %s interrotto: %s" % (f["name"], e))
-                if self.choice.get("method") == "cable":
+                if self.choice.get("method") in ("cable", "card"):
                     for _ in range(15):   # il distacco del cavo arriva come evento poco dopo l'errore
                         if self.status != "ready" or self.usb is None:
                             break

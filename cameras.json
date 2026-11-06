@@ -1,79 +1,293 @@
 {
   "_info": "Provino camera profiles. To add a camera: copy a profile, adapt methods/steps, test with the compatibility test and open a pull request. Menu labels: 'it_verified' = Italian label checked on an official Fujifilm Italian manual.",
   "menus": {
-    "PLAYBACK":       {"en": "PLAY BACK MENU",                "it": "MENU RIPRODUZIONE",             "it_verified": true},
-    "PC_AUTO_SAVE":   {"en": "PC AUTO SAVE",                  "it": "SALVAT. AUTOM. PC",             "it_verified": true},
-    "WIRELESS":       {"en": "WIRELESS COMMUNICATION",        "it": "COMUNIC. WIRELESS",             "it_verified": true},
-    "PCAS_SETTING":   {"en": "PC AUTO SAVE SETTING",          "it": "IMP. SALV.AUT. PC",             "it_verified": true},
-    "SET_UP":         {"en": "SET UP",                        "it": "IMPOSTAZIONI",                  "it_verified": false},
-    "CONN_SETTING":   {"en": "CONNECTION SETTING",            "it": "IMPOSTAZIONI CONNESSIONE",      "it_verified": false},
-    "CONN_MODE":      {"en": "CONNECTION MODE",               "it": "MODALITÀ CONNESSIONE",          "it_verified": false},
-    "CARD_READER":    {"en": "USB CARD READER",               "it": "LETTORE SCHEDA USB",            "it_verified": true},
-    "NETWORK_USB":    {"en": "NETWORK/USB SETTING",           "it": "IMPOSTAZIONE NETWORK/USB",      "it_verified": true},
-    "USB_POWER":      {"en": "USB POWER SUPPLY/COMM SETTING", "it": "IMPOSTAZ. USB ALIMENTAZ./COM.", "it_verified": true},
-    "PS_ON_COMM_OFF": {"en": "POWER SUPPLY ON/COMM OFF",      "it": "ALIMENTAZIONE ON/COM. OFF",     "it_verified": false},
-    "POWER_MGMT":     {"en": "POWER MANAGEMENT",              "it": "GESTIONE ALIMENTAZIONE",        "it_verified": false},
-    "AUTO_OFF":       {"en": "AUTO POWER OFF",                "it": "SPEGNIMENTO AUTOMATICO",        "it_verified": false}
+    "PLAYBACK": {
+      "en": "PLAY BACK MENU",
+      "it": "MENU RIPRODUZIONE",
+      "it_verified": true
+    },
+    "PC_AUTO_SAVE": {
+      "en": "PC AUTO SAVE",
+      "it": "SALVAT. AUTOM. PC",
+      "it_verified": true
+    },
+    "WIRELESS": {
+      "en": "WIRELESS COMMUNICATION",
+      "it": "COMUNIC. WIRELESS",
+      "it_verified": true
+    },
+    "PCAS_SETTING": {
+      "en": "PC AUTO SAVE SETTING",
+      "it": "IMP. SALV.AUT. PC",
+      "it_verified": true
+    },
+    "SET_UP": {
+      "en": "SET UP",
+      "it": "IMPOSTAZIONI",
+      "it_verified": false
+    },
+    "CONN_SETTING": {
+      "en": "CONNECTION SETTING",
+      "it": "IMPOSTAZIONI CONNESSIONE",
+      "it_verified": false
+    },
+    "CONN_MODE": {
+      "en": "CONNECTION MODE",
+      "it": "MODALITÀ CONNESSIONE",
+      "it_verified": false
+    },
+    "CARD_READER": {
+      "en": "USB CARD READER",
+      "it": "LETTORE SCHEDA USB",
+      "it_verified": true
+    },
+    "NETWORK_USB": {
+      "en": "NETWORK/USB SETTING",
+      "it": "IMPOSTAZIONE NETWORK/USB",
+      "it_verified": true
+    },
+    "USB_POWER": {
+      "en": "USB POWER SUPPLY/COMM SETTING",
+      "it": "IMPOSTAZ. USB ALIMENTAZ./COM.",
+      "it_verified": true
+    },
+    "PS_ON_COMM_OFF": {
+      "en": "POWER SUPPLY ON/COMM OFF",
+      "it": "ALIMENTAZIONE ON/COM. OFF",
+      "it_verified": false
+    },
+    "POWER_MGMT": {
+      "en": "POWER MANAGEMENT",
+      "it": "GESTIONE ALIMENTAZIONE",
+      "it_verified": false
+    },
+    "AUTO_OFF": {
+      "en": "AUTO POWER OFF",
+      "it": "SPEGNIMENTO AUTOMATICO",
+      "it_verified": false
+    }
   },
   "default_steps": {
     "home": [
-      {"it": ["Il computer è sulla rete Wi-Fi di casa", "La stessa rete a cui è collegata la fotocamera."],
-       "en": ["Your computer is on your home Wi-Fi", "The same network the camera is connected to."]},
-      {"it": ["Accendi la fotocamera", "Con la scheda inserita."],
-       "en": ["Turn the camera on", "With the memory card inserted."]},
-      {"it": ["Premi PLAY", "Il tasto con il triangolo: compaiono le foto."],
-       "en": ["Press PLAY", "The triangle button: your photos appear."]},
-      {"it": ["Premi MENU/OK", "Si apre il {PLAYBACK}."],
-       "en": ["Press MENU/OK", "The {PLAYBACK} opens."]},
-      {"it": ["Scegli {PC_AUTO_SAVE} e conferma", "La fotocamera si collega al Wi-Fi e cerca il computer."],
-       "en": ["Choose {PC_AUTO_SAVE} and confirm", "The camera joins the Wi-Fi and looks for your computer."]}
+      {
+        "it": [
+          "Il computer è sulla rete Wi-Fi di casa",
+          "La stessa rete a cui è collegata la fotocamera."
+        ],
+        "en": [
+          "Your computer is on your home Wi-Fi",
+          "The same network the camera is connected to."
+        ]
+      },
+      {
+        "it": [
+          "Accendi la fotocamera",
+          "Con la scheda inserita."
+        ],
+        "en": [
+          "Turn the camera on",
+          "With the memory card inserted."
+        ]
+      },
+      {
+        "it": [
+          "Premi PLAY",
+          "Il tasto con il triangolo: compaiono le foto."
+        ],
+        "en": [
+          "Press PLAY",
+          "The triangle button: your photos appear."
+        ]
+      },
+      {
+        "it": [
+          "Premi MENU/OK",
+          "Si apre il {PLAYBACK}."
+        ],
+        "en": [
+          "Press MENU/OK",
+          "The {PLAYBACK} opens."
+        ]
+      },
+      {
+        "it": [
+          "Scegli {PC_AUTO_SAVE} e conferma",
+          "La fotocamera si collega al Wi-Fi e cerca il computer."
+        ],
+        "en": [
+          "Choose {PC_AUTO_SAVE} and confirm",
+          "The camera joins the Wi-Fi and looks for your computer."
+        ]
+      }
     ],
     "direct": [
-      {"it": ["Sulla fotocamera avvia {WIRELESS}", "PLAY, poi MENU/OK, poi {WIRELESS} nel {PLAYBACK}."],
-       "en": ["Start {WIRELESS} on the camera", "PLAY, then MENU/OK, then {WIRELESS} in the {PLAYBACK}."]},
-      {"it": ["Collega il computer alla rete della fotocamera", "Icona Wi-Fi: scegli la rete FUJIFILM-…. Il computer resterà senza internet finché sei collegato."],
-       "en": ["Connect your computer to the camera's network", "Wi-Fi icon: choose the FUJIFILM-… network. Your computer will be offline while connected."]},
-      {"it": ["Se la fotocamera chiede conferma, premi OK", ""],
-       "en": ["If the camera asks for confirmation, press OK", ""]}
+      {
+        "it": [
+          "Sulla fotocamera avvia {WIRELESS}",
+          "PLAY, poi MENU/OK, poi {WIRELESS} nel {PLAYBACK}."
+        ],
+        "en": [
+          "Start {WIRELESS} on the camera",
+          "PLAY, then MENU/OK, then {WIRELESS} in the {PLAYBACK}."
+        ]
+      },
+      {
+        "it": [
+          "Collega il computer alla rete della fotocamera",
+          "Icona Wi-Fi: scegli la rete FUJIFILM-…. Il computer resterà senza internet finché sei collegato."
+        ],
+        "en": [
+          "Connect your computer to the camera's network",
+          "Wi-Fi icon: choose the FUJIFILM-… network. Your computer will be offline while connected."
+        ]
+      },
+      {
+        "it": [
+          "Se la fotocamera chiede conferma, premi OK",
+          ""
+        ],
+        "en": [
+          "If the camera asks for confirmation, press OK",
+          ""
+        ]
+      }
     ],
-    "tip": {"it": "Consiglio: se la fotocamera si spegne a metà, allunga {AUTO_OFF} in {SET_UP}, {POWER_MGMT}.",
-            "en": "Tip: if the camera turns off halfway, extend {AUTO_OFF} in {SET_UP}, {POWER_MGMT}."}
+    "tip": {
+      "it": "Consiglio: se la fotocamera si spegne a metà, allunga {AUTO_OFF} in {SET_UP}, {POWER_MGMT}.",
+      "en": "Tip: if the camera turns off halfway, extend {AUTO_OFF} in {SET_UP}, {POWER_MGMT}."
+    },
+    "card": [
+      {
+        "it": [
+          "Togli la scheda dalla fotocamera e mettila nel lettore",
+          "Lettore integrato o esterno: Provino la trova da solo."
+        ],
+        "en": [
+          "Take the card out of the camera and put it in the reader",
+          "Built-in or external reader: Provino finds it by itself."
+        ]
+      },
+      {
+        "it": [
+          "Lasciala inserita fino alla fine del download",
+          "Se la togli prima, nessun file resta a metà."
+        ],
+        "en": [
+          "Leave it in until the download is done",
+          "If you remove it early, no half-written file is left."
+        ]
+      }
+    ]
   },
   "cameras": {
     "X-Pro3": {
       "usb_hint": "xpro3",
-      "methods": ["home", "direct", "cable"],
-      "verified": {"home": "2026-11-01", "direct": "2026-11-01", "cable": "2026-11-01"},
+      "methods": [
+        "home",
+        "direct",
+        "cable",
+        "card"
+      ],
+      "verified": {
+        "home": "2026-11-01",
+        "direct": "2026-11-01",
+        "cable": "2026-11-01",
+        "card": "2026-11-06"
+      },
       "steps": {
         "cable": [
-          {"it": ["Imposta la fotocamera come lettore di schede", "MENU/OK, {SET_UP} (chiave), {CONN_SETTING}, {CONN_MODE}: {CARD_READER}."],
-           "en": ["Set the camera as a card reader", "MENU/OK, {SET_UP} (wrench), {CONN_SETTING}, {CONN_MODE}: {CARD_READER}."]},
-          {"it": ["Solo ora collega il cavo USB-C", "Lascia la fotocamera accesa: l'app la trova da sola."],
-           "en": ["Only now connect the USB-C cable", "Keep the camera on: the app finds it by itself."]}
+          {
+            "it": [
+              "Imposta la fotocamera come lettore di schede",
+              "MENU/OK, {SET_UP} (chiave), {CONN_SETTING}, {CONN_MODE}: {CARD_READER}."
+            ],
+            "en": [
+              "Set the camera as a card reader",
+              "MENU/OK, {SET_UP} (wrench), {CONN_SETTING}, {CONN_MODE}: {CARD_READER}."
+            ]
+          },
+          {
+            "it": [
+              "Solo ora collega il cavo USB-C",
+              "Lascia la fotocamera accesa: l'app la trova da sola."
+            ],
+            "en": [
+              "Only now connect the USB-C cable",
+              "Keep the camera on: the app finds it by itself."
+            ]
+          }
         ],
-        "register": {"it": "Sulla X-Pro3: MENU/OK, {SET_UP} (chiave), {CONN_SETTING}, {PCAS_SETTING}. Scegli IMPOSTAZIONE MANUALE (non quella semplice, che chiede il tasto WPS del router), poi SELEZ. LISTA RETI: scegli la rete di casa e inserisci la password. La fotocamera cerca il computer e lo registra. Questo menu serve solo a registrare: per scaricare usa poi PLAY → MENU/OK → scheda ▶ → SALVAT. AUTOM. PC.",
-                     "en": "On the X-Pro3: MENU/OK, {SET_UP} (wrench), {CONN_SETTING}, {PCAS_SETTING}. Choose MANUAL SETUP (not the simple one, which asks for the router's WPS button), then SELECT FROM NETWORK LIST: pick your home network and enter the password. The camera finds and registers your computer. This menu only registers: to download, use PLAY → MENU/OK → ▶ tab → PC AUTO SAVE."}
+        "register": {
+          "it": "Sulla X-Pro3: MENU/OK, {SET_UP} (chiave), {CONN_SETTING}, {PCAS_SETTING}. Scegli IMPOSTAZIONE MANUALE (non quella semplice, che chiede il tasto WPS del router), poi SELEZ. LISTA RETI: scegli la rete di casa e inserisci la password. La fotocamera cerca il computer e lo registra. Questo menu serve solo a registrare: per scaricare usa poi PLAY → MENU/OK → scheda ▶ → SALVAT. AUTOM. PC.",
+          "en": "On the X-Pro3: MENU/OK, {SET_UP} (wrench), {CONN_SETTING}, {PCAS_SETTING}. Choose MANUAL SETUP (not the simple one, which asks for the router's WPS button), then SELECT FROM NETWORK LIST: pick your home network and enter the password. The camera finds and registers your computer. This menu only registers: to download, use PLAY → MENU/OK → ▶ tab → PC AUTO SAVE."
+        }
       },
-      "quirks": ["autosave_close_by_reading_tail"]
+      "quirks": [
+        "autosave_close_by_reading_tail"
+      ]
     },
     "X100VI": {
       "usb_hint": "x100vi",
-      "methods": ["cable"],
-      "verified": {"cable": "2026-11-01"},
+      "methods": [
+        "cable",
+        "card"
+      ],
+      "verified": {
+        "cable": "2026-11-01"
+      },
       "unavailable": {
         "it": "Non ancora disponibile per la X100VI: dal firmware 1.30 il Wi-Fi passa dal Bluetooth.",
         "en": "Not available yet for the X100VI: since firmware 1.30 Wi-Fi goes through Bluetooth."
       },
       "steps": {
         "cable": [
-          {"it": ["Imposta la fotocamera come lettore di schede", "MENU/OK, {NETWORK_USB}, {CONN_MODE}: {CARD_READER}."],
-           "en": ["Set the camera as a card reader", "MENU/OK, {NETWORK_USB}, {CONN_MODE}: {CARD_READER}."]},
-          {"it": ["Controlla l'alimentazione USB", "Nello stesso menu, {USB_POWER}: AUTO (non {PS_ON_COMM_OFF}, che blocca i dati)."],
-           "en": ["Check USB power", "In the same menu, {USB_POWER}: AUTO (not {PS_ON_COMM_OFF}, which blocks data)."]},
-          {"it": ["Solo ora collega il cavo USB-C", "Lascia la fotocamera accesa: l'app la trova da sola."],
-           "en": ["Only now connect the USB-C cable", "Keep the camera on: the app finds it by itself."]}
+          {
+            "it": [
+              "Imposta la fotocamera come lettore di schede",
+              "MENU/OK, {NETWORK_USB}, {CONN_MODE}: {CARD_READER}."
+            ],
+            "en": [
+              "Set the camera as a card reader",
+              "MENU/OK, {NETWORK_USB}, {CONN_MODE}: {CARD_READER}."
+            ]
+          },
+          {
+            "it": [
+              "Controlla l'alimentazione USB",
+              "Nello stesso menu, {USB_POWER}: AUTO (non {PS_ON_COMM_OFF}, che blocca i dati)."
+            ],
+            "en": [
+              "Check USB power",
+              "In the same menu, {USB_POWER}: AUTO (not {PS_ON_COMM_OFF}, which blocks data)."
+            ]
+          },
+          {
+            "it": [
+              "Solo ora collega il cavo USB-C",
+              "Lascia la fotocamera accesa: l'app la trova da sola."
+            ],
+            "en": [
+              "Only now connect the USB-C cable",
+              "Keep the camera on: the app finds it by itself."
+            ]
+          }
         ]
       }
+    },
+    "Fujifilm": {
+      "label": {
+        "it": "Altra Fujifilm",
+        "en": "Other Fujifilm"
+      },
+      "usb_hint": "",
+      "methods": [
+        "card"
+      ],
+      "note": {
+        "it": "Con il lettore di schede funziona con le foto di qualsiasi Fujifilm. La ricetta META è stata provata su X-Pro3 e X100VI.",
+        "en": "With a card reader it works with photos from any Fujifilm. The META recipe has been tested on the X-Pro3 and X100VI."
+      },
+      "steps": {}
     }
   }
 }

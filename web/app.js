@@ -98,7 +98,7 @@ function checklist(found){
   });
   if(c.method==="cable" && S.status==="cable") return html + '</ol>';
   html += `<li class="auto ${found?'done':''}"><label>${found?'<input type="checkbox" checked disabled>':'<span class="spin"></span>'}<span class="txt"><b>${t(found?"auto.found":"auto.wait")}</b><small>${t(found?"auto.found.d":"auto.wait.d")}</small></span></label></li>`;
-  const tip = c.method==="cable" ? "" : `<p class="tip">${t(loc(CAMS.default_steps.tip))}</p>`;
+  const tip = (c.method==="cable" || c.method==="card") ? "" : `<p class="tip">${t(loc(CAMS.default_steps.tip))}</p>`;
   return html + `</ol>${tip}`;
 }
 document.addEventListener("change", e=>{
@@ -126,7 +126,7 @@ function build(){
   document.querySelectorAll("[data-f=VIDEO],[data-all=VIDEO]").forEach(b=>b.hidden = !nVid);
   const method = (S.choice||{}).method;
   $("#camInfo").textContent = (S.camera_id? S.camera_id+". " : "") + t(multiSlot? "info.shots2" : "info.shots",{n:gs.length-nVid}) + (nRaf? t("info.withRaf",{n:nRaf}) : "") + (nVid? t("info.videos",{n:nVid}) : "")
-    + (method==="cable" ? t("info.cable") : method==="direct" ? t("info.direct") : (!S.previews ? t("info.number") : ""));
+    + (method==="cable" ? t("info.cable") : method==="card" ? t("info.card",{v:esc(S.card||"")}) : method==="direct" ? t("info.direct") : (!S.previews ? t("info.number") : ""));
   let html = "", lastDay = "";
   for(const g of gs){
     const day = fmtDay(g.date);
@@ -188,7 +188,7 @@ function paint(){
   $("#go").disabled = n===0;
   let bytes = 0, known = true;
   for(const h of picked){ const f = fm.get(h); if(f && f.size) bytes += f.size; else known = false; }
-  const speed = (S.choice||{}).method==="cable" ? 20 : 1.1;   // MB/s indicativi
+  const speed = (S.choice||{}).method==="card" ? 40 : (S.choice||{}).method==="cable" ? 20 : 1.1;   // MB/s indicativi
   const secs = bytes / (speed*1048576);
   const eta = secs < 90 ? t("dl.eta.s",{n:Math.max(1,Math.round(secs))}) : t("dl.eta.m",{n:Math.round(secs/60)});
   $("#go").innerHTML = n? `${t("dl.btnN",{n})}${known&&bytes? `<small>${fmtSize(bytes)}, ${eta}</small>`:""}` : t("dl.btn");
@@ -428,12 +428,16 @@ function wizard(){
   const methods = cam.methods.filter(m => m!=="cable" || !S.platform || S.platform==="darwin" || S.platform.startsWith("linux"));
   if(!methods.includes(wiz.method)) wiz.method = methods[0];
   let h = `<div class="pick" role="radiogroup" aria-label="${esc(t("wiz.title"))}">`;
-  for(const c of names) h += `<button class="opt ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}"><b>${esc(c)}</b></button>`;
+  for(const c of names) h += `<button class="opt ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}"><b>${esc(CAMS.cameras[c].label? loc(CAMS.cameras[c].label) : c)}</b></button>`;
   const ml = ((S.settings||{}).menu_lang||{})[wiz.camera] || LANG;
-  h += `</div><div class="langrow"><span class="lbl">${t("wiz.menuLang",{cam:esc(wiz.camera)})}</span>${langSeg("data-ml", ml, t("wiz.menuLang",{cam:wiz.camera}))}</div>`;
+  const camLabel = cam.label? loc(cam.label) : wiz.camera;
+  h += `</div>`;
+  if(cam.methods.some(m=>m!=="card")) h += `<div class="langrow"><span class="lbl">${t("wiz.menuLang",{cam:esc(camLabel)})}</span>${langSeg("data-ml", ml, t("wiz.menuLang",{cam:camLabel}))}</div>`;
+  else if(cam.note) h += `<p class="tip">${esc(loc(cam.note))}</p>`;
   h += `<h2 class="q">${t("wiz.how")}</h2><div class="pick col" role="radiogroup" aria-label="${esc(t("wiz.how"))}">`;
-  for(const m of ["home","direct","cable"]){
+  for(const m of ["home","direct","cable","card"]){
     const ok = methods.includes(m);
+    if(!ok && !cam.methods.includes(m) && !cam.unavailable) continue;   // es. "Altra Fujifilm": solo il lettore
     const why = cam.methods.includes(m) ? t("method.notHere") : loc(cam.unavailable);
     h += `<button class="opt ${wiz.method===m?'on':''}" role="radio" aria-checked="${wiz.method===m}" data-m="${m}" ${ok?'':'disabled'}><b>${t("method."+m)}</b><small>${ok?t("method."+m+".d"):esc(why)}</small></button>`;
   }
@@ -487,7 +491,8 @@ function render(){
     return;
   }
   const btn = `<button class="go" id="reconnect">${t("reconnect")}</button>`;
-  if(S.status==="waiting") notice(isCable? t("connect.cable.title",{cam}) : t("connect.title",{cam}), cableWarn + xaWarn + (msg? `<span class="err">${msg}</span>` : t("connect.follow")), false, back, checklist(false));
+  const isCard = c.method==="card";
+  if(S.status==="waiting") notice(isCard? t("connect.card.title") : isCable? t("connect.cable.title",{cam}) : t("connect.title",{cam}), cableWarn + xaWarn + (msg? `<span class="err">${msg}</span>` : t("connect.follow")), false, back, checklist(false));
   else if(S.status==="connecting") notice(t("connected.title",{cam:S.camera||cam}), (S.camera_id? S.camera_id+". ":"") + msg, true, "", checklist(true));
   else if(S.status==="error") notice(t("notconnected.title"), `<span class="err">${msg}</span>`, false, btn+back, checklist(false));
   else notice("Provino", t("starting"), true);
@@ -627,7 +632,8 @@ function remember(base, v){
 // via cavo prepara anche la foto successiva, cosi' scorrere con le frecce e' immediato
 let prefetching = null;
 async function prefetchNext(){
-  if((S.choice||{}).method!=="cable" || prefetching) return;
+  const pm = (S.choice||{}).method;
+  if((pm!=="cable" && pm!=="card") || prefetching) return;
   const v = visibleBases(), i = v.indexOf(cur), base = v[i+1];
   if(!base || bigCache.has(base)) return;
   const g = groups().find(x=>x.base===base); if(!g) return;
