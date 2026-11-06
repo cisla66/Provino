@@ -115,9 +115,12 @@ function build(){
   const cm = S.camera_meta||{}, parts = [];
   if(cm.firmware) parts.push(t("meta.fw",{v:cm.firmware}));
   if(cm.serial) parts.push(t("meta.serial",{v:cm.serial})); else if(cm.internal_serial) parts.push(t("meta.internal",{v:cm.internal_serial}));
+  const isCardSrc = (S.choice||{}).method==="card";
+  // lettore di schede: il titolo e' la sorgente; la fotocamera che ha scattato va nella riga accanto
+  if(isCardSrc) parts.unshift(t("card.from",{cam:S.camera, v:S.card||""}));
   $("#camMeta").textContent = parts.join(", ");
   $("#camMeta").title = cm.from ? t("meta.from",{f:cm.from}) : "";
-  $("#camName").textContent = S.camera;
+  $("#camName").textContent = isCardSrc ? t("method.card") : S.camera;
   $("#camName").title = S.camera_id || "";
   const nRaf = S.files.filter(f=>f.kind==="RAF").length;
   const nVid = gs.filter(isVideo).length;
@@ -126,7 +129,7 @@ function build(){
   document.querySelectorAll("[data-f=VIDEO],[data-all=VIDEO]").forEach(b=>b.hidden = !nVid);
   const method = (S.choice||{}).method;
   $("#camInfo").textContent = (S.camera_id? S.camera_id+". " : "") + t(multiSlot? "info.shots2" : "info.shots",{n:gs.length-nVid}) + (nRaf? t("info.withRaf",{n:nRaf}) : "") + (nVid? t("info.videos",{n:nVid}) : "")
-    + (method==="cable" ? t("info.cable") : method==="card" ? t("info.card",{v:esc(S.card||"")}) : method==="direct" ? t("info.direct") : (!S.previews ? t("info.number") : ""));
+    + (method==="cable" ? t("info.cable") : method==="card" ? "" : method==="direct" ? t("info.direct") : (!S.previews ? t("info.number") : ""));
   let html = "", lastDay = "";
   for(const g of gs){
     const day = fmtDay(g.date);
@@ -493,7 +496,7 @@ function render(){
   const btn = `<button class="go" id="reconnect">${t("reconnect")}</button>`;
   const isCard = c.method==="card";
   if(S.status==="waiting") notice(isCard? t("connect.card.title") : isCable? t("connect.cable.title",{cam}) : t("connect.title",{cam}), cableWarn + xaWarn + (msg? `<span class="err">${msg}</span>` : t("connect.follow")), false, back, checklist(false));
-  else if(S.status==="connecting") notice(t("connected.title",{cam:S.camera||cam}), (S.camera_id? S.camera_id+". ":"") + msg, true, "", checklist(true));
+  else if(S.status==="connecting") notice(isCard? t("card.found") : t("connected.title",{cam:S.camera||cam}), (S.camera_id? S.camera_id+". ":"") + msg, true, "", checklist(true));
   else if(S.status==="error") notice(t("notconnected.title"), `<span class="err">${msg}</span>`, false, btn+back, checklist(false));
   else notice("Provino", t("starting"), true);
 }
