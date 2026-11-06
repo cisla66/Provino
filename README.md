@@ -20,7 +20,7 @@ Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac,
 
 ### Cosa fa
 - Miniature di tutti gli scatti, con RAW+JPG raggruppati in un solo provino.
-- Scegli con i bollini **JPG** / **RAF**, Maiusc+clic, riquadro o «Tutti i …».
+- Scegli con le etichette **JPG** / **RAF**, Maiusc+clic, riquadro o «Tutti i …».
 - Filtri per tipo di file e per simulazione pellicola.
 - Foto grande accanto alla griglia o a tutto schermo, zoom al 100%.
 - Pannello **META**: la ricetta completa (pellicola, grana, Color Chrome, bilanciamento del bianco, gamma dinamica…) e i dati di scatto; «Copia ricetta» la copia come testo.
@@ -53,7 +53,7 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 
 ### What it does
 - Thumbnails of every shot, RAW+JPG grouped into a single frame.
-- Pick with the **JPG** / **RAF** badges, Shift+click, drag box or "All …".
+- Pick with the **JPG** / **RAF** labels, Shift+click, drag box or "All …".
 - Filters by file type and by film simulation.
 - Large photo next to the grid or full screen, 100% zoom.
 - **META** panel: the full recipe (film, grain, Color Chrome, white balance, dynamic range…) and shooting data; "Copy recipe" copies it as text.
