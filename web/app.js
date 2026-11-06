@@ -447,7 +447,7 @@ function wizard(){
   h += `<h2 class="q" ${onlyCard?'hidden':''}>${t("wiz.how")}</h2><div class="pick col" role="radiogroup" aria-label="${esc(t("wiz.how"))}" ${onlyCard?'hidden':''}>`;
   for(const m of ["home","direct","cable","card"]){
     const ok = methods.includes(m);
-    if(!ok && !cam.methods.includes(m) && !cam.unavailable) continue;   // es. "Altra Fujifilm": solo il lettore
+    if(!cam.methods.includes(m)) continue;   // si mostrano solo i collegamenti che questa fotocamera ha davvero
     const why = cam.methods.includes(m) ? t("method.notHere") : loc(cam.unavailable);
     h += `<button class="opt ${wiz.method===m?'on':''}" role="radio" aria-checked="${wiz.method===m}" data-m="${m}" ${ok?'':'disabled'}><b>${t("method."+m)}</b><small>${ok?t("method."+m+".d"):esc(why)}</small></button>`;
   }
