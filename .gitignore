@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Provino: dati locali, mai da pubblicare / local data, never published
+log/
+scaricate/
+settings.json
+.provino_bin/
+.fujiwifi_bin/
+*.bak
+
+# Prove e aggiornatori di sviluppo / dev tests and updaters
+_vecchi test/
+aggiorna_rc*.py
+test_*.py
+
+# Sistema / OS
+.DS_Store
+._*
+Thumbs.db
+.directory

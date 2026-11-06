@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="bar" id="bar" hidden>
+  <div class="cam"><div class="camtop"><b id="camName"></b><span id="camMeta"></span></div><span id="camInfo"></span></div>
+  <div class="spacer"></div>
+  <button class="quiet changebtn" data-change data-i18n="change" data-i18n-title="change.tip"></button>
+  <button class="go" id="go" disabled></button>
+  <div class="row2">
+    <div class="grp">
+      <span class="lbl" data-i18n="bar.clickTakes"></span>
+      <div class="seg fmtseg" role="group" data-i18n-aria="bar.clickTakes">
+        <button data-f="both" aria-pressed="true" data-i18n="fmt.both"></button>
+        <button data-f="JPG" aria-pressed="false" data-i18n="fmt.JPG"></button>
+        <button data-f="RAF" aria-pressed="false" data-i18n="fmt.RAF"></button>
+        <button data-f="VIDEO" aria-pressed="false" data-i18n="fmt.VIDEO" hidden></button>
+      </div>
+      <select id="filmSel" class="filmsel" data-i18n-aria="film.filter"></select>
+    </div>
+    <div class="grp" role="group" data-i18n-aria="bar.select">
+      <span class="lbl" data-i18n="bar.select"></span>
+      <button class="quiet" data-all="JPG" data-i18n="bar.allJPG"></button>
+      <button class="quiet" data-all="RAF" data-i18n="bar.allRAF"></button>
+      <button class="quiet" data-all="both" data-i18n="bar.allBoth"></button>
+      <button class="quiet" data-all="VIDEO" data-i18n="bar.allVideo" hidden></button>
+      <button class="quiet" id="selNew" data-i18n="bar.new"></button>
+      <button class="quiet" id="selNone" data-i18n="bar.none"></button>
+    </div>
+    <span class="hint" data-i18n="bar.hint"></span>
+    <button class="quiet" id="viewToggle" aria-pressed="false" data-i18n="view.toggle"></button>
+  </div>
+</header>
+<div class="band" id="band" hidden></div>
+
+<dialog id="dest" aria-labelledby="destTitle">
+  <form method="dialog" id="destForm">
+    <h2 id="destTitle" data-i18n="dest.title"></h2>
+    <div class="destrow"><div class="destpath" id="destPath"></div><button type="button" class="quiet2" id="destPick" data-i18n="dest.pick"></button></div>
+    <fieldset class="fs"><legend data-i18n="dest.folders"></legend>
+      <label><input type="radio" name="org" value="date"> <span data-i18n="dest.byDate"></span> <span class="muted" data-i18n="dest.byDate.eg"></span></label>
+      <label><input type="radio" name="org" value="single"> <span data-i18n="dest.single"></span></label>
+    </fieldset>
+    <label class="chk"><input type="checkbox" id="destSplit"> <span data-i18n-html="dest.split"></span></label>
+    <p class="prev"><span data-i18n="dest.example"></span> <span id="destPrev"></span></p>
+    <p class="muted" id="destDays"></p>
+    <p class="err2" id="destErr"></p>
+    <div class="dlgbar"><button type="button" class="quiet2" id="destCancel" data-i18n="cancel"></button><span class="spacer"></span><button type="submit" class="go" data-i18n="continue"></button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form method="dialog" id="dlgForm">
+    <h2 id="dlgTitle"></h2>
+    <div id="dlgBody"></div>
+    <div class="dlgbar">
+      <button type="button" class="quiet2" id="dlgCancel" data-i18n="cancel"></button>
+      <span class="spacer"></span>
+      <button type="submit" class="go" id="dlgOk" data-i18n="dl.btn"></button>
+    </div>
+  </form>
+</dialog>
+
+<main id="main"></main>
+
+<aside class="viewer" id="viewer" hidden aria-label="Anteprima">
+  <div class="vtabs" role="tablist">
+    <button role="tab" data-vtab="photo" aria-selected="true" data-i18n="view.tabPhoto"></button>
+    <button role="tab" data-vtab="meta" aria-selected="false">META</button>
+  </div>
+  <div class="vimg" id="vbox"><img id="vpic" alt=""><span class="vwait" id="vwait" hidden></span><p class="vmsg" id="vmsg"></p></div>
+  <div class="metapane" id="vmeta" hidden></div>
+  <div class="vcap">
+    <div class="vtitle"><b id="vname"></b><span id="vsrc"></span></div>
+    <button class="quiet" id="vsel"></button>
+    <button class="quiet" id="vfull" data-i18n="view.full"></button>
+  </div>
+  <p class="vhint" data-i18n="view.hint"></p>
+</aside>
+
+<div class="full" id="full" hidden role="dialog" aria-modal="true">
+  <div class="fbody">
+    <div class="vimg" id="fbox"><img id="fpic" alt=""><span class="vwait" id="fwait" hidden></span><p class="vmsg" id="fmsg"></p></div>
+    <div class="metapane side" id="fmeta" hidden></div>
+  </div>
+  <div class="fcap">
+    <button class="fnav" id="fprev" aria-label="&larr;">&larr;</button>
+    <div class="vtitle"><b id="fname"></b><span id="fsrc"></span></div>
+    <button class="fnav" id="fnext" aria-label="&rarr;">&rarr;</button>
+    <span class="spacer"></span>
+    <button class="quiet" id="fmetaBtn" aria-pressed="false">META</button>
+    <button class="quiet" id="fsel"></button>
+    <button class="quiet" id="fclose" data-i18n="view.close"></button>
+  </div>
+</div>
+
+<div class="tray" id="tray" role="status" aria-live="polite">
+  <span class="trIcon" id="trIcon" aria-hidden="true"></span>
+  <div class="what"><b id="trName"></b><span id="trInfo"></span></div>
+  <div class="meter"><i id="trBar"></i></div>
+  <button id="cancel" data-i18n="cancel"></button>
+  <button id="openDir" data-i18n="tray.openDir"></button>
+  <button id="trClose" class="trClose" data-i18n-aria="tray.close">×</button>
+</div>
+
+<script src="/i18n.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
