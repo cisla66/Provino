@@ -1,5 +1,12 @@
 # Provino
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/icon/png/provino-logo-dark.png">
+    <img src="assets/icon/png/provino-logo-light.png" alt="Provino" width="420">
+  </picture>
+</p>
+
 Provino nasce dalla mia passione per la fotografia e per il mondo Fujifilm, e da un bisogno molto semplice: scaricare le foto sul computer in modo agevole, con il cavo o in rete, senza dover aprire programmi di ritocco fotografico solo per copiarle.
 Credo nell'open source, per questo metto a disposizione i sorgenti di Provino insieme alle app pronte per macOS e Linux (Fedora e Ubuntu), sperando che possa essere utile anche ad altri fotografi.
 Per ora Provino supporta la X-Pro3 e la X100VI: sono le mie fotocamere, quelle con cui ho potuto sviluppare e provare ogni funzione. Se in futuro potrò mettere le mani su altri modelli Fujifilm, aggiungerò sicuramente anche il loro supporto.
