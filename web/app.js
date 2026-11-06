@@ -443,7 +443,8 @@ function wizard(){
   h += `</div>`;
   if(cam.methods.some(m=>m!=="card")) h += `<div class="langrow"><span class="lbl">${t("wiz.menuLang",{cam:esc(camLabel)})}</span>${langSeg("data-ml", ml, t("wiz.menuLang",{cam:camLabel}))}</div>`;
   else if(cam.note) h += `<p class="tip">${esc(loc(cam.note))}</p>`;
-  h += `<h2 class="q">${t("wiz.how")}</h2><div class="pick col" role="radiogroup" aria-label="${esc(t("wiz.how"))}">`;
+  const onlyCard = cam.methods.length===1 && cam.methods[0]==="card";   // "Lettore di schede": niente da scegliere
+  h += `<h2 class="q" ${onlyCard?'hidden':''}>${t("wiz.how")}</h2><div class="pick col" role="radiogroup" aria-label="${esc(t("wiz.how"))}" ${onlyCard?'hidden':''}>`;
   for(const m of ["home","direct","cable","card"]){
     const ok = methods.includes(m);
     if(!ok && !cam.methods.includes(m) && !cam.unavailable) continue;   // es. "Altra Fujifilm": solo il lettore
