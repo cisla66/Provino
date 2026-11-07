@@ -294,8 +294,9 @@ $("#selNone").onclick = ()=>{ picked.clear(); paint(); };
 
 // ---------------------------------------------------------------- download
 async function startDownload(hs, options){
-  batchBase = S.done.length; trayClosedAt = -1;
-  await post("/api/download",{handles:hs, options});
+  batchBase = S.done.length; failBase = S.failed.length; trayClosedAt = -1; dlPending = true; tray();
+  const r = await post("/api/download",{handles:hs, options});
+  if(!(r && r.queued)){ dlPending = false; trayClosedAt = S.done.length + S.failed.length; tray(); }
   picked.clear(); paint(); poll();
 }
 $("#go").onclick = ()=>{ const hs=[...picked]; if(hs.length) askDest(hs); };
@@ -368,6 +369,20 @@ async function afterDest(hs){
   if(!conflicts.length) return startDownload(hs, {});
   const same = conflicts.filter(c=>c.kind==="same"), diff = conflicts.filter(c=>c.kind!=="same");
   const others = hs.length-conflicts.length;
+  if(NATIVE){
+    // la finestra nativa disegna la scelta; i testi (gia' tradotti) arrivano da qui, una sola fonte per GNOME e Mac
+    nativeMsg({type:"conflicts", hs,
+      title: conflicts.length===1 ? t("conf.title1") : t("conf.titleN",{n:conflicts.length}),
+      sub: t(others? (others===1?"conf.sub1":"conf.sub") : "conf.sub0",{n:others}),
+      items: [...same, ...diff].map(c=>({h:c.handle, name:c.name, same:c.kind==="same", proposed:c.proposed||"",
+        why: c.kind==="same"
+          ? t("conf.same",{size:fmtSize(c.cam_size)}) + (c.local_date? t("conf.sameDate",{date:fmtDay(c.local_date)+" "+fmtTime(c.local_date)}) : "") + "."
+          : t("conf.diff") + (c.local_date? t("conf.diffDetail",{ld:fmtDay(c.local_date)+" "+fmtTime(c.local_date), ls:fmtSize(c.local_size), cd:fmtDay(c.cam_date)+" "+fmtTime(c.cam_date), cs:c.cam_size?", "+fmtSize(c.cam_size):""}) : "") + "."})),
+      labels: {skip:t("conf.skip"), over:t("conf.over"), saveAs:t("conf.saveAs"), ok:t("dl.btn"), cancel:t("cancel"),
+               nothing:t("conf.nothing"), skipAll:t("conf.skip"), overAll:t("conf.over"), sameAll:t("conf.sameAll",{n:same.length}), newName:t("conf.newName")},
+      others});
+    return;
+  }
   let h = `<p class="sub">${t(others? (others===1?"conf.sub1":"conf.sub") : "conf.sub0",{n:others})}</p>`;
   if(same.length>1) h += `<div class="all"><button type="button" class="quiet2" data-bulk="skip">${t("conf.skipAll")}</button><button type="button" class="quiet2" data-bulk="overwrite">${t("conf.overAll")}</button></div>`;
   for(const c of same) h += `<div class="conf" data-h="${c.handle}">
@@ -406,7 +421,7 @@ async function afterDest(hs){
 $("#cancel").onclick = ()=>fetch("/api/cancel",{method:"POST"});
 $("#openDir").onclick = ()=>fetch("/api/open-folder",{method:"POST"});
 
-let trayClosedAt = -1, batchBase = 0;
+let trayClosedAt = -1, batchBase = 0, failBase = 0, dlPending = false;
 function tray(){
   const tr=$("#tray"), c=S.current, q=S.queue.length;
   const set = (mode, name, info, pct)=>{
@@ -415,9 +430,14 @@ function tray(){
     $("#trBar").style.width = (pct||0)+"%";
     $("#cancel").hidden = mode!=="run"; $("#trClose").hidden = mode==="run";
     $("#trIcon").textContent = mode==="ok" ? "✓" : mode==="warn" ? "!" : "";
+    if(NATIVE){ nativeTransfer({mode, name, info, pct:pct||0, n:S.done.length+S.failed.length,
+                                cancel:t("cancel"), open:t("tray.openDir")}); return; }
     tr.classList.add("show");
   };
-  if(!c && S.pending_n){
+  if(c || S.done.length > batchBase || S.failed.length > failBase) dlPending = false;
+  if(!c && (dlPending || S.queue.length)){
+    set("run", t("tray.start"), "", 0);
+  } else if(!c && S.pending_n){
     set("warn", t("tray.interrupted",{n:S.pending_n}), t(S.status==="ready" ? "tray.interrupted.go" : "tray.interrupted.wait"));
   } else if(c){
     trayClosedAt = -1;
@@ -432,7 +452,13 @@ function tray(){
     set(fl? "warn" : "ok",
         fl? t("tray.doneFail",{n, f:fl}) : (n===1? t("tray.done1") : t("tray.done",{n})),
         fl? S.failed[fl-1].name+": "+S.failed[fl-1].error : t("tray.where",{dir}));
-  } else tr.classList.remove("show");
+  } else { tr.classList.remove("show"); if(NATIVE) nativeTransfer({mode:"none"}); }
+}
+let nativeTrKey = "";
+function nativeTransfer(o){
+  const k = JSON.stringify({type:"transfer", ...o});
+  if(k===nativeTrKey) return;
+  nativeTrKey = k; nativeMsg(JSON.parse(k));
 }
 $("#trClose").onclick = ()=>{ trayClosedAt = S.done.length + S.failed.length; $("#tray").classList.remove("show"); };
 
@@ -538,6 +564,11 @@ window.provinoNative = function(cmd, arg){
   else if(cmd==="select"){ if(arg==="fresh") $("#selNew").click(); else if(arg==="none") $("#selNone").click();
     else if(arg==="visible"){ for(const g of groups()) wanted(g).forEach(f=>picked.add(f.handle)); paint(); }
     else selectAll(arg); }
+  else if(cmd==="conflictsDone"){ startDownload(arg.hs, arg.options||{}); }
+  else if(cmd==="lang"){ setLang(arg, true); }
+  else if(cmd==="trayClosed"){ trayClosedAt = S.done.length + S.failed.length; tray(); }
+  else if(cmd==="cancelDownload"){ fetch("/api/cancel",{method:"POST"}); }
+  else if(cmd==="openFolder"){ fetch("/api/open-folder",{method:"POST"}); }
   else if(cmd==="destConfirmed"){ (async ()=>{
       const r = await post("/api/dest-settings", {dest: arg.dest, split_type: !!arg.split_type, by_date: !!arg.by_date});
       if(r.error){ nativeMsg({type:"error", text:r.error}); return; }
@@ -594,7 +625,7 @@ async function poll(){
     pendingKey = pk;
     render();
   } catch(e){ noticeKey=""; notice(t("closed.title"), t("closed.text"), false); findNewer(); return; }
-  timer = setTimeout(poll, S && (S.current||S.status!=="ready") ? 700 : 1500);
+  timer = setTimeout(poll, S && (S.current||dlPending||S.status!=="ready") ? 700 : 1500);
 }
 
 (async function init(){

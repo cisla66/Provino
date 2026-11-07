@@ -24,7 +24,7 @@ try:
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
     gi.require_version("WebKit", "6.0")
-    from gi.repository import Adw, Gio, GLib, Gtk, WebKit
+    from gi.repository import Adw, Gdk, Gio, GLib, Gtk, WebKit
 except (ImportError, ValueError) as e:
     print("Mancano i componenti GNOME per la finestra (%s)." % e)
     print("Su Fedora: sudo dnf install webkitgtk6.0 libadwaita python3-gobject")
@@ -59,6 +59,69 @@ def start_core(args):
     return app, srv, url, log
 
 
+class Ring(Gtk.Widget):
+    """Anello di avanzamento disegnato con GSK (niente cairo): blu mentre scarica, segno di spunta alla fine."""
+
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+        self.set_size_request(18, 18)
+        self.set_valign(Gtk.Align.CENTER)
+        self.set_halign(Gtk.Align.CENTER)
+
+    def do_snapshot(self, snap):
+        import math
+        from gi.repository import Graphene, Gsk
+        w, h = self.get_width(), self.get_height()
+        tr = self.owner.tr
+        mode, pct = tr["mode"], tr["pct"]
+        try:
+            fg = self.get_color()
+        except AttributeError:
+            fg = self.owner._rgba("#808080")
+        track = fg.copy()
+        track.alpha = 0.22
+        acc = self.owner._ring_colors()
+        cx, cy, r = w / 2, h / 2, min(w, h) / 2 - 1.5
+        stroke = Gsk.Stroke.new(2.4)
+        stroke.set_line_cap(Gsk.LineCap.ROUND)
+
+        def circle(color):
+            pb = Gsk.PathBuilder.new()
+            pb.add_circle(Graphene.Point().init(cx, cy), r)
+            snap.append_stroke(pb.to_path(), stroke, color)
+
+        def poly(points, color):
+            pb = Gsk.PathBuilder.new()
+            pb.move_to(*points[0])
+            for p in points[1:]:
+                pb.line_to(*p)
+            snap.append_stroke(pb.to_path(), stroke, color)
+
+        if mode == "run":
+            circle(track)
+            f = max(0.03, min(1.0, pct / 100.0))
+            if f >= 0.999:
+                circle(acc)
+                return
+            a0, a1 = -math.pi / 2, -math.pi / 2 + 2 * math.pi * f
+            pb = Gsk.PathBuilder.new()
+            pb.move_to(cx + r * math.cos(a0), cy + r * math.sin(a0))
+            steps = max(2, int(48 * f))
+            for i in range(1, steps + 1):
+                a = a0 + (a1 - a0) * i / steps
+                pb.line_to(cx + r * math.cos(a), cy + r * math.sin(a))
+            snap.append_stroke(pb.to_path(), stroke, acc)
+        elif mode == "ok":
+            circle(acc)
+            poly([(cx - 3.6, cy + 0.2), (cx - 1, cy + 2.8), (cx + 3.8, cy - 2.4)], acc)
+        elif mode == "warn":
+            circle(acc)
+            poly([(cx, cy - 3.6), (cx, cy + 0.6)], acc)
+            poly([(cx, cy + 3.4), (cx, cy + 3.5)], acc)
+
+
+
 class ProvinoApp(Adw.Application):
     def __init__(self, args):
         super().__init__(application_id=APP_ID)
@@ -83,7 +146,17 @@ class ProvinoApp(Adw.Application):
                   "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle", "split": "Separa per tipo",
                   "split_sub": "Sottocartelle {k}", "where": "Dove finiscono", "cancel": "Annulla",
                   "new_dirs": "In grassetto le cartelle che Provino crea adesso.", "choose_title": "Scegli la cartella",
-                  "files": "file", "and": "e"},
+                  "files": "file", "and": "e", "transfers": "Download in corso",
+                  "prefs": "Preferenze", "keys": "Scorciatoie da tastiera", "p_dl": "Download",
+                  "p_dl_sub": "Valgono come proposta: prima di ogni download puoi cambiarle.",
+                  "p_by_date_sub": "Per esempio 2026-11-07", "p_split_sub": "Sottocartelle JPG, RAF, HEIF e VIDEO",
+                  "p_look": "Aspetto", "p_lang": "Lingua", "p_theme": "Stile",
+                  "p_safe": "Sicurezza", "p_safe_t": "Provino legge soltanto",
+                  "p_safe_s": "Non cancella, non modifica e non formatta mai nulla sulla scheda.",
+                  "k_photos": "Scelta delle foto", "k_all": "Scegli tutto quello che vedi", "k_none": "Deseleziona tutto",
+                  "k_space": "Scegli o togli la foto corrente", "k_move": "Passa da una foto all'altra",
+                  "k_view": "Foto grande", "k_full": "Foto intera, poi 100%", "k_back": "Torna alla griglia",
+                  "k_app": "Generale", "k_dl": "Scarica i file scelti"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -99,7 +172,17 @@ class ProvinoApp(Adw.Application):
                   "by_date_n": "The picked photos span {n} days: {n} folders", "split": "Split by type",
                   "split_sub": "Subfolders {k}", "where": "Where they go", "cancel": "Cancel",
                   "new_dirs": "Folders in bold are created now.", "choose_title": "Choose the folder",
-                  "files": "files", "and": "and"}}
+                  "files": "files", "and": "and", "transfers": "Downloads",
+                  "prefs": "Preferences", "keys": "Keyboard Shortcuts", "p_dl": "Download",
+                  "p_dl_sub": "These are suggestions: you can change them before each download.",
+                  "p_by_date_sub": "For example 2026-11-07", "p_split_sub": "JPG, RAF, HEIF and VIDEO subfolders",
+                  "p_look": "Appearance", "p_lang": "Language", "p_theme": "Style",
+                  "p_safe": "Safety", "p_safe_t": "Provino only reads",
+                  "p_safe_s": "It never deletes, changes or formats anything on the card.",
+                  "k_photos": "Picking photos", "k_all": "Pick everything you see", "k_none": "Deselect all",
+                  "k_space": "Pick or unpick the current photo", "k_move": "Move between photos",
+                  "k_view": "Large photo", "k_full": "Full photo, then 100%", "k_back": "Back to the grid",
+                  "k_app": "General", "k_dl": "Download the picked files"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -149,20 +232,7 @@ class ProvinoApp(Adw.Application):
                                       tooltip_text=self.t("camera"))
         bar.pack_start(self.cam_btn)
 
-        main_menu = Gio.Menu()
-        theme = Gio.Menu()
-        theme.append(self.t("system"), "app.theme::system")
-        theme.append(self.t("light"), "app.theme::light")
-        theme.append(self.t("dark"), "app.theme::dark")
-        main_menu.append_section(None, theme)
-        links = Gio.Menu()
-        links.append(self.t("site"), "app.site")
-        links.append(self.t("issues"), "app.issues")
-        main_menu.append_section(None, links)
-        last = Gio.Menu()
-        last.append(self.t("about"), "app.about")
-        last.append(self.t("quit"), "app.quit")
-        main_menu.append_section(None, last)
+        main_menu = self._main_menu()
         menu_btn = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=main_menu, primary=True,
                                   tooltip_text=self.t("menu"))
         bar.pack_end(menu_btn)
@@ -176,10 +246,13 @@ class ProvinoApp(Adw.Application):
         self.go_btn.add_css_class("suggested-action")
         self.go_btn.connect("clicked", lambda *_: self.js("download"))
         bar.pack_end(self.go_btn)
+        self._build_transfer(bar)
 
         self._actions()
         self.set_accels_for_action("app.quit", ["<Control>q"])
         self.set_accels_for_action("app.download", ["<Control>Return"])
+        self.set_accels_for_action("app.prefs", ["<Control>comma"])
+        self.set_accels_for_action("app.shortcuts", ["<Control>question"])
 
         tv = Adw.ToolbarView()
         tv.add_top_bar(bar)
@@ -196,6 +269,38 @@ class ProvinoApp(Adw.Application):
         view.load_uri(url)
         win.present()
 
+    def _main_menu(self):
+        main_menu = Gio.Menu()
+        theme = Gio.Menu()
+        theme.append(self.t("system"), "app.theme::system")
+        theme.append(self.t("light"), "app.theme::light")
+        theme.append(self.t("dark"), "app.theme::dark")
+        main_menu.append_section(None, theme)
+        links = Gio.Menu()
+        links.append(self.t("site"), "app.site")
+        links.append(self.t("issues"), "app.issues")
+        main_menu.append_section(None, links)
+        last = Gio.Menu()
+        last.append(self.t("prefs"), "app.prefs")
+        last.append(self.t("keys"), "app.shortcuts")
+        last.append(self.t("about"), "app.about")
+        last.append(self.t("quit"), "app.quit")
+        main_menu.append_section(None, last)
+        return main_menu
+
+    def _relabel(self):
+        """La lingua e' cambiata: rifaccio le etichette della finestra."""
+        self.menu_btn.set_menu_model(self._main_menu())
+        self.menu_btn.set_tooltip_text(self.t("menu"))
+        self.panel_btn.set_tooltip_text(self.t("panel"))
+        cm = Gio.Menu()
+        cm.append(self.t("change"), "app.change")
+        self.cam_btn.set_menu_model(cm)
+        self.cam_btn.set_tooltip_text(self.t("camera"))
+        for key, btn in getattr(self, "fbtn", {}).items():
+            if key in ("both", "VIDEO"):
+                btn.set_label(self.t("all") if key == "both" else self.t("video"))
+
     # ------------------------------------------------------------ azioni della finestra
     def _actions(self):
         def add(name, cb, param=None, state=None):
@@ -207,6 +312,8 @@ class ProvinoApp(Adw.Application):
         add("download", lambda *_: self.js("download"))
         add("quit", lambda *_: self.quit())
         add("about", lambda *_: self.about())
+        add("prefs", lambda *_: self.prefs())
+        add("shortcuts", lambda *_: self.shortcuts())
         add("site", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino").launch(self.win, None, None, None))
         add("issues", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino/issues").launch(self.win, None, None, None))
         saved = "system"
@@ -254,6 +361,10 @@ class ProvinoApp(Adw.Application):
         kind = st.get("type", "state")
         if kind == "askDest":
             self.ask_dest(st)
+        elif kind == "conflicts":
+            self.ask_conflicts(st)
+        elif kind == "transfer":
+            self.on_transfer(st)
         elif kind == "error":
             self.toast(st.get("text") or "")
         else:
@@ -452,6 +563,169 @@ class ProvinoApp(Adw.Application):
         dlg.present(self.win)
         self.dest_dialog = dlg
 
+    # ------------------------------------------------------------ finestra "File gia' nella cartella" (nativa)
+    def ask_conflicts(self, req):
+        L = req.get("labels") or {}
+        dlg = Adw.Dialog(title=req.get("title") or "", content_width=580, content_height=520)
+        tb = Adw.ToolbarView()
+        hb = Adw.HeaderBar(show_end_title_buttons=False, show_start_title_buttons=False)
+        cancel = Gtk.Button(label=L.get("cancel") or self.t("cancel"))
+        cancel.connect("clicked", lambda *_: dlg.close())
+        hb.pack_start(cancel)
+        ok = Gtk.Button(label=L.get("ok") or self.t("download"))
+        ok.add_css_class("suggested-action")
+        hb.pack_end(ok)
+        tb.add_top_bar(hb)
+        page = Adw.PreferencesPage()
+        grp = Adw.PreferencesGroup(description=req.get("sub") or "")
+        choices = {}
+        radios = {}
+        items = req.get("items") or []
+        others = int(req.get("others") or 0)
+
+        def ok_label(*_):
+            nothing = others == 0 and all(c["act"] == "skip" for c in choices.values())
+            ok.set_label((L.get("nothing") if nothing else L.get("ok")) or self.t("download"))
+        n_same = sum(1 for it in items if it.get("same"))
+        if n_same > 1:
+            g0 = Adw.PreferencesGroup(description=req.get("sub") or "")
+            grp.set_description(None)
+            brow = Adw.ActionRow(title=L.get("sameAll") or "")
+            bulk = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+            brow.add_suffix(bulk)
+            g0.add(brow)
+            page.add(g0)
+            for act, key in (("skip", "skipAll"), ("overwrite", "overAll")):
+                b = Gtk.Button(label=L.get(key) or act)
+                b.connect("clicked", lambda _b, a=act: [radios[(it["h"], a)].set_active(True)
+                                                        for it in items if it.get("same")])
+                bulk.append(b)
+        for it in items:
+            exp = Adw.ExpanderRow(title=it.get("name") or "", subtitle=it.get("why") or "")
+            exp.set_subtitle_lines(3)
+            exp.set_expanded(True)
+            tag = Gtk.Label(label="✓" if it.get("same") else "≠")
+            tag.add_css_class("success" if it.get("same") else "warning")
+            exp.add_prefix(tag)
+            opts = [("skip", L.get("skip"))]
+            opts.insert(0 if not it.get("same") else 1, ("rename" if not it.get("same") else "overwrite",
+                                                         L.get("saveAs") if not it.get("same") else L.get("over")))
+            first = None
+            state = {"act": "skip" if it.get("same") else "rename", "name": it.get("proposed") or ""}
+            choices[it["h"]] = state
+            for act, label in opts:
+                r = Adw.ActionRow(title=label or act)
+                rb = Gtk.CheckButton()
+                if first is None:
+                    first = rb
+                else:
+                    rb.set_group(first)
+                rb.set_active(act == state["act"])
+                rb.connect("toggled", lambda b, a=act, st=state: b.get_active() and (st.__setitem__("act", a), ok_label()))
+                radios[(it["h"], act)] = rb
+                r.add_prefix(rb)
+                r.set_activatable_widget(rb)
+                if act == "rename":
+                    ent = Gtk.Entry(text=state["name"], valign=Gtk.Align.CENTER, width_chars=18)
+                    ent.connect("changed", lambda e, st=state: st.__setitem__("name", e.get_text()))
+                    ent.connect("notify::has-focus", lambda e, _p, b=rb: e.has_focus() and b.set_active(True))
+                    r.add_suffix(ent)
+                exp.add_row(r)
+            grp.add(exp)
+        page.add(grp)
+        tb.set_content(page)
+        dlg.set_child(tb)
+
+        def done(*_):
+            options = {}
+            for h, st in choices.items():
+                options[str(h)] = {"action": st["act"], "name": st["name"] if st["act"] == "rename" else None}
+            dlg.close()
+            self.js("conflictsDone", {"hs": req.get("hs") or [], "options": options})
+        ok.connect("clicked", done)
+        ok_label()
+        self.conflicts_done = done
+        dlg.set_default_widget(ok)
+        dlg.present(self.win)
+
+    # ------------------------------------------------------------ avanzamento del download (anello nella testata)
+    def _build_transfer(self, bar):
+        self.tr = {"mode": "none", "pct": 0, "n": -1}
+        ring = Ring(self)
+        self.tr_ring = ring
+        pop = Gtk.Popover()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin_top=8, margin_bottom=8,
+                      margin_start=8, margin_end=8, width_request=300)
+        self.tr_name = Gtk.Label(xalign=0, ellipsize=3)
+        self.tr_name.add_css_class("heading")
+        self.tr_info = Gtk.Label(xalign=0, wrap=True, max_width_chars=40)
+        self.tr_info.add_css_class("dim-label")
+        self.tr_info.add_css_class("caption")
+        self.tr_bar = Gtk.ProgressBar(margin_top=4)
+        self.tr_action = Gtk.Button(halign=Gtk.Align.END, margin_top=6)
+        self.tr_action.add_css_class("pill")
+        self.tr_action.connect("clicked", self._tr_clicked)
+        for w in (self.tr_name, self.tr_info, self.tr_bar, self.tr_action):
+            box.append(w)
+        pop.set_child(box)
+        pop.connect("closed", self._tr_closed)
+        self.tr_btn = Gtk.MenuButton(child=ring, popover=pop, visible=False, tooltip_text=self.t("transfers"))
+        self.tr_btn.add_css_class("flat")
+        bar.pack_end(self.tr_btn)
+
+    def _rgba(self, spec):
+        c = Gdk.RGBA()
+        c.parse(spec)
+        return c
+
+    def _ring_colors(self):
+        dark = Adw.StyleManager.get_default().get_dark()
+        mode = self.tr["mode"]
+        if mode == "ok":
+            return self._rgba("#8ff0a4" if dark else "#26a269")
+        if mode == "warn":
+            return self._rgba("#ffc252" if dark else "#c64600")
+        try:
+            return Adw.StyleManager.get_default().get_accent_color_rgba()
+        except AttributeError:
+            return self._rgba("#78aeed" if dark else "#3584e4")
+
+    def on_transfer(self, st):
+        mode = st.get("mode") or "none"
+        prev, prev_n = self.tr.get("mode"), self.tr.get("n")
+        self.tr.update(st)
+        self.tr["pct"] = st.get("pct") or 0
+        if mode == "none":
+            self.tr_btn.set_visible(False)
+            return
+        self.tr_btn.set_visible(True)
+        self.tr_name.set_label(st.get("name") or "")
+        self.tr_info.set_label(st.get("info") or "")
+        self.tr_info.set_visible(bool(st.get("info")))
+        self.tr_bar.set_visible(mode == "run")
+        self.tr_bar.set_fraction(self.tr["pct"] / 100.0)
+        self.tr_action.set_label(st.get("cancel") if mode == "run" else st.get("open") or "")
+        self.tr_action.set_visible(mode == "run" or bool(st.get("open")))
+        self.tr_btn.set_tooltip_text(st.get("name") or self.t("transfers"))
+        self.tr_ring.queue_draw()
+        if mode in ("ok", "warn") and (prev != mode or prev_n != st.get("n")):
+            t = Adw.Toast(title=st.get("name") or "", timeout=6)
+            if mode == "ok" and st.get("open"):
+                t.set_button_label(st.get("open"))
+                t.connect("button-clicked", lambda *_: self.js("openFolder"))
+            self.toasts.add_toast(t)
+
+    def _tr_clicked(self, *_):
+        if self.tr.get("mode") == "run":
+            self.js("cancelDownload")
+        else:
+            self.js("openFolder")
+            self.tr_btn.popdown()
+
+    def _tr_closed(self, *_):
+        if self.tr.get("mode") in ("ok", "warn"):
+            self.js("trayClosed")
+
     def _nice(self, path):
         home = os.path.expanduser("~")
         return "~" + path[len(home):] if path.startswith(home) else path
@@ -476,8 +750,111 @@ class ProvinoApp(Adw.Application):
             self.panel_btn.set_active(bool(st.get("split")))
         self.cam_btn.set_sensitive(bool(st.get("canChange")))
         lang = st.get("lang")
-        if lang in self.TXT:
+        if lang in self.TXT and lang != self.lang:
             self.lang = lang
+            self._relabel()
+
+    # ------------------------------------------------------------ Preferenze
+    def prefs(self):
+        app = self.core[0]
+        S = app.settings
+        try:
+            dlg = Adw.PreferencesDialog(title=self.t("prefs"))
+        except AttributeError:   # libadwaita < 1.5
+            dlg = Adw.PreferencesWindow(transient_for=self.win, modal=True, title=self.t("prefs"))
+        page = Adw.PreferencesPage(title=self.t("prefs"), icon_name="preferences-system-symbolic")
+        g1 = Adw.PreferencesGroup(title=self.t("p_dl"), description=self.t("p_dl_sub"))
+        folder = Adw.ActionRow(title=self.t("folder"), subtitle=self._nice(app.dest))
+        folder.add_css_class("property")
+        ch = Gtk.Button(label=self.t("choose"), valign=Gtk.Align.CENTER)
+        folder.add_suffix(ch)
+        folder.set_activatable_widget(ch)
+        g1.add(folder)
+
+        def save(**kw):
+            for k, v in kw.items():
+                S[k] = v
+            app.save_settings()
+            try:
+                app.refresh_on_mac()
+            except Exception:  # noqa: BLE001
+                pass
+
+        def chosen(fd, res):
+            try:
+                f = fd.select_folder_finish(res)
+            except GLib.Error:
+                return
+            if f and f.get_path():
+                app.dest = f.get_path()
+                save(dest=app.dest)
+                folder.set_subtitle(self._nice(app.dest))
+
+        def pick(*_):
+            fd = Gtk.FileDialog(title=self.t("choose_title"), modal=True)
+            try:
+                fd.set_initial_folder(Gio.File.new_for_path(app.dest))
+            except Exception:  # noqa: BLE001
+                pass
+            fd.select_folder(self.win, None, chosen)
+        ch.connect("clicked", pick)
+        for key, title, sub in (("by_date", "by_date", "p_by_date_sub"), ("split_type", "split", "p_split_sub")):
+            row = Adw.SwitchRow(title=self.t(title), subtitle=self.t(sub), active=bool(S.get(key)))
+            row.connect("notify::active", lambda r, _p, k=key: save(**{k: r.get_active()}))
+            g1.add(row)
+        page.add(g1)
+
+        g2 = Adw.PreferencesGroup(title=self.t("p_look"))
+        langs = [("it", "Italiano"), ("en", "English")]
+        lrow = Adw.ComboRow(title=self.t("p_lang"), model=Gtk.StringList.new([n for _c, n in langs]))
+        cur = S.get("ui_lang") or self.lang
+        lrow.set_selected(next((i for i, (c, _n) in enumerate(langs) if c == cur), 0))
+        lrow.connect("notify::selected", lambda r, _p: self.js("lang", langs[r.get_selected()][0]))
+        g2.add(lrow)
+        themes = ["system", "light", "dark"]
+        trow = Adw.ComboRow(title=self.t("p_theme"), model=Gtk.StringList.new([self.t(x) for x in themes]))
+        trow.set_selected(themes.index(self.theme_action.get_state().get_string())
+                          if self.theme_action.get_state().get_string() in themes else 0)
+        trow.connect("notify::selected", lambda r, _p: self.theme_action.activate(GLib.Variant("s", themes[r.get_selected()])))
+        g2.add(trow)
+        page.add(g2)
+
+        g3 = Adw.PreferencesGroup(title=self.t("p_safe"))
+        g3.add(Adw.ActionRow(title=self.t("p_safe_t"), subtitle=self.t("p_safe_s")))
+        page.add(g3)
+        dlg.add(page)
+        self.prefs_dlg = dlg
+        try:
+            dlg.present(self.win)
+        except TypeError:
+            dlg.present()
+
+    # ------------------------------------------------------------ Scorciatoie da tastiera
+    def shortcuts(self):
+        T = self.t
+        groups = [
+            (T("k_photos"), [("<Control>a", T("k_all")), ("Escape", T("k_none")), ("space", T("k_space")),
+                             ("Left Right Up Down", T("k_move"))]),
+            (T("k_view"), [("f", T("k_full")), ("Escape", T("k_back"))]),
+            (T("k_app"), [("<Control>Return", T("k_dl")), ("<Control>comma", T("prefs")),
+                          ("<Control>question", T("keys")), ("<Control>q", T("quit"))]),
+        ]
+        from xml.sax.saxutils import escape as esc
+        xml = ['<interface><object class="GtkShortcutsWindow" id="w"><property name="modal">1</property><property name="title">%s</property>' % esc(T("keys")),
+               '<child><object class="GtkShortcutsSection"><property name="section-name">main</property>']
+        for title, items in groups:
+            xml.append('<child><object class="GtkShortcutsGroup"><property name="title">%s</property>' % esc(title))
+            for acc, label in items:
+                xml.append('<child><object class="GtkShortcutsShortcut"><property name="accelerator">%s</property>'
+                           '<property name="title">%s</property></object></child>' % (esc(acc), esc(label)))
+            xml.append('</object></child>')
+        xml.append('</object></child></object></interface>')
+        b = Gtk.Builder.new_from_string("".join(xml), -1)
+        w = b.get_object("w")
+        w.set_transient_for(self.win)
+        w.set_title(T("keys"))
+        self.shortcuts_win = w
+        w.present()
 
     def about(self):
         try:

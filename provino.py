@@ -166,6 +166,13 @@ def local_capture_date(path):
                 fh.seek(off)
                 head = fh.read(0x20000)
         dt = _exif_datetime(head)
+        if not dt and head[4:8] == b"ftyp":        # HEIF: l'EXIF sta dentro il contenitore
+            try:
+                import fuji_meta
+                raw = str((fuji_meta.parse(head) or {}).get("date") or "")
+                dt = (raw[:10].replace(":", "") + "T" + raw[11:19].replace(":", "")) if len(raw) >= 19 else None
+            except Exception:
+                dt = None
         if dt:
             return dt
         # video e file senza EXIF: il Mac li salva con la data di scatto come data di modifica
