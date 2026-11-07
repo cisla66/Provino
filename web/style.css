@@ -104,9 +104,12 @@ dialog .sub{color:#555;margin:0 0 14px;font-size:14px}
 .warn .quiet2{margin-left:6px;margin-top:6px}
 
 /* provino */
-.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:28px 22px;padding:26px 24px 140px}
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px 22px;padding:26px 24px 140px}
 .day{grid-column:1/-1;font-stretch:112%;font-weight:600;color:var(--ink-soft);margin:6px 0 -10px}
 .frame{position:relative;background:none;border:0;padding:0;text-align:left}
+.sheet h2.day{display:none}
+.dtag{height:22px;line-height:16px;font-stretch:112%;font-weight:600;font-size:14px;color:var(--ink-soft);white-space:nowrap;overflow:visible;padding-top:2px}
+.frame.dfirst .dtag{border-top:2px solid var(--line);padding-top:6px;height:30px;margin-top:-8px}
 .pic{position:relative}
 .photo{position:relative;width:100%;padding:0;aspect-ratio:3/2;background:var(--board-deep);border:6px solid var(--paper);
   display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -153,6 +156,10 @@ body.split .sheet{margin-right:var(--vw);grid-template-columns:repeat(auto-fill,
 body.split .tray{right:var(--vw)}
 .viewer{position:fixed;right:0;top:var(--barh);bottom:0;width:var(--vw);z-index:3;display:flex;flex-direction:column;
   padding:18px 22px 14px;background:var(--board-deep);border-left:1px solid rgba(0,0,0,.25)}
+.vgrip{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:5}
+.vgrip::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:transparent;transition:background .15s}
+.vgrip:hover::after, body.vdrag .vgrip::after{background:var(--accent, #3584e4)}
+body.vdrag, body.vdrag *{cursor:col-resize!important;user-select:none!important;-webkit-user-select:none!important}
 .vimg{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:zoom-in;user-select:none;-webkit-user-select:none}
 .vimg img{max-width:100%;max-height:100%;object-fit:contain;display:block;-webkit-user-drag:none;box-shadow:0 2px 14px rgba(0,0,0,.35)}
 .vimg img.low{filter:blur(2px);opacity:.75}
@@ -290,7 +297,7 @@ html.native[data-theme=dark]{
   }
 }
 html.native body{font-size:14px;font-family:var(--font)}
-html.native .sheet{gap:26px 18px;padding:20px 20px 120px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+html.native .sheet{gap:16px 18px;padding:20px 20px 120px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 html.native .day{font-stretch:normal;font-weight:700;font-size:15px;color:var(--ink);margin:6px 0 -12px}
 /* la foto: angoli arrotondati, niente passe-partout bianco */
 html.native .photo{border:0;border-radius:8px;overflow:hidden;background:var(--board-deep);box-shadow:0 0 0 1px var(--line2)}
@@ -368,3 +375,7 @@ html.native.mac .cap .n{font-weight:500}
 html.native.mac .vcap .quiet, html.native.mac .fcap .quiet, html.native.mac .metapane button{border-radius:5px;font-weight:500}
 html.native.mac .opt{border-radius:10px}
 html.native.mac .metapane.side{border-radius:10px}
+
+html.native .dtag{font-stretch:normal;font-weight:700;font-size:14px;color:var(--ink)}
+html.native .frame:not(.dfirst) .dtag{color:transparent}
+html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}

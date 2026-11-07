@@ -141,7 +141,7 @@ function build(){
     // solo HEIF e il sistema non sa mostrarlo (Linux senza libheif): segnaposto invece della rotella infinita
     const heifOnly = !vid && !g.files.JPG && !g.files.RAF && g.files.HIF && !S.heif_preview;
     html += `<div class="frame${vid||heifOnly?" video":""}" data-b="${esc(g.base)}">
-      <div class="pic"><button class="photo" data-b="${esc(g.base)}" aria-label="${esc(t("select.photo",{name:g.base}))}">${vid? `<span class="vid" aria-hidden="true">▶</span><span class="vidl">${t("video")}</span>` : heifOnly? `<span class="vid" aria-hidden="true">HEIF</span><span class="vidl">${t("heif.nopreview")}</span>` : `<span class="wait"></span>`}</button>
+      <div class="dtag"></div><div class="pic"><button class="photo" data-b="${esc(g.base)}" aria-label="${esc(t("select.photo",{name:g.base}))}">${vid? `<span class="vid" aria-hidden="true">▶</span><span class="vidl">${t("video")}</span>` : heifOnly? `<span class="vid" aria-hidden="true">HEIF</span><span class="vidl">${t("heif.nopreview")}</span>` : `<span class="wait"></span>`}</button>
       <svg class="mark" viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="94" height="64" rx="4" transform="rotate(-.6 50 35)"/></svg></div>
       <div class="cap"><span class="n">${esc(g.base.replace(/^_/,""))}</span><span class="t">${slotOf(g)? slotOf(g).split("+").map(n=>sdIcon(n)).join("")+" " : ""}${fmtTime(g.date)}</span><span class="film"></span></div>
       <div class="kinds">${kinds.map(k=>`<button class="kind" data-h="${g.files[k].handle}" aria-pressed="false">${k}${g.files[k].size? " "+fmtSize(g.files[k].size):""}</button>`).join("")}${vid? "" : `<button class="kind meta" data-meta="${esc(g.base)}">META</button>`}</div>
@@ -155,10 +155,19 @@ function build(){
 }
 
 function hideEmptyDays(){
+  // le foto scorrono una dopo l'altra senza andare a capo a ogni giorno (niente spazio sprecato):
+  // la data compare sopra la prima foto visibile di ogni giorno
   for(const h of document.querySelectorAll(".sheet h2.day")){
-    let el = h.nextElementSibling, vis = false;
-    while(el && !el.matches("h2.day")){ if(!el.hidden){ vis = true; break; } el = el.nextElementSibling; }
-    h.hidden = !vis;
+    let el = h.nextElementSibling, first = null;
+    while(el && !el.matches("h2.day")){
+      if(el.classList.contains("frame")){
+        const tag = el.querySelector(".dtag");
+        if(!first && !el.hidden){ first = el; tag.textContent = h.textContent; el.classList.add("dfirst"); }
+        else { tag.textContent = ""; el.classList.remove("dfirst"); }
+      }
+      el = el.nextElementSibling;
+    }
+    h.hidden = !first;
   }
 }
 function paint(){
@@ -647,6 +656,35 @@ let bigReq = null, bigFor = null, bigRetry = null;
 function curGroup(){ return cur ? groups().find(g=>g.base===cur) : null; }
 function visibleBases(){ return groups().filter(g=>wanted(g).length).map(g=>g.base); }
 function fullOpen(){ return !$("#full").hidden; }
+// divisione trascinabile tra griglia e foto grande (larghezza ricordata, separata per foto e foto+META)
+const VW = {photo:0, meta:0};
+try{ const o = JSON.parse(localStorage.getItem("provino.vw")||"{}"); VW.photo = +o.photo||0; VW.meta = +o.meta||0; }catch(e){}
+function vwKey(){ return document.body.classList.contains("metaon") ? "meta" : "photo"; }
+function vwClamp(w){ return Math.round(Math.max(320, Math.min(innerWidth - 220, w))); }
+function vwApply(){
+  const w = VW[vwKey()];
+  if(w) document.body.style.setProperty("--vw", vwClamp(w)+"px"); else document.body.style.removeProperty("--vw");
+}
+new MutationObserver(vwApply).observe(document.body, {attributes:true, attributeFilter:["class"]});
+addEventListener("resize", vwApply);
+(function(){
+  const g = $("#vgrip"); if(!g) return;
+  let x0 = 0, w0 = 0;
+  g.addEventListener("pointerdown", e=>{
+    e.preventDefault(); g.setPointerCapture(e.pointerId);
+    x0 = e.clientX; w0 = $("#viewer").getBoundingClientRect().width;
+    document.body.classList.add("vdrag");
+  });
+  g.addEventListener("pointermove", e=>{
+    if(!document.body.classList.contains("vdrag")) return;
+    VW[vwKey()] = vwClamp(w0 + (x0 - e.clientX)); vwApply();
+  });
+  const end = ()=>{ if(!document.body.classList.contains("vdrag")) return;
+    document.body.classList.remove("vdrag");
+    try{ localStorage.setItem("provino.vw", JSON.stringify(VW)); }catch(e){} };
+  g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end);
+  g.addEventListener("dblclick", ()=>{ VW[vwKey()] = 0; vwApply(); try{ localStorage.setItem("provino.vw", JSON.stringify(VW)); }catch(e){} });
+})();
 function splitActive(){ return split && innerWidth > 900; }
 
 function layout(){
