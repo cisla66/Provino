@@ -804,10 +804,47 @@ class App:
                         x["date_text"] = iso_to_text(x["date"])
         return sorted(files, key=lambda x: (x["date"], x["base"], x["kind"]), reverse=True)
 
+    def _raf_size(self, f):
+        """Dimensioni della foto da un RAF (tag 0x111 'RawImageCroppedSize' dell'intestazione CFA): (larghezza, altezza)."""
+        local = os.path.join(self.dir_for(f), f["name"])
+
+        def rd(off, n):
+            if f.get("on_mac") and os.path.exists(local):
+                with open(local, "rb") as fh:
+                    fh.seek(off)
+                    return fh.read(n)
+            if self.usb is not None:
+                return self.usb.read(f["handle"], off, n) or b""
+            return b""   # Wi-Fi: niente letture in piu'
+        try:
+            head = rd(0, 0x64)
+            if head[:15] != b"FUJIFILMCCD-RAW":
+                return None
+            co, cl = struct.unpack(">II", head[92:100])
+            d = rd(co, min(cl, 512))
+            n = struct.unpack(">I", d[:4])[0]
+            off = 4
+            for _ in range(min(n, 64)):
+                tag, ln = struct.unpack(">HH", d[off:off + 4])
+                if tag == 0x111 and ln == 4:
+                    h, w = struct.unpack(">HH", d[off + 4:off + 8])
+                    return (w, h) if w and h else None
+                off += 4 + ln
+        except (OSError, struct.error):
+            return None
+        return None
+
     def _set_meta(self, f, head):
         m = fuji_meta.parse(head or b"")
         if not m:
             return None
+        if f.get("kind") == "RAF":
+            # l'EXIF dentro il RAF descrive l'anteprima JPEG: la misura vera e' nell'intestazione del RAF
+            m.pop("width", None)
+            m.pop("height", None)
+            size = self._raf_size(f)
+            if size:
+                m["width"], m["height"] = size
         m["from"] = f["name"]
         with self.state_lock:
             self.meta[f["base"]] = m

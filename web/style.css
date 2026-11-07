@@ -379,3 +379,8 @@ html.native.mac .metapane.side{border-radius:10px}
 html.native .dtag{font-stretch:normal;font-weight:700;font-size:14px;color:var(--ink)}
 html.native .frame:not(.dfirst) .dtag{color:transparent}
 html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
+
+/* istogramma sopra la ricetta */
+.histo{margin:0 0 16px;border-radius:6px;background:var(--fill);padding:6px;line-height:0}
+.histo canvas{width:100%;height:70px;display:block}
+.histo.low{opacity:.6}

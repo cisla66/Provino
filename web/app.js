@@ -732,6 +732,50 @@ function viewerPaint(){
   $("#vsrc").textContent = $("#fsrc").textContent = src;
 }
 
+// ---------------------------------------------------------------- istogramma (calcolato qui dalla foto mostrata)
+const HISTO = new Map();
+function histoOf(img){
+  const k = img.currentSrc || img.src;
+  if(!k || !img.complete || !img.naturalWidth) return null;
+  if(HISTO.has(k)) return HISTO.get(k);
+  const W = Math.min(480, img.naturalWidth), H = Math.max(1, Math.round(W*img.naturalHeight/img.naturalWidth));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d", {willReadFrequently:true});
+  let d;
+  try{ x.drawImage(img, 0, 0, W, H); d = x.getImageData(0, 0, W, H).data; }catch(e){ return null; }
+  const r = new Float32Array(256), g = new Float32Array(256), b = new Float32Array(256), l = new Float32Array(256);
+  for(let i=0; i<d.length; i+=4){ r[d[i]]++; g[d[i+1]]++; b[d[i+2]]++; l[(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])|0]++; }
+  const h = {r, g, b, l, low: img.classList.contains("low")};
+  if(!h.low){ HISTO.set(k, h); if(HISTO.size > 60) HISTO.delete(HISTO.keys().next().value); }
+  return h;
+}
+function drawHisto(){
+  for(const [pane, pic] of [["#vmeta","#vpic"],["#fmeta","#fpic"]]){
+    const cv = document.querySelector(pane+" .histo canvas"), img = $(pic);
+    if(!cv || !img) continue;
+    const h = histoOf(img), x = cv.getContext("2d"), W = cv.width, H = cv.height;
+    x.clearRect(0, 0, W, H);
+    if(!h) continue;
+    // scala: il picco tra i toni intermedi (i pixel bruciati o chiusi non schiacciano tutto il resto)
+    let top = 1;
+    for(const a of [h.r, h.g, h.b, h.l]) for(let i=2; i<254; i++) if(a[i] > top) top = a[i];
+    const curve = (a, fill)=>{
+      x.beginPath(); x.moveTo(0, H);
+      for(let i=0; i<256; i++) x.lineTo(i*W/255, H - Math.min(1, a[i]/top)*(H-4));
+      x.lineTo(W, H); x.closePath(); x.fillStyle = fill; x.fill();
+    };
+    const dark = getComputedStyle(document.body).getPropertyValue("color-scheme").includes("dark")
+      || matchMedia("(prefers-color-scheme: dark)").matches && document.documentElement.dataset.theme !== "light"
+      || document.documentElement.dataset.theme === "dark";
+    x.globalCompositeOperation = dark ? "lighter" : "multiply";
+    if(dark){ curve(h.r, "rgba(255,69,58,.55)"); curve(h.g, "rgba(48,209,88,.55)"); curve(h.b, "rgba(10,132,255,.6)"); }
+    else { curve(h.r, "rgba(255,110,100,.75)"); curve(h.g, "rgba(110,220,130,.75)"); curve(h.b, "rgba(100,160,255,.75)"); }
+    x.globalCompositeOperation = "source-over";
+    cv.parentElement.classList.toggle("low", h.low);
+  }
+}
+for(const id of ["#vpic","#fpic"]){ const im = $(id); if(im) im.addEventListener("load", ()=>setTimeout(drawHisto, 0)); }
+
 function showImg(which, url, low){
   const img = $(which==="v"?"#vpic":"#fpic");
   if(img.dataset.url !== url){ img.dataset.url = url||""; if(url) img.src = url; else img.removeAttribute("src"); }
@@ -989,14 +1033,22 @@ function recipeText(m){
   return [filmName(m.film||"")].concat(recipeRows(m).filter(r=>r[0]!=="r.film").map(r=>`${t(r[0])}: ${r[1]}`)).join("\n");
 }
 function slotRow(g){ const sl = g && slotOf(g); return sl ? [["s.slot", t("slot.n",{n:sl})]] : []; }
+function pixelRow(m){
+  // dimensioni in pixel della foto (per il RAF le legge il motore dall'intestazione del file)
+  if(!(m && m.width && m.height)) return [];
+  const w=Math.max(m.width,m.height), h=Math.min(m.width,m.height);
+  const [a,b] = m.portrait ? [h,w] : [w,h];
+  return [["meta.pixels", `${fmtNum(a)} × ${fmtNum(b)} px · ${Math.round(w*h/1e6)} MP`]];
+}
 function metaHTML(g){
   if(!g) return `<p class="soon">${t("view.empty")}</p>`;
   if(isVideo(g)) return `<p class="soon">${t("meta.video")}</p>`;
   const m = META[g.base];
   if(!m) return `<p class="soon">${t("meta.loading")}</p>`;
   const dl = rows => `<dl>${rows.map(([k,v,c])=>`<dt>${esc(t(k))}</dt><dd${c?` class="${c}"`:""}>${esc(v)}</dd>`).join("")}</dl>`;
-  return `<h3>${t("meta.recipe")}</h3>${dl(recipeRows(m))}
-    <h3>${t("meta.shot")}</h3>${dl(shotRows(m).concat(slotRow(g)))}
+  return `<div class="histo" aria-label="${esc(t("meta.histo"))}"><canvas width="512" height="140"></canvas></div>
+    <h3>${t("meta.recipe")}</h3>${dl(recipeRows(m))}
+    <h3>${t("meta.shot")}</h3>${dl(shotRows(m).concat(pixelRow(m), slotRow(g)))}
     <div class="mfoot"><button class="quiet" data-copy="${esc(g.base)}">${t("meta.copy")}</button><span>${esc(t("meta.readFrom",{f:m.from||""}))}</span></div>
     <p class="soon">${t("meta.editSoon")}</p>`;
 }
@@ -1010,6 +1062,7 @@ function renderMeta(){
   }
   const html = metaHTML(g);
   for(const id of ["#vmeta","#fmeta"]){ const el=$(id); if(el.dataset.html!==html){ el.dataset.html=html; el.innerHTML=html; } }
+  drawHisto();
   $("#fmeta").hidden = !fmetaOn; $("#fmetaBtn").setAttribute("aria-pressed", fmetaOn);
 }
 
