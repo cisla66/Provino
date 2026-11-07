@@ -84,6 +84,7 @@ jobs:
           mkdir -p /tmp/ci && cp shots/*.png /tmp/ci/ 2>/dev/null || true
           cp app-stdout.txt test-data/log/*.txt /tmp/ci/ 2>/dev/null || true
           ls -la dist > /tmp/ci/dist.txt 2>/dev/null || true
+          cp dist/*.dmg /tmp/ci/ 2>/dev/null || true
           cd /tmp/ci && git init -q && git checkout -q -b ci-mac
           git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
           git add -A && git commit -q -m "CI ${GITHUB_SHA::7}" || exit 0
