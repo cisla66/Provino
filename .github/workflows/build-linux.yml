@@ -35,6 +35,29 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb imagemagick dbus-x11 xdotool >/dev/null
 
+      - name: Scheda finta per la prova (foto generate, nessuna foto vera)
+        run: |
+          pip install -q pillow
+          sudo mkdir -p /media/$USER/PROVA/DCIM/100_FUJI && sudo chown -R $USER /media/$USER
+          python3 - <<'PY'
+          import os, random
+          from PIL import Image, ImageDraw
+          d = "/media/%s/PROVA/DCIM/100_FUJI" % os.environ["USER"]
+          random.seed(3)
+          for i in range(10):
+              im = Image.new("RGB", (1800, 1200), (random.randint(40, 200), random.randint(40, 200), random.randint(40, 200)))
+              dr = ImageDraw.Draw(im)
+              for _ in range(14):
+                  x, y = random.randint(0, 1700), random.randint(0, 1100)
+                  dr.ellipse((x, y, x + random.randint(80, 500), y + random.randint(80, 400)),
+                             fill=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+              ex = Image.Exif()
+              ex[0x010F] = "FUJIFILM"; ex[0x0110] = "X-T5"; ex[0x0132] = "2026:11:0%d 1%d:20:00" % (1 + i // 4, i)
+              th = im.copy(); th.thumbnail((160, 120))
+              im.save(os.path.join(d, "DSCF%04d.JPG" % (100 + i)), quality=85, exif=ex)
+          print(os.listdir(d))
+          PY
+
       - name: Prova - la finestra si apre
         env:
           GDK_BACKEND: x11
@@ -47,8 +70,12 @@ jobs:
           export XDG_DATA_HOME=$PWD/test-data
           xvfb-run -a -s "-screen 0 1440x900x24" sh -c "
             dbus-launch --exit-with-session \"$APP\" --appimage-extract-and-run &
-            sleep 18
+            sleep 12
             import -window root dist/finestra.png
+            PORT=\$(grep -o '127.0.0.1:[0-9]*' test-data/Provino/log/*.txt | head -1 | cut -d: -f2)
+            curl -s -X POST http://127.0.0.1:\$PORT/api/start -H 'Content-Type: application/json' -d '{\"camera\":\"Fujifilm\",\"method\":\"card\"}'
+            sleep 10
+            import -window root dist/finestra-griglia.png
             xdotool search --name Provino windowactivate 2>/dev/null; xdotool key ctrl+q 2>/dev/null; sleep 1
             kill %1 2>/dev/null || true
           " || true
@@ -61,14 +88,14 @@ jobs:
           name: Provino-AppImage
           path: |
             dist/*.AppImage
-            dist/finestra.png
+            dist/finestra*.png
             test-data/Provino/log/*.txt
           retention-days: 14
 
       - name: Screenshot nel ramo "ci" (per controllarlo senza scaricare l'artefatto)
         if: always()
         run: |
-          mkdir -p /tmp/ci && cp dist/finestra.png /tmp/ci/ 2>/dev/null || true
+          mkdir -p /tmp/ci && cp dist/finestra*.png /tmp/ci/ 2>/dev/null || true
           cp test-data/Provino/log/*.txt /tmp/ci/ 2>/dev/null || true
           cd /tmp/ci && git init -q && git checkout -q -b ci
           git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
