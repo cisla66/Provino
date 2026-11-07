@@ -462,7 +462,7 @@ class ProvinoApp(Adw.Application):
             sec3 = Gio.Menu()
             sec3.append(self.t("sel_none"), "app.sel-none")
             m.append_section(None, sec3)
-            self.pick_btn.set_label(("%s · %d" % (self.t("pick"), n)) if n else self.t("pick"))
+            self.pick_btn.set_label(self.t("pick"))   # il numero e' gia' sul pulsante Scarica
         finally:
             self._updating = False
 

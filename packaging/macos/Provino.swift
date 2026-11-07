@@ -467,7 +467,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         let cur = (st["film"] as? String) ?? ""
         if let i = filmValues.firstIndex(of: cur), filmPop.indexOfSelectedItem != i { filmPop.selectItem(at: i) }
         let n = (st["picked"] as? Int) ?? 0
-        pickItem.title = n > 0 ? "\(T("pick")) · \(n)" : T("pick")
+        pickItem.title = T("pick")   // il numero e' gia' sul pulsante Scarica
         pickItem.toolTip = n > 0 ? ((st["sum"] as? String) ?? "") : T("pick_none")
         let m = NSMenu()
         let h = NSMenuItem(title: T("by_type"), action: nil, keyEquivalent: "")
