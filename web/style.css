@@ -242,8 +242,9 @@ body.metaon{--vw:min(76vw,calc(100vw - 220px))}
 .cap .sd b{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:11px;font-weight:700;color:var(--ink);line-height:1}
 
 /* ---------- finestra GNOME: titolo, Scarica, pannello e Cambia fotocamera sono nella barra della finestra ---------- */
-html.native .bar .cam, html.native .bar .spacer, html.native .bar .changebtn, html.native .bar #go, html.native #viewToggle{display:none}
-html.native .bar{padding-top:10px}
+/* nella finestra nativa la barra della pagina sparisce del tutto: comandi, filtri e scelte sono controlli del sistema */
+html.native .bar{display:none!important}
+html.native{--barh:0px}
 
 /* ---------- tema chiaro: segue il sistema, oppure la scelta dal menu (data-theme) ---------- */
 html[data-theme=light]{
@@ -264,3 +265,73 @@ html[data-theme=light]{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;background-size:10px 6px}
 .filmsel.on{background-color:var(--sel);color:var(--on-sel)}
+
+/* =====================================================================================
+   FINESTRA NATIVA GNOME (html.native): la pagina e' solo il foglio dei provini.
+   Carattere, colori e forme di libadwaita; il rosso matita resta l'unico segno di Provino.
+   ===================================================================================== */
+html.native{
+  --font:"Adwaita Sans","Cantarell","Inter",system-ui,sans-serif;
+  --board:#fafafb; --board-deep:#ebebed; --paper:#ffffff; --ink:rgba(0,0,6,.8); --ink-soft:rgba(0,0,6,.55);
+  --line:rgba(0,0,6,.12); --line2:rgba(0,0,6,.07); --fill:rgba(0,0,6,.07); --sel:#3584e4; --on-sel:#fff;
+  --accent:#3584e4; --ok-bg:rgba(46,194,126,.16); --ok-ink:#1b7a4a; --card:#ffffff; --pencil:#e01b24;
+  --spin:rgba(0,0,6,.12);
+}
+html.native[data-theme=dark]{
+  --board:#222226; --board-deep:#2e2e32; --paper:#3a3a3e; --ink:#ffffff; --ink-soft:rgba(255,255,255,.6);
+  --line:rgba(255,255,255,.12); --line2:rgba(255,255,255,.07); --fill:rgba(255,255,255,.1); --sel:#3584e4;
+  --accent:#78aeed; --ok-bg:rgba(46,194,126,.2); --ok-ink:#8ff0a4; --card:#2e2e32; --pencil:#ff7b63; --spin:rgba(255,255,255,.15);
+}
+@media (prefers-color-scheme: dark){
+  html.native:not([data-theme=light]){
+    --board:#222226; --board-deep:#2e2e32; --paper:#3a3a3e; --ink:#ffffff; --ink-soft:rgba(255,255,255,.6);
+    --line:rgba(255,255,255,.12); --line2:rgba(255,255,255,.07); --fill:rgba(255,255,255,.1); --sel:#3584e4;
+    --accent:#78aeed; --ok-bg:rgba(46,194,126,.2); --ok-ink:#8ff0a4; --card:#2e2e32; --pencil:#ff7b63; --spin:rgba(255,255,255,.15);
+  }
+}
+html.native body{font-size:14px;font-family:var(--font)}
+html.native .sheet{gap:26px 18px;padding:20px 20px 120px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+html.native .day{font-stretch:normal;font-weight:700;font-size:15px;color:var(--ink);margin:6px 0 -12px}
+/* la foto: angoli arrotondati, niente passe-partout bianco */
+html.native .photo{border:0;border-radius:8px;overflow:hidden;background:var(--board-deep);box-shadow:0 0 0 1px var(--line2)}
+html.native .photo img{border-radius:8px}
+/* scelta: segno rosso a matita attorno alla foto */
+html.native .frame.cur .photo{box-shadow:0 0 0 3px var(--accent)}
+html.native .frame.cur::before{inset:-8px;border-radius:14px;background:var(--fill);box-shadow:none}
+html.native .cap .n{font-stretch:normal;font-weight:600;font-size:13px}
+html.native .cap .t{font-size:12px;font-variant-numeric:tabular-nums}
+html.native .cap .film{font-size:12px}
+/* etichette JPG / RAF: pastiglie come nelle app GNOME. Blu = scelta, verde = gia' scaricata */
+html.native .kind{border:0;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;background:var(--fill);color:var(--ink)}
+html.native .kind[aria-pressed=true]{background:var(--accent);color:#fff}
+html.native .kind.onmac{background:var(--ok-bg);color:var(--ok-ink)}
+html.native .kind.onmac::after{content:" ✓";color:inherit}
+html.native .kind[aria-pressed=true].onmac{background:var(--accent);color:#fff}
+html.native .kind.meta{background:none;color:var(--ink-soft);padding:3px 6px;font-weight:600}
+html.native .kind.meta:hover{background:var(--fill);color:var(--ink)}
+html.native .frame.video .photo{background:#1e1e22;color:#fff}
+/* pannello a destra: colore della barra laterale, ricetta in una scheda come gli elenchi di libadwaita */
+html.native .viewer{background:var(--board-deep);border-left:1px solid var(--line)}
+html.native .metapane.side{background:var(--card);border-radius:12px;box-shadow:0 0 0 1px var(--line2),0 1px 3px rgba(0,0,6,.07)}
+html.native .vcap .quiet, html.native .fcap .quiet{border:0;border-radius:6px;background:var(--fill);color:var(--ink);font-weight:600;padding:7px 12px}
+html.native .vcap .quiet:hover{background:var(--line)}
+html.native #vmetaBtn[aria-pressed=true]{background:var(--ink);color:var(--board)}
+html.native #vsel[aria-pressed=true]{background:var(--accent);color:#fff}
+html.native .vhint{display:none}
+html.native .vtitle b{font-weight:700}
+/* la barra di avanzamento in basso: come un avviso di libadwaita */
+html.native .tray{background:var(--card);color:var(--ink);border-radius:12px;left:16px;right:16px;bottom:16px;box-shadow:0 0 0 1px var(--line2),0 8px 24px rgba(0,0,6,.18)}
+html.native .tray button{border:0;background:var(--fill);color:var(--ink);font-weight:600}
+html.native .tray[data-mode=ok] #openDir{background:var(--accent);color:#fff}
+html.native .meter{background:var(--fill)}
+html.native .meter i{background:var(--accent)}
+/* schermata iniziale */
+html.native .opt{border:0;border-radius:12px;background:var(--card);box-shadow:0 0 0 1px var(--line2),0 1px 3px rgba(0,0,6,.07)}
+html.native .opt.on{box-shadow:0 0 0 2px var(--accent)}
+html.native .go{background:var(--accent);border-radius:6px}
+html.native h1, html.native h2{font-stretch:normal}
+html.native .frame .mark{display:none}
+html.native .frame.sel .photo{outline:3px solid var(--pencil);outline-offset:3px}
+html.native .frame.video .vid{color:#fff;opacity:.85}
+html.native .frame.video .vidl{font-size:10px;letter-spacing:.06em;padding:0 12px;text-align:center;color:rgba(255,255,255,.6)}
+html.native .metapane button, html.native .metapane .quiet2{border:0;border-radius:6px;background:var(--fill);color:var(--ink);font-weight:600;padding:6px 12px}

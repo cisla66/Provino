@@ -301,6 +301,17 @@ async function startDownload(hs, options){
 $("#go").onclick = ()=>{ const hs=[...picked]; if(hs.length) askDest(hs); };
 
 function askDest(hs){
+  if(NATIVE){
+    const st = S.settings||{};
+    const sel = S.files.filter(f=>hs.includes(f.handle));
+    const bytes = sel.reduce((a,f)=>a+(f.size||0),0);
+    const kinds = {}; for(const f of sel){ const k = VIDEO.includes(f.kind)? "VIDEO" : f.kind==="HIF"? "HEIF" : f.kind; kinds[k]=(kinds[k]||0)+1; }
+    const days = [...new Set(sel.map(f=>(f.date||"").slice(0,8)).filter(Boolean))].sort();
+    nativeMsg({type:"askDest", hs, n:hs.length, size:fmtSize(bytes), kinds, days,
+      files: sel.slice(0,400).map(f=>[f.name, (f.date||"").slice(0,8), VIDEO.includes(f.kind)? "VIDEO" : f.kind==="HIF"? "HEIF" : f.kind]),
+      dest:S.dest, by_date:!!st.by_date, split_type:!!st.split_type});
+    return;
+  }
   const st = S.settings||{}, d = $("#dest");
   // cartella scelta in questa finestra: tenuta qui, perche' S viene riletto dal programma ogni secondo
   let dest = S.dest;
@@ -501,13 +512,36 @@ function nativeState(){
     go: { label: go.firstChild ? (go.childNodes[0].textContent || t("dl.btn")) : t("dl.btn"), small: (go.querySelector("small")||{}).textContent || "", enabled: ready && !go.disabled },
     split: !!split, canChange: S.status!=="setup", lang: LANG,
   };
-  const k = JSON.stringify(st);
+  if(ready){
+    const files = S.files||[];
+    const nK = k => files.filter(f=>k==="VIDEO"? VIDEO.includes(f.kind) : f.kind===k).length;
+    const sel = $("#filmSel");
+    st.filter = filter;
+    st.hasVideo = files.some(f=>VIDEO.includes(f.kind));
+    st.films = sel && !sel.hidden ? [...sel.options].map(o=>[o.value, o.textContent]) : [];
+    st.film = filmFilter || "";
+    st.counts = {JPG:nK("JPG"), RAF:nK("RAF"), HIF:nK("HIF"), VIDEO:nK("VIDEO"),
+                 both:nK("JPG")+nK("RAF"), fresh:files.filter(f=>!f.on_mac).length};
+    st.picked = picked.size;
+    st.sum = (go.querySelector("small")||{}).textContent || "";
+  }
+  const k = JSON.stringify({type:"state", ...st});
   if(k===nativeKey) return;
   nativeKey = k;
   try{ window.webkit.messageHandlers.provino.postMessage(k); }catch(e){}
 }
+function nativeMsg(o){ try{ window.webkit.messageHandlers.provino.postMessage(JSON.stringify(o)); }catch(e){} }
 window.provinoNative = function(cmd, arg){
-  if(cmd==="download"){ const g=$("#go"); if(g && !g.disabled) g.click(); }
+  if(cmd==="download"){ const hs=[...picked]; if(hs.length) askDest(hs); }
+  else if(cmd==="filter"){ setFilter(arg); paint(); }
+  else if(cmd==="film"){ filmFilter = arg||""; filmOptions(); paint(); }
+  else if(cmd==="select"){ if(arg==="fresh") $("#selNew").click(); else if(arg==="none") $("#selNone").click();
+    else if(arg==="visible"){ for(const g of groups()) wanted(g).forEach(f=>picked.add(f.handle)); paint(); }
+    else selectAll(arg); }
+  else if(cmd==="destConfirmed"){ (async ()=>{
+      const r = await post("/api/dest-settings", {dest: arg.dest, split_type: !!arg.split_type, by_date: !!arg.by_date});
+      if(r.error){ nativeMsg({type:"error", text:r.error}); return; }
+      S.settings = r.settings; S.dest = r.dest; afterDest(arg.hs); })(); }
   else if(cmd==="split"){ $("#viewToggle").click(); }
   else if(cmd==="change"){ wiz=null; built=false; post("/api/stop", {}).then(poll); }
   else if(cmd==="theme"){ document.documentElement.dataset.theme = arg || ""; }
