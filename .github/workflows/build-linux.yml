@@ -1,0 +1,62 @@
+name: AppImage (Linux)
+
+# Costruisce l'AppImage di prova e controlla che la finestra si apra (screenshot su un Linux virtuale).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "*.py"
+      - "cameras.json"
+      - "web/**"
+      - "assets/icon/**"
+      - "packaging/linux/**"
+      - ".github/workflows/build-linux.yml"
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: appimagetool
+        run: |
+          curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+
+      - name: Costruisci l'AppImage
+        run: APPIMAGETOOL=$PWD/appimagetool sh packaging/linux/build-appimage.sh
+
+      - name: Librerie GNOME per la prova
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb imagemagick dbus-x11 >/dev/null
+
+      - name: Prova - la finestra si apre
+        env:
+          GDK_BACKEND: x11
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
+          WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: "1"
+        run: |
+          APP=$(ls dist/Provino-*-x86_64.AppImage)
+          chmod +x "$APP"
+          export XDG_DATA_HOME=$PWD/test-data
+          xvfb-run -a -s "-screen 0 1440x900x24" sh -c "
+            dbus-launch --exit-with-session \"$APP\" --appimage-extract-and-run &
+            sleep 18
+            import -window root dist/finestra.png
+            kill %1 2>/dev/null || true
+          " || true
+          ls -la dist
+          cat test-data/Provino/log/*.txt || true
+          test -s dist/finestra.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Provino-AppImage
+          path: |
+            dist/*.AppImage
+            dist/finestra.png
+            test-data/Provino/log/*.txt
+          retention-days: 14

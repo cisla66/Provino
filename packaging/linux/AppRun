@@ -1,0 +1,16 @@
+#!/bin/sh
+# Provino AppImage: usa il Python e le librerie GNOME del sistema (GTK 4, WebKitGTK 6, libadwaita).
+HERE="$(dirname "$(readlink -f "$0")")"
+APP="$HERE/usr/share/provino"
+export PROVINO_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/Provino"
+mkdir -p "$PROVINO_DATA"
+if ! command -v python3 >/dev/null 2>&1; then
+  command -v notify-send >/dev/null 2>&1 && notify-send "Provino" "Serve Python 3: installalo dal gestore dei programmi."
+  echo "Provino: serve python3" >&2
+  exit 1
+fi
+if python3 -c 'import gi; gi.require_version("Gtk","4.0"); gi.require_version("WebKit","6.0"); gi.require_version("Adw","1"); from gi.repository import Gtk, WebKit, Adw' 2>/dev/null; then
+  exec python3 "$APP/provino_finestra.py" "$@"
+fi
+# senza le librerie della finestra: Provino si apre nel browser
+exec python3 "$APP/provino.py" "$@"

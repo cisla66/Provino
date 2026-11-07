@@ -30,6 +30,40 @@ except ImportError:  # Python < 3.7
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+
+
+def _data_dir():
+    """Dove scrivere impostazioni, log e aiutanti compilati.
+    Dalla cartella dei sorgenti: la cartella stessa (come sempre). Dall'app installata (.dmg, AppImage),
+    che e' di sola lettura: PROVINO_DATA oppure la cartella standard del sistema."""
+    d = os.environ.get("PROVINO_DATA")
+    if d:
+        return d
+    if os.access(HERE, os.W_OK) and not os.environ.get("APPIMAGE") and ".app/Contents/" not in HERE:
+        return HERE
+    if sys.platform == "darwin":
+        return os.path.expanduser("~/Library/Application Support/Provino")
+    return os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "Provino")
+
+
+def default_dest():
+    """Cartella di download predefinita: 'scaricate' accanto ai sorgenti, Immagini/Provino per l'app installata."""
+    if DATA == HERE:
+        return os.path.join(HERE, "scaricate")
+    pics = ""
+    if sys.platform.startswith("linux"):
+        try:
+            pics = subprocess.run(["xdg-user-dir", "PICTURES"], stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, timeout=3).stdout.decode().strip()
+        except (OSError, subprocess.SubprocessError):
+            pics = ""
+    if not pics or pics == os.path.expanduser("~"):
+        pics = os.path.expanduser("~/Pictures")
+    return os.path.join(pics, "Provino")
+
+
+DATA = _data_dir()
+os.makedirs(DATA, exist_ok=True)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
@@ -213,7 +247,7 @@ class App:
         self.thumb_tries = {}
         self.camera_meta = {}
         self.choice = {}
-        self.settings_path = os.path.join(HERE, "settings.json")
+        self.settings_path = os.path.join(DATA, "settings.json")
         old = os.path.join(HERE, "impostazioni.json")   # FujiWiFi <= 2.8
         if not os.path.exists(self.settings_path) and os.path.exists(old):
             try:
@@ -347,11 +381,11 @@ class App:
         self._usb_files = []
         self.thumb_tries = {}
         try:
-            bindir = os.path.join(HERE, ".provino_bin")
+            bindir = os.path.join(DATA, ".provino_bin")
             first = sys.platform == "darwin" and not (os.path.isdir(bindir) and any(n.startswith("fujiusb_") for n in os.listdir(bindir)))
             self.set_status("waiting", "usb_prepare" if first else "")
             hint = (load_cameras()["cameras"].get(camera) or {}).get("usb_hint") or camera.lower().replace("-", "")
-            sess = fuji_usb.UsbSession(HERE, hint, self.log, self._usb_event)
+            sess = fuji_usb.UsbSession(DATA, hint, self.log, self._usb_event)
             sess.start()
             self.usb = sess
             self.set_status("waiting", "")
@@ -1631,7 +1665,7 @@ def main():
     ap = argparse.ArgumentParser(description="Provino - scegli e scarica le foto dalle fotocamere Fujifilm")
     ap.add_argument("--wireless", action="store_true", help="usa la rete Wi-Fi della fotocamera (solo JPG)")
     ap.add_argument("--ip", default=fw.CAM_IP)
-    ap.add_argument("--dest", default=os.path.join(HERE, "scaricate"))
+    ap.add_argument("--dest", default=default_dest())
     ap.add_argument("--auto", action="store_true", help="salta la scelta iniziale: X-Pro3 via rete di casa")
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--port", type=int, default=0)
@@ -1639,7 +1673,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.dest, exist_ok=True)
-    logdir = os.path.join(HERE, "log")
+    logdir = os.path.join(DATA, "log")
     os.makedirs(logdir, exist_ok=True)
     logpath = os.path.join(logdir, "app_%s.txt" % datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
     log = fw.Log(logpath, verbose=args.verbose)

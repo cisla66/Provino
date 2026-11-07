@@ -40,7 +40,7 @@ APP_ID = "io.github.provino.Provino"
 def start_core(args):
     """Avvia Provino (server locale, download, controlli) senza browser. Ritorna (app, srv, url, log)."""
     os.makedirs(args.dest, exist_ok=True)
-    logdir = os.path.join(HERE, "log")
+    logdir = os.path.join(pv.DATA, "log")
     os.makedirs(logdir, exist_ok=True)
     log = fw.Log(os.path.join(logdir, "app_%s.txt" % datetime.datetime.now().strftime("%Y%m%d_%H%M%S")),
                  verbose=args.verbose)
@@ -117,7 +117,7 @@ class ProvinoApp(Adw.Application):
 
 def main():
     ap = argparse.ArgumentParser(description="Provino in una finestra GNOME")
-    ap.add_argument("--dest", default=os.path.join(HERE, "scaricate"))
+    ap.add_argument("--dest", default=pv.default_dest())
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
     a = ProvinoApp(args)
