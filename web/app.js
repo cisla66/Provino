@@ -162,6 +162,7 @@ function hideEmptyDays(){
   }
 }
 function paint(){
+  setTimeout(nativeState, 0);
   if(S.camera_meta && S.camera_meta.from && metaShown !== S.camera_meta.from) { metaShown = S.camera_meta.from; built=false; return build(); }
   const ready = new Set(S.thumbs_ready);
   const gm = new Map(groups().map(g=>[g.base,g]));
@@ -483,7 +484,38 @@ function setLang(l, save){
 }
 
 // ---------------------------------------------------------------- rendering
+// ---------------------------------------------------------------- cornice nativa (finestra GNOME)
+// Nella finestra GNOME il titolo, Scarica, il pannello e "Cambia fotocamera" stanno nella barra della finestra:
+// la pagina manda lo stato alla finestra e la finestra rimanda i comandi (window.provinoNative).
+const NATIVE = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.provino);
+if(NATIVE) document.documentElement.classList.add("native");
+let nativeKey = "";
+function nativeState(){
+  if(!NATIVE) return;
+  const ready = S.status==="ready" && S.files.length>0;
+  const go = $("#go");
+  const st = {
+    ready, status: S.status,
+    title: ready ? ($("#camName").textContent || "Provino") : "Provino",
+    subtitle: ready ? [$("#camMeta").textContent, $("#camInfo").textContent].filter(Boolean)[0] || "" : "",
+    go: { label: go.firstChild ? (go.childNodes[0].textContent || t("dl.btn")) : t("dl.btn"), small: (go.querySelector("small")||{}).textContent || "", enabled: ready && !go.disabled },
+    split: !!split, canChange: S.status!=="setup", lang: LANG,
+  };
+  const k = JSON.stringify(st);
+  if(k===nativeKey) return;
+  nativeKey = k;
+  try{ window.webkit.messageHandlers.provino.postMessage(k); }catch(e){}
+}
+window.provinoNative = function(cmd, arg){
+  if(cmd==="download"){ const g=$("#go"); if(g && !g.disabled) g.click(); }
+  else if(cmd==="split"){ $("#viewToggle").click(); }
+  else if(cmd==="change"){ wiz=null; built=false; post("/api/stop", {}).then(poll); }
+  else if(cmd==="theme"){ document.documentElement.dataset.theme = arg || ""; }
+  nativeState();
+};
+
 function render(){
+  setTimeout(nativeState, 0);
   // collegamento perso: chiudo la foto a tutto schermo, cosi' si vede subito il messaggio
   if(S.status!=="ready" && !$("#full").hidden){ $("#full").hidden = true; zoomFit($("#fbox")); try{ if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){} }
   layout();

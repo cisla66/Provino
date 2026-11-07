@@ -2,6 +2,7 @@
 # Provino AppImage: usa il Python e le librerie GNOME del sistema (GTK 4, WebKitGTK 6, libadwaita).
 HERE="$(dirname "$(readlink -f "$0")")"
 APP="$HERE/usr/share/provino"
+export XDG_DATA_DIRS="$HERE/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export PROVINO_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/Provino"
 mkdir -p "$PROVINO_DATA"
 if ! command -v python3 >/dev/null 2>&1; then

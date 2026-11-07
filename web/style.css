@@ -238,3 +238,7 @@ body.metaon{--vw:min(76vw,calc(100vw - 220px))}
 .cap .sd{position:relative;display:inline-block;width:17px;height:22px;margin-right:4px;vertical-align:-6px}
 .cap .sd svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--ink);stroke-width:1.3}
 .cap .sd b{position:absolute;left:0;right:0;top:7px;text-align:center;font-size:11px;font-weight:700;color:var(--ink);line-height:1}
+
+/* ---------- finestra GNOME: titolo, Scarica, pannello e Cambia fotocamera sono nella barra della finestra ---------- */
+html.native .bar .cam, html.native .bar .spacer, html.native .bar .changebtn, html.native .bar #go, html.native #viewToggle{display:none}
+html.native .bar{padding-top:10px}

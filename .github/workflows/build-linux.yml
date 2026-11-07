@@ -13,6 +13,9 @@ on:
       - "packaging/linux/**"
       - ".github/workflows/build-linux.yml"
 
+permissions:
+  contents: write
+
 jobs:
   appimage:
     runs-on: ubuntu-24.04
@@ -30,7 +33,7 @@ jobs:
       - name: Librerie GNOME per la prova
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb imagemagick dbus-x11 >/dev/null
+          sudo apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb imagemagick dbus-x11 xdotool >/dev/null
 
       - name: Prova - la finestra si apre
         env:
@@ -46,6 +49,7 @@ jobs:
             dbus-launch --exit-with-session \"$APP\" --appimage-extract-and-run &
             sleep 18
             import -window root dist/finestra.png
+            xdotool search --name Provino windowactivate 2>/dev/null; xdotool key ctrl+q 2>/dev/null; sleep 1
             kill %1 2>/dev/null || true
           " || true
           ls -la dist
@@ -60,3 +64,13 @@ jobs:
             dist/finestra.png
             test-data/Provino/log/*.txt
           retention-days: 14
+
+      - name: Screenshot nel ramo "ci" (per controllarlo senza scaricare l'artefatto)
+        if: always()
+        run: |
+          mkdir -p /tmp/ci && cp dist/finestra.png /tmp/ci/ 2>/dev/null || true
+          cp test-data/Provino/log/*.txt /tmp/ci/ 2>/dev/null || true
+          cd /tmp/ci && git init -q && git checkout -q -b ci
+          git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -q -m "CI ${GITHUB_SHA::7}" || exit 0
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci
