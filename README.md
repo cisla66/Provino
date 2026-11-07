@@ -29,8 +29,8 @@ Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touche
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
 
-**Stato / Status:** versione di prova `1.0.0-rc`, la 1.0 arriverà come app da installare (`.dmg` per Mac, AppImage per Linux).
-Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac, AppImage for Linux).
+**Stato / Status:** versione di prova `1.0.0-rc`: app native per Mac (`.dmg`) e GNOME/Linux (AppImage).
+Release candidate `1.0.0-rc`: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage).
 
 [Italiano](#italiano) · [English](#english) · Guida completa / Full guide: `docs/guida.html` (online con la 1.0)
 
@@ -63,11 +63,10 @@ Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac,
 **Wi-Fi di casa**, la prima volta: MENU/OK › chiave › IMPOSTAZIONI CONNESSIONE › IMP. SALV.AUT. PC › IMPOSTAZIONE MANUALE › SELEZ. LISTA RETI. Provino registra il computer da solo. Per scaricare: PLAY › MENU/OK › menu riproduzione › SALVAT. AUTOM. PC.
 **Wi-Fi diretto:** PLAY › MENU/OK › COMUNIC. WIRELESS, poi collega il computer alla rete `FUJIFILM-…`.
 
-### Avvio (versione di prova)
-Serve Python 3, senza pacchetti aggiuntivi.
-
-**Mac:** doppio clic su `Provino.command`; si apre il browser. Per il cavo servono gli strumenti da riga di comando di Apple (`xcode-select --install`).
-**Linux:** in un terminale nella cartella, `sh avvia-linux.sh` (nel browser) oppure `python3 provino_finestra.py` (finestra GNOME). Il cavo usa libgphoto2, già presente nei desktop GNOME; la finestra usa GTK 4, WebKitGTK 6 e libadwaita.
+### Installazione
+**Mac** (macOS 11 o successivo, Intel e Apple Silicon): apri `Provino-…-mac.dmg` e trascina Provino in Applicazioni. Non serve installare altro: Python è già dentro l'app. Provino non è ancora firmato da Apple: la prima volta macOS lo blocca; apri Impostazioni di Sistema › Privacy e sicurezza e premi «Apri comunque».
+**Linux** (GNOME: Fedora, Ubuntu…): scarica `Provino-…-x86_64.AppImage`, rendilo eseguibile (tasto destro › Proprietà › Esegui come programma) e aprilo. Usa GTK 4, libadwaita e WebKitGTK 6, già presenti nei desktop GNOME recenti; il cavo usa libgphoto2.
+Dai sorgenti: `python3 provino_finestra.py` (finestra GNOME) oppure `python3 provino.py` (nel browser, anche su Mac).
 
 ### Sicurezza
 Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non sovrascrive file sul computer senza chiederlo. Nella cartella `log` c'è un file per ogni avvio, utile se qualcosa non va.
@@ -101,11 +100,10 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 **Home Wi-Fi**, first time: MENU/OK › wrench › CONNECTION SETTING › PC AUTO SAVE SETTING › MANUAL SETUP › SELECT FROM NETWORK LIST. Provino registers the computer by itself. To download: PLAY › MENU/OK › playback menu › PC AUTO SAVE.
 **Direct Wi-Fi:** PLAY › MENU/OK › WIRELESS COMMUNICATION, then join the `FUJIFILM-…` network.
 
-### Running (release candidate)
-Needs Python 3, no extra packages.
-
-**Mac:** double-click `Provino.command`; your browser opens. The cable needs Apple's command line tools (`xcode-select --install`).
-**Linux:** in a terminal in the folder, `sh avvia-linux.sh` (in the browser) or `python3 provino_finestra.py` (GNOME window). The cable uses libgphoto2, already present on GNOME desktops; the window uses GTK 4, WebKitGTK 6 and libadwaita.
+### Installing
+**Mac** (macOS 11 or later, Intel and Apple Silicon): open `Provino-…-mac.dmg` and drag Provino to Applications. Nothing else to install: Python is inside the app. Provino isn't signed by Apple yet: the first time macOS blocks it; open System Settings › Privacy & Security and click "Open Anyway".
+**Linux** (GNOME: Fedora, Ubuntu…): download `Provino-…-x86_64.AppImage`, make it executable (right click › Properties › Run as a program) and open it. It uses GTK 4, libadwaita and WebKitGTK 6, already on recent GNOME desktops; the cable uses libgphoto2.
+From source: `python3 provino_finestra.py` (GNOME window) or `python3 provino.py` (in the browser, Mac too).
 
 ### Safety
 Provino never deletes, changes or formats anything on the card. It never overwrites files on your computer without asking. The `log` folder has one file per run, useful if something goes wrong.
