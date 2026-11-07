@@ -972,7 +972,7 @@ final class FlippedView: NSView { override var isFlipped: Bool { true } }
 // MARK: - Impostazioni
 
 final class SettingsWindow: NSWindowController {
-    weak var owner: MainWindow?
+    weak var mainWin: MainWindow?
     var dest = ""
     let pathLbl = label("", size: 13)
     let byDate = NSButton(checkboxWithTitle: T("by_date"), target: nil, action: nil)
@@ -980,8 +980,8 @@ final class SettingsWindow: NSWindowController {
     let lang = NSPopUpButton(frame: .zero, pullsDown: false)
     let theme = NSPopUpButton(frame: .zero, pullsDown: false)
 
-    init(owner: MainWindow) {
-        self.owner = owner
+    init(mainWin: MainWindow) {
+        self.mainWin = mainWin
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 300), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         w.title = T("general")
         super.init(window: w)
@@ -1036,7 +1036,7 @@ final class SettingsWindow: NSWindowController {
     func load() {
         lang.selectItem(at: LANG == "it" ? 0 : 1)
         theme.selectItem(at: ["system", "light", "dark"].firstIndex(of: AppDelegate.theme) ?? 0)
-        owner?.engine.get("/api/state") { st in
+        mainWin?.engine.get("/api/state") { st in
             let s = (st["settings"] as? [String: Any]) ?? [:]
             self.dest = (st["dest"] as? String) ?? (s["dest"] as? String) ?? ""
             self.pathLbl.stringValue = nice(self.dest)
@@ -1046,7 +1046,7 @@ final class SettingsWindow: NSWindowController {
     }
 
     @objc func save() {
-        owner?.engine.post("/api/dest-settings", ["dest": dest, "by_date": byDate.state == .on, "split_type": split.state == .on])
+        mainWin?.engine.post("/api/dest-settings", ["dest": dest, "by_date": byDate.state == .on, "split_type": split.state == .on])
     }
 
     @objc func pick() {
@@ -1061,7 +1061,7 @@ final class SettingsWindow: NSWindowController {
         }
     }
 
-    @objc func onLang() { owner?.js("lang", lang.indexOfSelectedItem == 0 ? "it" : "en") }
+    @objc func onLang() { mainWin?.js("lang", lang.indexOfSelectedItem == 0 ? "it" : "en") }
     @objc func onTheme() { AppDelegate.setTheme(["system", "light", "dark"][max(0, theme.indexOfSelectedItem)]) }
 }
 
@@ -1110,7 +1110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func buildMenu() {
         let bar = NSMenu()
-        func sub(_ title: String, _ items: [NSMenuItem]) -> NSMenu {
+        @discardableResult func sub(_ title: String, _ items: [NSMenuItem]) -> NSMenu {
             let m = NSMenu(title: title)
             items.forEach { m.addItem($0) }
             let i = NSMenuItem(title: title, action: nil, keyEquivalent: "")
@@ -1176,7 +1176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.orderFrontStandardAboutPanel(options: [.credits: credits, .applicationName: "Provino"])
     }
     @objc func openSettings() {
-        if settings == nil { settings = SettingsWindow(owner: main) } else { settings?.load() }
+        if settings == nil { settings = SettingsWindow(mainWin: main) } else { settings?.load() }
         settings?.window?.center()
         settings?.showWindow(nil)
     }
