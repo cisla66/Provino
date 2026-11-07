@@ -228,6 +228,9 @@ def helper_path(base_dir, log):
     """Compila l'aiutante Swift se serve e ritorna il percorso dell'eseguibile."""
     if sys.platform != "darwin":
         raise UsbError("Il collegamento via cavo dentro l'app funziona solo su macOS.")
+    pre = os.environ.get("PROVINO_USB_HELPER")   # app per Mac: aiutante gia' compilato dentro Provino.app
+    if pre and os.access(pre, os.X_OK):
+        return pre
     bindir = os.path.join(base_dir, ".provino_bin")
     old = os.path.join(base_dir, ".fujiwifi_bin")   # nome usato fino a FujiWiFi 2.8
     if not os.path.isdir(bindir) and os.path.isdir(old):

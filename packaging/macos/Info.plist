@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>Provino</string>
+  <key>CFBundleDisplayName</key><string>Provino</string>
+  <key>CFBundleIdentifier</key><string>io.github.provino.Provino</string>
+  <key>CFBundleExecutable</key><string>Provino</string>
+  <key>CFBundleIconFile</key><string>Provino</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>@VERSION@</string>
+  <key>CFBundleVersion</key><string>@BUILD@</string>
+  <key>CFBundleDevelopmentRegion</key><string>it</string>
+  <key>CFBundleLocalizations</key><array><string>it</string><string>en</string></array>
+  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSApplicationCategoryType</key><string>public.app-category.photography</string>
+  <key>NSHighResolutionCapable</key><true/>
+  <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+  <key>NSHumanReadableCopyright</key><string>© Marco Cislaghi · MIT</string>
+  <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+  <key>NSLocalNetworkUsageDescription</key><string>Provino si collega alla fotocamera via Wi-Fi per scaricare le foto. / Provino connects to the camera over Wi-Fi to download photos.</string>
+  <key>NSRemovableVolumesUsageDescription</key><string>Provino legge le foto dalla scheda nel lettore (solo lettura). / Provino reads photos from the card in the reader (read-only).</string>
+  <key>NSDesktopFolderUsageDescription</key><string>Per salvare le foto nella cartella che hai scelto. / To save photos in the folder you chose.</string>
+  <key>NSDocumentsFolderUsageDescription</key><string>Per salvare le foto nella cartella che hai scelto. / To save photos in the folder you chose.</string>
+  <key>NSDownloadsFolderUsageDescription</key><string>Per salvare le foto nella cartella che hai scelto. / To save photos in the folder you chose.</string>
+  <key>NSNetworkVolumesUsageDescription</key><string>Per salvare le foto nella cartella che hai scelto. / To save photos in the folder you chose.</string>
+  <key>NSAppleEventsUsageDescription</key><string>Per aprire la cartella dei download nel Finder. / To open the downloads folder in Finder.</string>
+</dict>
+</plist>

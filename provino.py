@@ -67,7 +67,7 @@ os.makedirs(DATA, exist_ok=True)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc17"   # lettore di schede SD, META affiancato, filtro che non toglie le scelte
+APP_VERSION = "1.0.0-rc18"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
@@ -1700,6 +1700,14 @@ def main():
         app.choose("X-Pro3", "home")
     url = "http://127.0.0.1:%d/" % port
     log.info("Interfaccia: %s" % url)
+    pf = os.environ.get("PROVINO_PORT_FILE")   # app per Mac: la finestra legge qui la porta
+    if pf:
+        try:
+            with open(pf + ".tmp", "w") as fh:
+                fh.write(str(port))
+            os.replace(pf + ".tmp", pf)
+        except OSError as e:
+            log.info("Non riesco a scrivere la porta in %s: %s" % (pf, e))
     log.info("Per chiudere: chiudi questa finestra del Terminale (o premi Ctrl+C).")
     if not args.no_browser:
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()

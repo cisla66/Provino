@@ -1,0 +1,81 @@
+name: App per Mac
+
+# Costruisce Provino.app (Intel + Apple Silicon) e il .dmg, poi apre l'app su un Mac virtuale
+# con una scheda finta (foto generate, nessuna foto vera) e fa le schermate della finestra.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "*.py"
+      - "cameras.json"
+      - "web/**"
+      - "assets/icon/**"
+      - "packaging/macos/**"
+      - ".github/workflows/build-macos.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Costruisci Provino.app e il dmg
+        run: sh packaging/macos/build-app.sh
+
+      - name: Scheda finta per la prova
+        run: |
+          hdiutil create -size 120m -fs "MS-DOS FAT32" -volname PROVA -layout MBRSPUD card >/dev/null
+          hdiutil attach card.dmg
+          mkdir -p /Volumes/PROVA/DCIM/100_FUJI
+          python3 -m venv /tmp/v && /tmp/v/bin/pip install -q pillow
+          /tmp/v/bin/python - <<'PY'
+          import os, random
+          from PIL import Image, ImageDraw
+          d = "/Volumes/PROVA/DCIM/100_FUJI"
+          random.seed(3)
+          for i in range(10):
+              im = Image.new("RGB", (1800, 1200), (random.randint(40, 200), random.randint(40, 200), random.randint(40, 200)))
+              dr = ImageDraw.Draw(im)
+              for _ in range(14):
+                  x, y = random.randint(0, 1700), random.randint(0, 1100)
+                  dr.ellipse((x, y, x + random.randint(80, 500), y + random.randint(80, 400)),
+                             fill=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+              ex = Image.Exif()
+              ex[0x010F] = "FUJIFILM"; ex[0x0110] = "X-T5"; ex[0x0132] = "2026:11:0%d 1%d:20:00" % (1 + i // 4, i)
+              ex.get_ifd(0x8769)[0x9003] = "2026:11:0%d 1%d:20:00" % (1 + i // 4, i)
+              im.save(os.path.join(d, "DSCF%04d.JPG" % (100 + i)), quality=85, exif=ex)
+          print(sorted(os.listdir(d)))
+          PY
+
+      - name: Prova - l'app si apre e scarica
+        run: |
+          mkdir -p shots test-data
+          export PROVINO_SHOTS=$PWD/shots PROVINO_DATA=$PWD/test-data PROVINO_DEST=$HOME/Pictures/Provino
+          ./dist/Provino.app/Contents/MacOS/Provino > app-stdout.txt 2>&1 &
+          for i in $(seq 1 80); do sleep 1; kill -0 $! 2>/dev/null || break; done
+          kill $! 2>/dev/null || true
+          ls -la shots dist
+          cat app-stdout.txt || true
+          cat test-data/log/*.txt || true
+          ls -R $HOME/Pictures/Provino || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Provino-mac
+          path: dist/*.dmg
+          retention-days: 14
+
+      - name: Schermate nel ramo "ci-mac"
+        if: always()
+        run: |
+          mkdir -p /tmp/ci && cp shots/*.png /tmp/ci/ 2>/dev/null || true
+          cp app-stdout.txt test-data/log/*.txt /tmp/ci/ 2>/dev/null || true
+          ls -la dist > /tmp/ci/dist.txt 2>/dev/null || true
+          cd /tmp/ci && git init -q && git checkout -q -b ci-mac
+          git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -q -m "CI ${GITHUB_SHA::7}" || exit 0
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-mac
