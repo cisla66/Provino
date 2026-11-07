@@ -3,9 +3,10 @@ name: AppImage (Linux)
 # Costruisce l'AppImage di prova e controlla che la finestra si apra (screenshot su un Linux virtuale).
 on:
   workflow_dispatch:
+  release:
+    types: [published]
   push:
     branches: [main]
-    tags: ["v*"]
     paths:
       - "*.py"
       - "cameras.json"
@@ -84,12 +85,11 @@ jobs:
           cat test-data/Provino/log/*.txt || true
           test -s dist/finestra.png
 
-      - name: Versione di prova su GitHub (solo per i tag v*)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Versione di prova su GitHub (solo quando pubblico una versione)
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: true
-          name: Provino ${{ github.ref_name }} (prova)
+          tag_name: ${{ github.event.release.tag_name }}
           files: dist/*.AppImage
 
       - uses: actions/upload-artifact@v4

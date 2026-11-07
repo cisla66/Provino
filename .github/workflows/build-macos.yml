@@ -4,9 +4,10 @@ name: App per Mac
 # con una scheda finta (foto generate, nessuna foto vera) e fa le schermate della finestra.
 on:
   workflow_dispatch:
+  release:
+    types: [published]
   push:
     branches: [main]
-    tags: ["v*"]
     paths:
       - "*.py"
       - "cameras.json"
@@ -64,12 +65,11 @@ jobs:
           cat test-data/log/*.txt || true
           ls -R $HOME/Pictures/Provino || true
 
-      - name: Versione di prova su GitHub (solo per i tag v*)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Versione di prova su GitHub (solo quando pubblico una versione)
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: true
-          name: Provino ${{ github.ref_name }} (prova)
+          tag_name: ${{ github.event.release.tag_name }}
           files: dist/*.dmg
 
       - uses: actions/upload-artifact@v4
