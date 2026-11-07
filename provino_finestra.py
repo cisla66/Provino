@@ -104,6 +104,12 @@ class ProvinoApp(Adw.Application):
         ucm.connect("script-message-received::provino", self.on_page_state)
         view = WebKit.WebView(user_content_manager=ucm)
         self.view = view
+        # la pagina parla la lingua del sistema (come le app GNOME), se l'utente non ne ha scelta una
+        try:
+            sys_lang = (GLib.get_language_names() or ["it"])[0].split(".")[0].replace("_", "-")
+            view.get_context().set_preferred_languages([sys_lang, "en"])
+        except Exception:  # noqa: BLE001
+            pass
         st = view.get_settings()
         st.set_enable_developer_extras(bool(self.args.verbose))
         st.set_javascript_can_access_clipboard(True)   # "Copia ricetta"
@@ -138,6 +144,7 @@ class ProvinoApp(Adw.Application):
         menu_btn = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=main_menu, primary=True,
                                   tooltip_text=self.t("menu"))
         bar.pack_end(menu_btn)
+        self.menu_btn = menu_btn
 
         self.panel_btn = Gtk.ToggleButton(icon_name="sidebar-show-right-symbolic", tooltip_text=self.t("panel"))
         self.panel_btn.connect("toggled", self.on_panel)
