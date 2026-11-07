@@ -296,6 +296,8 @@ class App:
                 "choice": self.choice,
                 "settings": self.settings,
                 "card": os.path.basename((getattr(self.usb, "vol", None) or "").rstrip("/")) if self.choice.get("method") == "card" else "",
+                "card_models": list(getattr(self.usb, "models", []) or []) if self.choice.get("method") == "card" else [],
+                "heif_preview": self._heif_ok(),
             }
 
     # ------------------------------------------------------------ collegamento
@@ -359,6 +361,17 @@ class App:
             self.set_status("cable", "usb_failed", detail=e)
         finally:
             self.usb_starting = False
+
+    _heif_cache = None
+
+    def _heif_ok(self):
+        if App._heif_cache is None:
+            try:
+                import fuji_sd
+                App._heif_cache = fuji_sd.can_heif()
+            except Exception:  # noqa: BLE001
+                App._heif_cache = False
+        return App._heif_cache
 
     # ------------------------------------------------------------ lettore di schede (macOS e Linux)
     def _connect_card(self):
@@ -656,7 +669,7 @@ class App:
             d = os.path.join(d, "%s-%s-%s" % (dt[:4], dt[4:6], dt[6:8]))
         if split_type:
             k = f.get("kind") or "ALTRI"
-            d = os.path.join(d, "VIDEO" if k in VIDEO_KINDS else k)
+            d = os.path.join(d, "VIDEO" if k in VIDEO_KINDS else ("HEIF" if k == "HIF" else k))
         return d
 
     def refresh_on_mac(self):
@@ -791,14 +804,14 @@ class App:
     def shot_meta(self, f):
         if f["base"] in self.meta:
             return self.meta[f["base"]]
-        if not any(x["kind"] in ("JPG", "RAF") for x in self.files if x["base"] == f["base"]):
+        if not any(x["kind"] in ("JPG", "RAF", "HIF") for x in self.files if x["base"] == f["base"]):
             return None   # video: nessuna ricetta
         if self.meta_tries.get(f["base"], 0) >= 3:
             return None
         self.meta_tries[f["base"]] = self.meta_tries.get(f["base"], 0) + 1
         group = {x["kind"]: x for x in self.files if x["base"] == f["base"]}
-        src = next((x for x in (group.get("JPG"), group.get("RAF")) if x and x.get("on_mac")), None) \
-            or group.get("JPG") or group.get("RAF") or f
+        src = next((x for x in (group.get("JPG"), group.get("RAF"), group.get("HIF")) if x and x.get("on_mac")), None) \
+            or group.get("JPG") or group.get("RAF") or group.get("HIF") or f
         if self.usb is None and not src.get("on_mac") and \
                 (self.current or self.queue or not self.previews_ok or self.cam is None):
             self.meta_tries[f["base"]] -= 1   # via Wi-Fi una cosa alla volta: riprovo piu' tardi
@@ -842,7 +855,8 @@ class App:
                 b = f["base"]
                 if f["kind"] in VIDEO_KINDS:
                     continue   # la fotocamera non da' anteprime dei video (ImageCaptureCore: errore -21000)
-                if b not in seen or (f["kind"] == "JPG" and seen[b]["kind"] != "JPG"):
+                rank = {"JPG": 0, "RAF": 1, "HIF": 2}   # l'anteprima piu' leggera: JPG, poi RAF, poi HEIF
+                if b not in seen or rank.get(f["kind"], 3) < rank.get(seen[b]["kind"], 3):
                     seen[b] = f
             order = sorted(seen.values(), key=lambda f: f["date"], reverse=True)
             missing = 0
@@ -1023,14 +1037,14 @@ class App:
         if f is None:
             return None
         group = {x["kind"]: x for x in self.files if x["base"] == f["base"]}
-        jpg, raf = group.get("JPG"), group.get("RAF")
-        if not jpg and not raf:
+        jpg, raf, hif = group.get("JPG"), group.get("RAF"), group.get("HIF")
+        if not jpg and not raf and not hif:
             return None   # video: niente foto grande
         for x in (jpg, raf):
             if x and x.get("on_mac") and os.path.exists(os.path.join(self.dir_for(x), x["name"])):
                 return x
         if self.usb is not None:
-            return jpg or raf
+            return jpg or raf or (hif if hasattr(self.usb, "heif_jpeg") else None)
         return raf or jpg
 
     @staticmethod
@@ -1087,6 +1101,8 @@ class App:
                     return fh.read(ln)
                 return self._jpeg_of_raf(rd)
         if self.usb is not None:
+            if f["kind"] == "HIF":
+                return self.usb.heif_jpeg(f["handle"], 2560)   # HEIF -> JPEG con gli strumenti del sistema
             def rd(off, ln):
                 return self.usb.read(f["handle"], off, ln, timeout=60)
             if is_raf:

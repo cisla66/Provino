@@ -62,7 +62,7 @@ function sdIcon(n){
   return `<span class="sd" title="${esc(t("s.slot")+" "+t("slot.n",{n}))}" aria-label="SD ${n}"><svg viewBox="0 0 14 18" aria-hidden="true"><path d="M1.5 1h7.5l3.5 3.5v11.5a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1z"/></svg><b>${n}</b></span>`;
 }
 function slotOf(g){ const sl=[...new Set(Object.values(g.files).map(f=>f.slot).filter(n=>n===1||n===2))].sort(); return sl.join("+"); }
-function isVideo(g){ return !g.files.JPG && !g.files.RAF; }
+function isVideo(g){ return !g.files.JPG && !g.files.RAF && !g.files.HIF; }
 function wanted(g){
   if(filmFilter && ((META[g.base]||{}).film||"") !== filmFilter) return [];
   return Object.values(g.files).filter(f => filter==="both" || f.kind===filter || (filter==="VIDEO" && VIDEO.includes(f.kind)));
@@ -117,7 +117,9 @@ function build(){
   if(cm.serial) parts.push(t("meta.serial",{v:cm.serial})); else if(cm.internal_serial) parts.push(t("meta.internal",{v:cm.internal_serial}));
   const isCardSrc = (S.choice||{}).method==="card";
   // lettore di schede: il titolo e' la sorgente; la fotocamera che ha scattato va nella riga accanto
-  if(isCardSrc) parts.unshift(t("card.from",{cam:S.camera, v:S.card||""}));
+  const models = S.card_models||[];
+  if(isCardSrc && models.length>1){ parts.length = 0; parts.push(t("card.fromN",{v:S.card||"", n:models.length, list:models.join(", ")})); }
+  else if(isCardSrc) parts.unshift(t("card.from",{cam:S.camera, v:S.card||""}));
   $("#camMeta").textContent = parts.join(", ");
   $("#camMeta").title = cm.from ? t("meta.from",{f:cm.from}) : "";
   $("#camName").textContent = isCardSrc ? t("method.card") : S.camera;
@@ -136,8 +138,10 @@ function build(){
     if(day!==lastDay){ html += `<h2 class="day">${day}</h2>`; lastDay = day; }
     const kinds = ["JPG","RAF"].filter(k=>g.files[k]).concat(Object.keys(g.files).filter(k=>k!=="JPG"&&k!=="RAF"));
     const vid = isVideo(g);
-    html += `<div class="frame${vid?" video":""}" data-b="${esc(g.base)}">
-      <div class="pic"><button class="photo" data-b="${esc(g.base)}" aria-label="${esc(t("select.photo",{name:g.base}))}">${vid? `<span class="vid" aria-hidden="true">▶</span><span class="vidl">${t("video")}</span>` : `<span class="wait"></span>`}</button>
+    // solo HEIF e il sistema non sa mostrarlo (Linux senza libheif): segnaposto invece della rotella infinita
+    const heifOnly = !vid && !g.files.JPG && !g.files.RAF && g.files.HIF && !S.heif_preview;
+    html += `<div class="frame${vid||heifOnly?" video":""}" data-b="${esc(g.base)}">
+      <div class="pic"><button class="photo" data-b="${esc(g.base)}" aria-label="${esc(t("select.photo",{name:g.base}))}">${vid? `<span class="vid" aria-hidden="true">▶</span><span class="vidl">${t("video")}</span>` : heifOnly? `<span class="vid" aria-hidden="true">HEIF</span><span class="vidl">${t("heif.nopreview")}</span>` : `<span class="wait"></span>`}</button>
       <svg class="mark" viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="94" height="64" rx="4" transform="rotate(-.6 50 35)"/></svg></div>
       <div class="cap"><span class="n">${esc(g.base.replace(/^_/,""))}</span><span class="t">${slotOf(g)? slotOf(g).split("+").map(n=>sdIcon(n)).join("")+" " : ""}${fmtTime(g.date)}</span><span class="film"></span></div>
       <div class="kinds">${kinds.map(k=>`<button class="kind" data-h="${g.files[k].handle}" aria-pressed="false">${k}${g.files[k].size? " "+fmtSize(g.files[k].size):""}</button>`).join("")}${vid? "" : `<button class="kind meta" data-meta="${esc(g.base)}">META</button>`}</div>
@@ -312,7 +316,7 @@ function askDest(hs){
     const dt = (sample.date||"").slice(0,8);
     const byDate = d.querySelector("input[name=org]:checked").value==="date";
     if(byDate && dt.length===8) parts.push(`${dt.slice(0,4)}-${dt.slice(4,6)}-${dt.slice(6,8)}`);
-    if($("#destSplit").checked) parts.push(sample.kind||"RAF");
+    if($("#destSplit").checked) parts.push(sample.kind==="HIF" ? "HEIF" : VIDEO.includes(sample.kind) ? "VIDEO" : (sample.kind||"RAF"));
     parts.push(sample.name||"DSCF0001.RAF");
     let txt = parts.join("/");
     if(vid && sample.handle!==vid.handle){
@@ -934,6 +938,7 @@ function splitLabel(hs){
   const kinds = [];
   if(sel.some(f=>f.kind==="RAF")) kinds.push(["RAF", t("dest.kRAF")]);
   if(sel.some(f=>f.kind==="JPG")) kinds.push(["JPG", t("dest.kJPG")]);
+  if(sel.some(f=>f.kind==="HIF")) kinds.push(["HEIF", "HEIF"]);
   if(sel.some(f=>VIDEO.includes(f.kind))) kinds.push(["VIDEO", t("dest.kVIDEO")]);
   if(!kinds.length) return t("dest.split");
   const join = a => a.length<2 ? a.join("") : a.slice(0,-1).join(", ") + t("dest.and") + a[a.length-1];

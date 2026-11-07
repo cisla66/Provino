@@ -12,16 +12,19 @@ comandi -> metodi (thumbnail, read, download, stop).
 
 Provato il 6 nov 2026 con una scheda della X-Pro3 (DCIM/130_FUJI, nomi _DSF0153.*) sul Mac.
 """
-import glob
 import os
 import re
+import shutil
 import struct
+import subprocess
 import sys
+import tempfile
 import threading
 import time
 
 READ_CHUNK = 1 << 20
 MEDIA = (".JPG", ".JPEG", ".RAF", ".MOV", ".MP4", ".HIF")
+PHOTO = (".JPG", ".JPEG", ".RAF", ".HIF")
 
 
 class CardError(Exception):
@@ -74,6 +77,21 @@ def find_cards():
     return out
 
 
+def can_heif():
+    """Il sistema sa trasformare un HEIF in JPEG? (sips sul Mac; su Linux GdkPixbuf con il modulo heif o heif-convert)"""
+    if sys.platform == "darwin":
+        return os.path.exists("/usr/bin/sips")
+    try:
+        import gi
+        gi.require_version("GdkPixbuf", "2.0")
+        from gi.repository import GdkPixbuf
+        if any("heif" in (fmt.get_name() or "").lower() for fmt in GdkPixbuf.Pixbuf.get_formats()):
+            return True
+    except Exception:  # noqa: BLE001
+        pass
+    return bool(shutil.which("heif-convert"))
+
+
 class CardSession:
     def __init__(self, base_dir, camera_hint, log, on_event, dest_dir=""):
         self.base_dir = base_dir
@@ -86,6 +104,8 @@ class CardSession:
         self.stopping = False
         self.lock = threading.RLock()
         self.camera_name = ""
+        self.models = []         # modelli trovati sulla scheda (una scheda puo' avere foto di piu' fotocamere)
+        self.heif_cache = {}     # (id, lato) -> JPEG
 
     # ------------------------------------------------------------ avvio e controllo
     def start(self):
@@ -149,17 +169,25 @@ class CardSession:
     def _publish(self, vol):
         entries = self._walk(vol)
         label = os.path.basename(vol.rstrip("/"))
-        model = ""
+        heads = {}
+        models = []
         for folder, n, p in entries:
-            if n.upper().endswith((".JPG", ".JPEG", ".RAF")):
-                model = _exif_model(self._head(p)) or ""
-                if model:
-                    break
+            if n.upper().endswith(PHOTO):
+                try:
+                    heads[p] = self._head(p)
+                except OSError:
+                    continue
+                m = _exif_model(heads[p])
+                if m and m not in models:
+                    models.append(m)
+        model = models[0] if len(models) == 1 else ""
         with self.lock:
             self.vol = vol
             self.files = {}
+            self.models = models
+            self.heif_cache = {}
             self.camera_name = model or ("Scheda %s" % label)
-        self.log.info("Scheda trovata: %s (%s), %d file" % (vol, model or "modello sconosciuto", len(entries)))
+        self.log.info("Scheda trovata: %s (%s), %d file" % (vol, ", ".join(models) or "modello sconosciuto", len(entries)))
         self._emit({"event": "device", "name": self.camera_name})
         self._emit({"event": "session", "name": self.camera_name})
         for folder, n, p in entries:
@@ -167,12 +195,7 @@ class CardSession:
                 st = os.stat(p)
             except OSError:
                 continue
-            date = None
-            if n.upper().endswith((".JPG", ".JPEG", ".RAF")):
-                try:
-                    date = _exif_date(self._head(p))
-                except OSError:
-                    date = None
+            date = _exif_date(heads[p]) if p in heads else None
             if not date:
                 date = time.strftime("%Y%m%dT%H%M%S", time.localtime(st.st_mtime))
             with self.lock:
@@ -188,10 +211,63 @@ class CardSession:
         with self.lock:
             return self.files.get(fid)
 
+    def heif_jpeg(self, fid, side):
+        """HEIF (.HIF della X100VI) -> JPEG con il lato lungo `side`, usando gli strumenti del sistema:
+        sips sul Mac (sempre presente); su Linux heif-convert o GdkPixbuf, se installati. Altrimenti None."""
+        f = self._get(fid)
+        if not f:
+            return None
+        key = (fid, side)
+        if key in self.heif_cache:
+            return self.heif_cache[key]
+        src, data = f[0], None
+        tmpdir = tempfile.mkdtemp(prefix="provino_heif_")
+        out = os.path.join(tmpdir, "x.jpg")
+        try:
+            if sys.platform == "darwin" and os.path.exists("/usr/bin/sips"):
+                subprocess.run(["/usr/bin/sips", "-s", "format", "jpeg", "-s", "formatOptions", "82",
+                                "-Z", str(side), src, "--out", out],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+            else:
+                try:
+                    import gi
+                    gi.require_version("GdkPixbuf", "2.0")
+                    from gi.repository import GdkPixbuf
+                    pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(src, side, side, True)
+                    pb.savev(out, "jpeg", ["quality"], ["82"])
+                except Exception:  # noqa: BLE001
+                    tool = shutil.which("heif-convert")
+                    if tool and side <= 600 and shutil.which("heif-thumbnailer"):
+                        png = os.path.join(tmpdir, "x.png")
+                        subprocess.run(["heif-thumbnailer", "-s", str(side), src, png],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+                        out = png
+                    elif tool:
+                        subprocess.run([tool, "-q", "82", src, out],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+            if os.path.exists(out):
+                with open(out, "rb") as fh:
+                    data = fh.read()
+                if not data.startswith(b"\xff\xd8"):
+                    data = None   # (PNG da heif-thumbnailer: il browser lo mostra comunque come miniatura)
+                    with open(out, "rb") as fh:
+                        png = fh.read()
+                    if png.startswith(b"\x89PNG") and side <= 600:
+                        data = png
+        except (OSError, subprocess.SubprocessError) as e:
+            self.log.debug("HEIF %s: %r" % (f[1], e))
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+        if data:
+            self.heif_cache[key] = data
+        return data
+
     def thumbnail(self, fid, timeout=20):
         f = self._get(fid)
         if not f:
             return None
+        if f[1].upper().endswith(".HIF"):
+            return self.heif_jpeg(fid, 480)
         import fuji_wifi as fw
         try:
             with open(f[0], "rb") as fh:

@@ -90,7 +90,14 @@ def _val(entry, en, index=0):
 
 def parse(buf):
     """Metadati da un JPEG (anche parziale). Restituisce {} se non trova l'EXIF."""
-    i = buf.find(b"Exif\0\0")
+    # il primo "Exif\0\0" valido: nei file HEIF (.HIF) la parola compare prima anche come nome di un blocco
+    i = -1
+    j = buf.find(b"Exif\0\0")
+    while j >= 0:
+        if buf[j + 6:j + 10] in (b"II*\0", b"MM\0*"):
+            i = j
+            break
+        j = buf.find(b"Exif\0\0", j + 6)
     if i < 0:
         return {}
     t = buf[i + 6:]
