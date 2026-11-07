@@ -27,7 +27,7 @@ let TXT: [String: [String: String]] = [
         "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle.", "split": "Separa per tipo",
         "split_sub": "Sottocartelle {k}.", "where": "Dove finiscono (in grassetto le cartelle nuove):", "cancel": "Annulla",
         "choose_title": "Scegli la cartella", "and": "e", "transfers": "Download",
-        "general": "Generale", "p_dl_sub": "Valgono come proposta: prima di ogni download puoi cambiarle.",
+        "general": "Generale", "settingsTitle": "Impostazioni", "p_dl_sub": "Valgono come proposta: prima di ogni download puoi cambiarle.",
         "p_lang": "Lingua:", "p_theme": "Aspetto:", "system": "Automatico", "light": "Chiaro", "dark": "Scuro",
         "p_safe": "Provino legge soltanto: non cancella, non modifica e non formatta mai nulla sulla scheda.",
         "comments": "Progetto indipendente, non affiliato a FUJIFILM Corporation.",
@@ -53,7 +53,7 @@ let TXT: [String: [String: String]] = [
         "by_date_n": "The picked photos span {n} days: {n} folders.", "split": "Split by type",
         "split_sub": "Subfolders {k}.", "where": "Where they go (new folders in bold):", "cancel": "Cancel",
         "choose_title": "Choose the folder", "and": "and", "transfers": "Downloads",
-        "general": "General", "p_dl_sub": "These are suggestions: you can change them before each download.",
+        "general": "General", "settingsTitle": "Settings", "p_dl_sub": "These are suggestions: you can change them before each download.",
         "p_lang": "Language:", "p_theme": "Appearance:", "system": "Automatic", "light": "Light", "dark": "Dark",
         "p_safe": "Provino only reads: it never deletes, changes or formats anything on the card.",
         "comments": "Independent project, not affiliated with FUJIFILM Corporation.",
@@ -288,7 +288,10 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
 
     required init?(coder: NSCoder) { fatalError() }
 
+    override func windowDidLoad() { super.windowDidLoad() }
+
     func load(port: Int) {
+        setHidden(.transfer, true)
         web.load(URLRequest(url: URL(string: "http://127.0.0.1:\(port)/")!))
     }
 
@@ -389,6 +392,13 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         window?.toolbar?.items.first { $0.itemIdentifier == id }
     }
 
+    /// Nasconde davvero una voce della barra (da macOS 15 anche il suo fondo "vetro").
+    func setHidden(_ id: NSToolbarItem.Identifier, _ hidden: Bool) {
+        guard let it = item(id) else { return }
+        if #available(macOS 15.0, *) { it.isHidden = hidden }
+        it.view?.isHidden = hidden
+    }
+
     // MARK: dalla pagina alla finestra
     func userContentController(_ ucc: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let s = message.body as? String, let d = s.data(using: .utf8),
@@ -435,7 +445,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         panelBtn.state = ((st["split"] as? Bool) ?? false) ? .on : .off
         camItem.isEnabled = (st["canChange"] as? Bool) ?? false
         for id: NSToolbarItem.Identifier in [.show, .films, .pick, .go, .panel] {
-            item(id)?.view?.isHidden = !ready
+            setHidden(id, !ready)
             item(id)?.isEnabled = ready
         }
         pickItem.isEnabled = ready
@@ -453,7 +463,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
             filmPop.removeAllItems()
             filmPop.addItems(withTitles: films.map { $0.count > 1 ? $0[1] : $0[0] })
         }
-        filmPop.isHidden = films.count <= 1
+        setHidden(.films, films.count <= 1)
         let cur = (st["film"] as? String) ?? ""
         if let i = filmValues.firstIndex(of: cur), filmPop.indexOfSelectedItem != i { filmPop.selectItem(at: i) }
         let n = (st["picked"] as? Int) ?? 0
@@ -527,11 +537,11 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         tr = st
         let pct = (st["pct"] as? Double) ?? Double((st["pct"] as? Int) ?? 0)
         if mode == "none" {
-            ringBox.isHidden = true
+            setHidden(.transfer, true)
             trPopover?.close()
             return
         }
-        ringBox.isHidden = false
+        setHidden(.transfer, false)
         switch mode {
         case "run":
             ring.isHidden = false
@@ -712,13 +722,20 @@ final class DestSheet: NSObject {
         let wl = label(T("where"), size: 12, color: .secondaryLabelColor)
         preview.isSelectable = true
         preview.preferredMaxLayoutWidth = 470
-        let box = NSBox()
-        box.boxType = .custom
-        box.cornerRadius = 6
-        box.borderColor = .separatorColor
-        box.fillColor = .textBackgroundColor
-        box.contentViewMargins = NSSize(width: 10, height: 8)
-        box.contentView = preview
+        let box = NSView()
+        box.wantsLayer = true
+        box.layer?.cornerRadius = 6
+        box.layer?.borderWidth = 1
+        box.layer?.borderColor = NSColor.separatorColor.cgColor
+        box.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+        preview.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(preview)
+        NSLayoutConstraint.activate([
+            preview.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 10),
+            preview.trailingAnchor.constraint(lessThanOrEqualTo: box.trailingAnchor, constant: -10),
+            preview.topAnchor.constraint(equalTo: box.topAnchor, constant: 8),
+            preview.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -8),
+        ])
 
         let cancel = NSButton(title: T("cancel"), target: self, action: #selector(onCancel))
         cancel.keyEquivalent = "\u{1b}"
@@ -869,8 +886,8 @@ final class ConflictSheet: NSObject {
             }
             radios[h] = rs
             choices[h] = (def, field)
-            let o = NSStackView(views: opts)
-            o.spacing = 16
+            let o = NSStackView(views: opts + [NSView()])
+            o.spacing = 18
             let block = NSStackView(views: [head, why, o])
             block.orientation = .vertical
             block.alignment = .leading
@@ -983,7 +1000,7 @@ final class SettingsWindow: NSWindowController {
     init(mainWin: MainWindow) {
         self.mainWin = mainWin
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 300), styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        w.title = T("general")
+        w.title = T("settingsTitle")
         super.init(window: w)
         build()
         load()
@@ -998,7 +1015,9 @@ final class SettingsWindow: NSWindowController {
         frow.spacing = 8
         byDate.target = self; byDate.action = #selector(save)
         split.target = self; split.action = #selector(save)
-        let dlBox = NSStackView(views: [frow, byDate, split, label(T("p_dl_sub"), size: 11, color: .secondaryLabelColor, wrap: true)])
+        let note = label(T("p_dl_sub"), size: 11, color: .secondaryLabelColor, wrap: true)
+        note.preferredMaxLayoutWidth = 380
+        let dlBox = NSStackView(views: [frow, byDate, split, note])
         dlBox.orientation = .vertical
         dlBox.alignment = .leading
         dlBox.spacing = 8
@@ -1008,6 +1027,9 @@ final class SettingsWindow: NSWindowController {
         theme.addItems(withTitles: [T("system"), T("light"), T("dark")])
         theme.target = self; theme.action = #selector(onTheme)
         let safe = label(T("p_safe"), size: 11, color: .secondaryLabelColor, wrap: true)
+        safe.preferredMaxLayoutWidth = 380
+        safe.translatesAutoresizingMaskIntoConstraints = false
+        safe.widthAnchor.constraint(equalToConstant: 380).isActive = true
 
         let g = NSGridView(views: [
             [label(T("folder"), size: 13), dlBox],

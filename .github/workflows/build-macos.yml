@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p shots test-data
           export PROVINO_SHOTS=$PWD/shots PROVINO_DATA=$PWD/test-data PROVINO_DEST=$HOME/Pictures/Provino
-          ./dist/Provino.app/Contents/MacOS/Provino > app-stdout.txt 2>&1 &
+          ./dist/Provino.app/Contents/MacOS/Provino -AppleLanguages "(it)" -AppleLocale it_IT > app-stdout.txt 2>&1 &
           for i in $(seq 1 80); do sleep 1; kill -0 $! 2>/dev/null || break; done
           kill $! 2>/dev/null || true
           ls -la shots dist

@@ -277,6 +277,10 @@ class CardSession:
                     fh.seek(loc[0])
                     head = fh.read(min(0x80000, loc[1]))
             th, _ = fw.exif_thumbnail(head)
+            if not th and not loc and f[1].upper().endswith((".JPG", ".JPEG")) and os.path.getsize(f[0]) <= 4 << 20:
+                # JPG senza miniatura (es. modificato al computer): la pagina rimpicciolisce la foto intera
+                with open(f[0], "rb") as fh:
+                    th = fh.read()
             return th
         except (OSError, struct.error) as e:
             self.log.debug("scheda miniatura %s: %r" % (f[1], e))
