@@ -57,7 +57,7 @@ Release candidate `1.0.0-rc`; 1.0 will ship as installable apps (`.dmg` for Mac,
 
 **Firmware provati:** X-Pro3 2.00 · X100VI 1.31. Con altre versioni dovrebbe funzionare, ma non è stato provato.
 
-**Lettore di schede:** metti la scheda nel lettore, Provino la trova da solo. È il più veloce e legge le foto di qualsiasi Fujifilm (sempre in sola lettura).
+**Lettore di schede:** metti la scheda nel lettore, Provino la trova da solo. È il più veloce e legge le foto di qualsiasi Fujifilm, anche HEIF (sempre in sola lettura). Ricetta META provata con X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3 e X100VI.
 
 **Cavo:** sulla fotocamera imposta prima la modalità LETTORE SCHEDA USB, poi collega il cavo. Sulla X100VI l'alimentazione USB va su AUTO.
 **Wi-Fi di casa**, la prima volta: MENU/OK › chiave › IMPOSTAZIONI CONNESSIONE › IMP. SALV.AUT. PC › IMPOSTAZIONE MANUALE › SELEZ. LISTA RETI. Provino registra il computer da solo. Per scaricare: PLAY › MENU/OK › menu riproduzione › SALVAT. AUTOM. PC.
@@ -95,7 +95,7 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 
 **Tested firmware:** X-Pro3 2.00 · X100VI 1.31. Other versions should work but haven't been tested.
 
-**Card reader:** put the card in the reader and Provino finds it. It's the fastest and reads photos from any Fujifilm (always read-only).
+**Card reader:** put the card in the reader and Provino finds it. It's the fastest and reads photos from any Fujifilm, HEIF included (always read-only). META recipe tested with the X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3 and X100VI.
 
 **Cable:** on the camera set USB CARD READER mode first, then plug in the cable. On the X100VI set USB power supply to AUTO.
 **Home Wi-Fi**, first time: MENU/OK › wrench › CONNECTION SETTING › PC AUTO SAVE SETTING › MANUAL SETUP › SELECT FROM NETWORK LIST. Provino registers the computer by itself. To download: PLAY › MENU/OK › playback menu › PC AUTO SAVE.
