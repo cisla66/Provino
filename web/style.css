@@ -335,3 +335,36 @@ html.native .frame.sel .photo{outline:3px solid var(--pencil);outline-offset:3px
 html.native .frame.video .vid{color:#fff;opacity:.85}
 html.native .frame.video .vidl{font-size:10px;letter-spacing:.06em;padding:0 12px;text-align:center;color:rgba(255,255,255,.6)}
 html.native .metapane button, html.native .metapane .quiet2{border:0;border-radius:6px;background:var(--fill);color:var(--ink);font-weight:600;padding:6px 12px}
+
+/* =====================================================================================
+   FINESTRA NATIVA MAC (html.native.mac): stessa pagina, carattere e colori di macOS.
+   ===================================================================================== */
+html.native.mac{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+  --board:#ffffff; --board-deep:#f2f2f4; --paper:#ffffff; --ink:rgba(0,0,0,.85); --ink-soft:rgba(0,0,0,.5);
+  --line:rgba(0,0,0,.1); --line2:rgba(0,0,0,.06); --fill:rgba(0,0,0,.05); --sel:#007aff; --on-sel:#fff;
+  --accent:#007aff; --ok-bg:rgba(52,199,89,.15); --ok-ink:#1f7a35; --card:#ffffff; --pencil:#ff3b30;
+  --spin:rgba(0,0,0,.12);
+}
+html.native.mac[data-theme=dark]{
+  --board:#1e1e1e; --board-deep:#2a2a2a; --paper:#323232; --ink:rgba(255,255,255,.88); --ink-soft:rgba(255,255,255,.55);
+  --line:rgba(255,255,255,.12); --line2:rgba(255,255,255,.07); --fill:rgba(255,255,255,.08); --sel:#0a84ff;
+  --accent:#0a84ff; --ok-bg:rgba(48,209,88,.18); --ok-ink:#30d158; --card:#2a2a2a; --pencil:#ff453a; --spin:rgba(255,255,255,.15);
+}
+@media (prefers-color-scheme: dark){
+  html.native.mac:not([data-theme=light]){
+    --board:#1e1e1e; --board-deep:#2a2a2a; --paper:#323232; --ink:rgba(255,255,255,.88); --ink-soft:rgba(255,255,255,.55);
+    --line:rgba(255,255,255,.12); --line2:rgba(255,255,255,.07); --fill:rgba(255,255,255,.08); --sel:#0a84ff;
+    --accent:#0a84ff; --ok-bg:rgba(48,209,88,.18); --ok-ink:#30d158; --card:#2a2a2a; --pencil:#ff453a; --spin:rgba(255,255,255,.15);
+  }
+}
+html.native.mac body{font-size:13px;-webkit-font-smoothing:antialiased}
+html.native.mac .day{font-size:13px;font-weight:600;color:var(--ink-soft);letter-spacing:.01em}
+html.native.mac .photo, html.native.mac .photo img{border-radius:5px}
+html.native.mac .frame.cur::before{border-radius:9px}
+html.native.mac .kind{border-radius:5px;font-weight:500;font-size:11px;padding:2px 8px}
+html.native.mac .kind.meta{font-weight:500}
+html.native.mac .cap .n{font-weight:500}
+html.native.mac .vcap .quiet, html.native.mac .fcap .quiet, html.native.mac .metapane button{border-radius:5px;font-weight:500}
+html.native.mac .opt{border-radius:10px}
+html.native.mac .metapane.side{border-radius:10px}
