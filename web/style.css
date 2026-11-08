@@ -389,3 +389,10 @@ html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .opt.camcard{flex-direction:row;align-items:center;gap:12px;padding:14px 20px 14px 16px;min-width:150px;white-space:nowrap}
 .opt.camcard svg{width:34px;height:34px;flex:none;fill:none;stroke:var(--accent, var(--sel));stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
 .opt.camcard svg .dot{fill:var(--accent, var(--sel));stroke:none}
+.pick.cams{flex-wrap:nowrap}
+.pick.cams .opt.camcard{flex:1 1 auto;min-width:0}
+.opt.camcard .camtxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt.camcard b::before{display:none!important}
+.opt.camcard .live{font-size:12px;font-weight:500;color:var(--ok-ink,#1b7a4a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opt.camcard .live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:6px;vertical-align:0}
+@media (max-width:640px){ .pick.cams{flex-wrap:wrap} }

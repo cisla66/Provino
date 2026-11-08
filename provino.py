@@ -11,6 +11,7 @@ Legge e copia soltanto: i comandi che cancellano o modificano la scheda sono blo
 
 import argparse
 import datetime
+import glob
 import json
 import os
 import re
@@ -44,6 +45,47 @@ def _data_dir():
     if sys.platform == "darwin":
         return os.path.expanduser("~/Library/Application Support/Provino")
     return os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "Provino")
+
+
+_DEV_CACHE = [0.0, None]
+
+
+def connected_devices():
+    """Cosa c'e' collegato adesso: fotocamere Fujifilm sul cavo USB (nome del modello) e schede nel lettore.
+    Lettura veloce e senza toccare i dispositivi: ioreg sul Mac, /sys su Linux. Risultato tenuto 2 secondi."""
+    now = time.time()
+    if _DEV_CACHE[1] is not None and now - _DEV_CACHE[0] < 2:
+        return _DEV_CACHE[1]
+    usb = []
+    try:
+        if sys.platform == "darwin":
+            out = subprocess.run(["/usr/sbin/ioreg", "-p", "IOUSB", "-l", "-w0"], stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, timeout=4).stdout.decode("utf-8", "replace")
+            for block in out.split("+-o ")[1:]:
+                if re.search(r'"idVendor" = 1227\b', block):          # 0x04CB = FUJIFILM
+                    m = re.search(r'"USB Product Name" = "([^"]+)"', block) or re.match(r"([^@<]+)", block)
+                    if m:
+                        usb.append(m.group(1).strip())
+        elif sys.platform.startswith("linux"):
+            for d in glob.glob("/sys/bus/usb/devices/*"):
+                try:
+                    with open(os.path.join(d, "idVendor")) as fh:
+                        if fh.read().strip().lower() != "04cb":
+                            continue
+                    with open(os.path.join(d, "product")) as fh:
+                        usb.append(fh.read().strip())
+                except OSError:
+                    continue
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import fuji_sd
+        cards = [os.path.basename(v.rstrip("/")) for v in fuji_sd.find_cards()]
+    except Exception:  # noqa: BLE001
+        cards = []
+    res = {"usb": sorted(set(u for u in usb if u)), "cards": cards}
+    _DEV_CACHE[0], _DEV_CACHE[1] = now, res
+    return res
 
 
 def safe_filename(name):
@@ -1558,6 +1600,8 @@ def make_handler(app):
             if self.path == "/api/cameras":
                 with open(CAMERAS_PATH, "rb") as fh:
                     return self._send(200, fh.read(), "application/json")
+            if self.path == "/api/devices":
+                return self._send(200, connected_devices())
             if self.path == "/api/state":
                 st = app.snapshot()
                 st["platform"] = sys.platform   # la UI disattiva il cavo dove non c'e' ancora

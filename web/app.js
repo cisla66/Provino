@@ -483,6 +483,23 @@ function langSeg(attr, current, label){
 // icone generiche, come nella barra laterale del Finder: una fotocamera uguale per tutte, la scheda SD per il lettore
 const CAM_ICON = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11.5a2.5 2.5 0 0 1 2.5-2.5h3.2l1.8-2.6h9l1.8 2.6h3.2a2.5 2.5 0 0 1 2.5 2.5v12a2.5 2.5 0 0 1-2.5 2.5h-19A2.5 2.5 0 0 1 4 23.5z"/><circle cx="16" cy="17" r="5.2"/><circle cx="24.2" cy="12.6" r=".9" class="dot"/></svg>`;
 const SD_ICON = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.5 4h11a2.5 2.5 0 0 1 2.5 2.5v19a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 6 25.5V10z"/><path d="M12 8v4.5M15 8v4.5M18 8v4.5M21 8v4.5"/></svg>`;
+// cosa c'e' collegato adesso (fotocamere sul cavo, schede nel lettore): un pallino verde sulla scelta
+let DEV = {usb:[], cards:[]}, devTimer = 0;
+const norm = x => String(x||"").toUpperCase().replace(/[^A-Z0-9]/g, "");
+function devOf(c){
+  const cam = CAMS.cameras[c] || {};
+  if(cam.icon === "reader") return DEV.cards.length ? t("dev.card", {v: DEV.cards.join(", ")}) : "";
+  return DEV.usb.some(u => norm(u) === norm(c) || norm(u).endsWith(norm(c))) ? t("dev.usb") : "";
+}
+async function pollDevices(){
+  clearTimeout(devTimer);
+  if(!S || S.status !== "setup"){ devTimer = 0; return; }
+  try{
+    const r = await fetch("/api/devices"); const d = await r.json();
+    if(JSON.stringify(d) !== JSON.stringify(DEV)){ DEV = d; render(); }
+  }catch(e){}
+  devTimer = setTimeout(pollDevices, 3000);
+}
 function camArt(c){ return (CAMS.cameras[c]||{}).icon==="reader" ? SD_ICON : CAM_ICON; }
 
 function wizard(){
@@ -492,8 +509,12 @@ function wizard(){
   // il cavo c'e' su macOS (ImageCaptureCore) e su Linux (libgphoto2); su Windows arrivera' dopo
   const methods = cam.methods.filter(m => m!=="cable" || !S.platform || S.platform==="darwin" || S.platform.startsWith("linux"));
   if(!methods.includes(wiz.method)) wiz.method = methods[0];
-  let h = `<div class="pick" role="radiogroup" aria-label="${esc(t("wiz.title"))}">`;
-  for(const c of names) h += `<button class="opt camcard ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}">${camArt(c)}<b>${esc(CAMS.cameras[c].label? loc(CAMS.cameras[c].label) : c)}</b></button>`;
+  let h = `<div class="pick cams" role="radiogroup" aria-label="${esc(t("wiz.title"))}">`;
+  if(!devTimer) pollDevices();
+  for(const c of names){
+    const dv = devOf(c);
+    h += `<button class="opt camcard ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}">${camArt(c)}<span class="camtxt"><b>${esc(CAMS.cameras[c].label? loc(CAMS.cameras[c].label) : c)}</b>${dv?`<small class="live">${esc(dv)}</small>`:""}</span></button>`;
+  }
   const ml = ((S.settings||{}).menu_lang||{})[wiz.camera] || LANG;
   const camLabel = cam.label? loc(cam.label) : wiz.camera;
   h += `</div>`;
