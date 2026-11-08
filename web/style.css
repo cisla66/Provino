@@ -384,3 +384,13 @@ html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .histo{margin:0 0 16px;border-radius:6px;background:var(--fill);padding:6px;line-height:0}
 .histo canvas{width:100%;height:70px;display:block}
 .histo.low{opacity:.6}
+
+/* scelta della fotocamera: disegno + nome */
+.opt.camcard{align-items:center;text-align:center;gap:10px;padding:16px 18px 14px;min-width:170px}
+.opt.camcard svg{width:150px;height:98px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;color:var(--ink-soft);transition:color .15s, transform .15s}
+.opt.camcard svg .thin{stroke-width:1.4;opacity:.7}
+.opt.camcard svg .glass{fill:currentColor;opacity:.18}
+.opt.camcard svg .slot{stroke-width:3.2}
+.opt.camcard svg .dot{fill:currentColor;stroke:none}
+.opt.camcard:hover svg{color:var(--ink)}
+.opt.camcard.on svg{color:var(--accent, var(--sel))}

@@ -222,7 +222,8 @@
       },
       "quirks": [
         "autosave_close_by_reading_tail"
-      ]
+      ],
+      "icon": "rangefinder"
     },
     "X100VI": {
       "usb_hint": "x100vi",
@@ -269,7 +270,8 @@
             ]
           }
         ]
-      }
+      },
+      "icon": "compact"
     },
     "Fujifilm": {
       "label": {
@@ -284,7 +286,8 @@
         "it": "Togli la scheda dalla fotocamera e mettila nel lettore: funziona con le foto di qualsiasi Fujifilm, anche X-Pro3 e X100VI. La ricetta META è stata provata su X-Pro3 e X100VI.",
         "en": "Take the card out of the camera and put it in the reader: it works with photos from any Fujifilm, including the X-Pro3 and X100VI. The META recipe has been tested on the X-Pro3 and X100VI."
       },
-      "steps": {}
+      "steps": {},
+      "icon": "reader"
     }
   }
 }

@@ -480,6 +480,14 @@ function checkXA(){
 function langSeg(attr, current, label){
   return `<div class="seg" role="group" aria-label="${esc(label)}">${Object.entries(LANGS).map(([k,v])=>`<button ${attr}="${k}" aria-pressed="${current===k}">${v}</button>`).join("")}</div>`;
 }
+// disegni stilizzati e originali (non copie dei modelli): tipo di fotocamera, non marca
+const CAM_ART = {
+  compact: `<svg viewBox="0 0 140 92" aria-hidden="true"><rect x="8" y="20" width="124" height="62" rx="9"/><path d="M18 20v-5h22v5M104 20v-6h14v6"/><rect x="18" y="30" width="20" height="13" rx="2.5"/><circle cx="76" cy="51" r="23"/><circle cx="76" cy="51" r="16"/><circle cx="76" cy="51" r="8" class="glass"/><circle cx="114" cy="31" r="3"/><path d="M8 66h20M112 66h20" class="thin"/></svg>`,
+  rangefinder: `<svg viewBox="0 0 140 92" aria-hidden="true"><path d="M8 26a7 7 0 0 1 7-7h110a7 7 0 0 1 7 7v48a7 7 0 0 1-7 7H15a7 7 0 0 1-7-7z"/><path d="M98 19v-6h18v6M24 19v-4h18v4"/><rect x="14" y="27" width="24" height="15" rx="2.5"/><path d="M118 30v36" class="thin"/><circle cx="72" cy="54" r="27"/><circle cx="72" cy="54" r="21"/><circle cx="72" cy="54" r="13"/><circle cx="72" cy="54" r="6" class="glass"/><circle cx="125" cy="28" r="2.5"/></svg>`,
+  reader: `<svg viewBox="0 0 140 92" aria-hidden="true"><path d="M58 18h22l8 8v30H58z"/><path d="M64 26v8M70 26v8M76 26v8" class="thin"/><rect x="22" y="48" width="96" height="30" rx="7"/><path d="M50 56h40" class="slot"/><path d="M40 66h60" class="slot"/><circle cx="108" cy="58" r="2.2" class="dot"/><path d="M22 63H12c-4 0-6 3-6 7v12" class="thin"/></svg>`,
+};
+function camArt(c){ return CAM_ART[(CAMS.cameras[c]||{}).icon] || CAM_ART.compact; }
+
 function wizard(){
   const names = Object.keys(CAMS.cameras);
   if(!wiz){ const st=S.settings||{}; wiz = {camera: CAMS.cameras[st.camera]? st.camera : names[0], method: st.method}; }
@@ -488,7 +496,7 @@ function wizard(){
   const methods = cam.methods.filter(m => m!=="cable" || !S.platform || S.platform==="darwin" || S.platform.startsWith("linux"));
   if(!methods.includes(wiz.method)) wiz.method = methods[0];
   let h = `<div class="pick" role="radiogroup" aria-label="${esc(t("wiz.title"))}">`;
-  for(const c of names) h += `<button class="opt ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}"><b>${esc(CAMS.cameras[c].label? loc(CAMS.cameras[c].label) : c)}</b></button>`;
+  for(const c of names) h += `<button class="opt camcard ${wiz.camera===c?'on':''}" role="radio" aria-checked="${wiz.camera===c}" data-cam="${esc(c)}">${camArt(c)}<b>${esc(CAMS.cameras[c].label? loc(CAMS.cameras[c].label) : c)}</b></button>`;
   const ml = ((S.settings||{}).menu_lang||{})[wiz.camera] || LANG;
   const camLabel = cam.label? loc(cam.label) : wiz.camera;
   h += `</div>`;
