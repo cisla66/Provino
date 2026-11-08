@@ -37,7 +37,7 @@ import json  # noqa: E402
 import provino as pv  # noqa: E402
 import fuji_wifi as fw  # noqa: E402
 
-APP_ID = "io.github.provino.Provino"
+APP_ID = "io.github.cisla66.Provino"
 
 
 def start_core(args):
@@ -138,9 +138,18 @@ def appimage_path():
 
 
 def menu_entry_path():
-    """L'AppImage a cui punta la voce nel menu (None se non c'e' la voce)."""
+    """L'AppImage a cui punta la voce nel menu (None se non c'e' la voce). Legge anche la voce delle
+    versioni di prova con il vecchio identificativo, cosi' l'aggiornamento la sostituisce."""
+    for f in [DESK_FILE] + [os.path.join(os.path.dirname(DESK_FILE), o + ".desktop") for o in OLD_IDS]:
+        p = _entry_target(f)
+        if p:
+            return p
+    return None
+
+
+def _entry_target(path):
     try:
-        with open(DESK_FILE, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             for line in fh:
                 if line.startswith("X-Provino-AppImage="):
                     return line.split("=", 1)[1].strip()
@@ -168,6 +177,7 @@ def install_menu_entry(img=None):
                 d = os.path.join(ICON_DIR, size, "apps")
                 os.makedirs(d, exist_ok=True)
                 shutil.copyfile(f, os.path.join(d, APP_ID + "." + ext))
+    _remove_old_ids()
     tmp = DESK_FILE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines) + "\n")
@@ -209,7 +219,26 @@ def move_to_apps(img):
     return dest
 
 
+OLD_IDS = ("io.github.provino.Provino",)   # identificativi delle versioni di prova precedenti
+
+
+def _remove_old_ids():
+    for old in OLD_IDS:
+        try:
+            os.remove(os.path.join(os.path.dirname(DESK_FILE), old + ".desktop"))
+        except OSError:
+            pass
+        for root, _dirs, files in os.walk(ICON_DIR):
+            for f in files:
+                if f.startswith(old + "."):
+                    try:
+                        os.remove(os.path.join(root, f))
+                    except OSError:
+                        pass
+
+
 def remove_menu_entry():
+    _remove_old_ids()
     try:
         os.remove(DESK_FILE)
     except OSError:

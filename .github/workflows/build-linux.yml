@@ -37,6 +37,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 xvfb imagemagick dbus-x11 xdotool >/dev/null
 
+      - name: Controllo della scheda AppStream (per Flathub)
+        run: |
+          sudo apt-get install -y -qq appstream >/dev/null
+          appstreamcli validate --no-net --explain packaging/linux/io.github.cisla66.Provino.metainfo.xml | tee appstream.txt || true
+          desktop-file-validate packaging/linux/io.github.cisla66.Provino.desktop 2>&1 | tee -a appstream.txt || true
+
       - name: Scheda finta per la prova (foto generate, nessuna foto vera)
         run: |
           pip install -q pillow
@@ -107,6 +113,7 @@ jobs:
           mkdir -p /tmp/ci && cp dist/finestra*.png /tmp/ci/ 2>/dev/null || true
           cp test-data/Provino/log/*.txt /tmp/ci/ 2>/dev/null || true
           cp dist/*.AppImage /tmp/ci/ 2>/dev/null || true
+          cp appstream.txt /tmp/ci/ 2>/dev/null || true
           cd /tmp/ci && git init -q && git checkout -q -b ci
           git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
           git add -A && git commit -q -m "CI ${GITHUB_SHA::7}" || exit 0

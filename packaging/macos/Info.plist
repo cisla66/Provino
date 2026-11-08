@@ -4,7 +4,7 @@
 <dict>
   <key>CFBundleName</key><string>Provino</string>
   <key>CFBundleDisplayName</key><string>Provino</string>
-  <key>CFBundleIdentifier</key><string>io.github.provino.Provino</string>
+  <key>CFBundleIdentifier</key><string>io.github.cisla66.Provino</string>
   <key>CFBundleExecutable</key><string>Provino</string>
   <key>CFBundleIconFile</key><string>Provino</string>
   <key>CFBundlePackageType</key><string>APPL</string>

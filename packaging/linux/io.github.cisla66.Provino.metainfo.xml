@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.cisla66.Provino</id>
+  <name>Provino</name>
+  <summary>Pick photos from your Fujifilm and download only those</summary>
+  <summary xml:lang="it">Scegli le foto della tua Fujifilm e scarica solo quelle</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.cisla66">
+    <name>Marco Cislaghi</name>
+  </developer>
+  <description>
+    <p>Provino shows thumbnails of every shot on your Fujifilm camera or card, lets you pick the ones you want and downloads only those, over Wi-Fi, USB cable or from a card reader.</p>
+    <p xml:lang="it">Provino mostra le miniature di tutti gli scatti della tua Fujifilm o della scheda, ti fa scegliere quelli che vuoi e scarica solo quelli, via Wi-Fi, con il cavo USB o dal lettore di schede.</p>
+    <ul>
+      <li>RAW+JPG grouped in a single frame, filters by file type and film simulation</li>
+      <li xml:lang="it">RAW+JPG raggruppati in un solo provino, filtri per tipo di file e simulazione pellicola</li>
+      <li>META panel with the full recipe, shooting data and histogram</li>
+      <li xml:lang="it">Pannello META con la ricetta completa, i dati di scatto e l'istogramma</li>
+      <li>Downloads into folders by date and/or type; asks before overwriting</li>
+      <li xml:lang="it">Download in cartelle per data e/o tipo; chiede prima di sovrascrivere</li>
+      <li>Read-only: it never deletes, changes or formats anything on the card</li>
+      <li xml:lang="it">Sola lettura: non cancella, non modifica e non formatta mai nulla sulla scheda</li>
+    </ul>
+    <p>Independent project, not affiliated with FUJIFILM Corporation.</p>
+    <p xml:lang="it">Progetto indipendente, non affiliato a FUJIFILM Corporation.</p>
+  </description>
+  <launchable type="desktop-id">io.github.cisla66.Provino.desktop</launchable>
+  <url type="homepage">https://github.com/cisla66/Provino</url>
+  <url type="bugtracker">https://github.com/cisla66/Provino/issues</url>
+  <url type="vcs-browser">https://github.com/cisla66/Provino</url>
+  <categories>
+    <category>Graphics</category>
+    <category>Photography</category>
+  </categories>
+  <keywords>
+    <keyword>Fujifilm</keyword>
+    <keyword>camera</keyword>
+    <keyword>RAF</keyword>
+    <keyword>photo</keyword>
+  </keywords>
+  <content_rating type="oars-1.1"/>
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <!-- schermate: da aggiungere con la 1.0 (foto vere, numero di serie nascosto) -->
+  <releases>
+    <release version="1.0.0" date="2026-11-08" type="development">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

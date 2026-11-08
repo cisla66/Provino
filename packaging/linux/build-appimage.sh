@@ -12,16 +12,17 @@ for f in provino.py provino_finestra.py fuji_wifi.py fuji_usb_linux.py fuji_sd.p
 done
 cp -r "$ROOT/web" "$APPDIR/usr/share/provino/web"
 cp "$ROOT/packaging/linux/AppRun" "$APPDIR/AppRun"; chmod +x "$APPDIR/AppRun"
-cp "$ROOT/packaging/linux/io.github.provino.Provino.desktop" "$APPDIR/"
-cp "$ROOT/packaging/linux/io.github.provino.Provino.desktop" "$APPDIR/usr/share/applications/"
-cp "$ROOT/assets/icon/png/linux/256x256/provino.png" "$APPDIR/io.github.provino.Provino.png"
-cp "$APPDIR/io.github.provino.Provino.png" "$APPDIR/.DirIcon"
+cp "$ROOT/packaging/linux/io.github.cisla66.Provino.desktop" "$APPDIR/"
+cp "$ROOT/packaging/linux/io.github.cisla66.Provino.desktop" "$APPDIR/usr/share/applications/"
+mkdir -p "$APPDIR/usr/share/metainfo" && cp "$ROOT/packaging/linux/io.github.cisla66.Provino.metainfo.xml" "$APPDIR/usr/share/metainfo/"
+cp "$ROOT/assets/icon/png/linux/256x256/provino.png" "$APPDIR/io.github.cisla66.Provino.png"
+cp "$APPDIR/io.github.cisla66.Provino.png" "$APPDIR/.DirIcon"
 for s in 16 24 32 48 64 128 256 512; do
   d="$APPDIR/usr/share/icons/hicolor/${s}x${s}/apps"; mkdir -p "$d"
-  cp "$ROOT/assets/icon/png/linux/${s}x${s}/provino.png" "$d/io.github.provino.Provino.png"
+  cp "$ROOT/assets/icon/png/linux/${s}x${s}/provino.png" "$d/io.github.cisla66.Provino.png"
 done
 mkdir -p "$APPDIR/usr/share/icons/hicolor/scalable/apps"
-cp "$ROOT/assets/icon/provino-linux.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/io.github.provino.Provino.svg"
+cp "$ROOT/assets/icon/provino-linux.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/io.github.cisla66.Provino.svg"
 TOOL="${APPIMAGETOOL:-appimagetool}"
 ARCH=x86_64 "$TOOL" --appimage-extract-and-run "$APPDIR" "$OUT/Provino-$VER-x86_64.AppImage" 2>/dev/null \
   || ARCH=x86_64 "$TOOL" "$APPDIR" "$OUT/Provino-$VER-x86_64.AppImage"
