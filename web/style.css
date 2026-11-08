@@ -88,7 +88,7 @@ dialog .sub{color:#555;margin:0 0 14px;font-size:14px}
 .opt b{font-stretch:112%;font-size:19px;font-weight:600}
 .opt small{color:var(--ink-soft);font-size:14px}
 .opt.on{border-color:var(--ink);background:var(--fill)}
-.opt.on b::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--pencil);margin-right:9px;vertical-align:2px}
+.opt.on b::before{content:"✓";display:inline-block;margin-right:8px;font-weight:700;color:var(--accent, var(--ink))}
 .opt:disabled{opacity:.5;cursor:default}
 .q{font-stretch:112%;font-weight:600;font-size:20px;margin:0 0 10px}
 .wizbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:6px 0 18px}
@@ -392,7 +392,6 @@ html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .pick.cams{flex-wrap:nowrap}
 .pick.cams .opt.camcard{flex:1 1 auto;min-width:0}
 .opt.camcard .camtxt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.opt.camcard b::before{display:none!important}
 .opt.camcard .live{font-size:12px;font-weight:500;color:var(--ok-ink,#1b7a4a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .opt.camcard .live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:6px;vertical-align:0}
 @media (max-width:640px){ .pick.cams{flex-wrap:wrap} }

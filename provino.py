@@ -59,13 +59,20 @@ def connected_devices():
     usb = []
     try:
         if sys.platform == "darwin":
-            out = subprocess.run(["/usr/sbin/ioreg", "-p", "IOUSB", "-l", "-w0"], stdout=subprocess.PIPE,
-                                 stderr=subprocess.DEVNULL, timeout=4).stdout.decode("utf-8", "replace")
-            for block in out.split("+-o ")[1:]:
-                if re.search(r'"idVendor" = 1227\b', block):          # 0x04CB = FUJIFILM
-                    m = re.search(r'"USB Product Name" = "([^"]+)"', block) or re.match(r"([^@<]+)", block)
-                    if m:
-                        usb.append(m.group(1).strip())
+            # dispositivi USB per classe (vale per il vecchio e il nuovo sistema USB di macOS)
+            for cls in ("IOUSBHostDevice", "IOUSBDevice"):
+                out = subprocess.run(["/usr/sbin/ioreg", "-r", "-c", cls, "-l", "-w0"], stdout=subprocess.PIPE,
+                                     stderr=subprocess.DEVNULL, timeout=4).stdout.decode("utf-8", "replace")
+                for block in out.split("+-o ")[1:]:
+                    fuji = re.search(r'"idVendor" = 1227\b', block) or \
+                        re.search(r'"(USB Vendor Name|kUSBVendorString)" = "FUJIFILM', block, re.I)   # 0x04CB = FUJIFILM
+                    if fuji:
+                        m = re.search(r'"(?:USB Product Name|kUSBProductString)" = "([^"]+)"', block) or \
+                            re.match(r"([^@<]+)", block)
+                        if m:
+                            usb.append(m.group(1).strip())
+                if usb:
+                    break
         elif sys.platform.startswith("linux"):
             for d in glob.glob("/sys/bus/usb/devices/*"):
                 try:
