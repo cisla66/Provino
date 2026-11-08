@@ -39,7 +39,7 @@ jobs:
 
       - name: Controllo della scheda AppStream (per Flathub)
         run: |
-          sudo apt-get install -y -qq appstream >/dev/null
+          sudo apt-get install -y -qq appstream desktop-file-utils >/dev/null
           appstreamcli validate --no-net --explain packaging/linux/io.github.cisla66.Provino.metainfo.xml | tee appstream.txt || true
           desktop-file-validate packaging/linux/io.github.cisla66.Provino.desktop 2>&1 | tee -a appstream.txt || true
 
