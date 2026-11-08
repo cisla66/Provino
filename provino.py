@@ -46,6 +46,12 @@ def _data_dir():
     return os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "Provino")
 
 
+def safe_filename(name):
+    """Nome di file ricevuto dalla fotocamera o dalla scheda: solo il nome, mai un percorso (niente ../)."""
+    name = str(name or "").replace("\\", "/").split("/")[-1].replace("\x00", "").strip()
+    return "" if name in ("", ".", "..") or name.startswith(".") else name
+
+
 def default_dest():
     """Cartella di download predefinita: 'scaricate' accanto ai sorgenti, Immagini/Provino per l'app installata."""
     if DATA == HERE:
@@ -442,7 +448,9 @@ class App:
                 self.camera_name = (ev.get("name") or self.camera_name)
             self.set_status("connecting", "reading_card")
         elif k == "file":
-            name = ev.get("name") or ""
+            name = safe_filename(ev.get("name") or "")
+            if not name:
+                return
             base, ext = os.path.splitext(name)
             e = ext.upper()
             kind = "RAF" if e == ".RAF" else ("JPG" if e in (".JPG", ".JPEG") else e.lstrip("."))
@@ -672,7 +680,9 @@ class App:
                 info = self.cam.object_info(h)
             if not info or info["format"] == 0x3001:
                 continue
-            name = info["filename"]
+            name = safe_filename(info["filename"])
+            if not name:
+                continue
             base, ext = os.path.splitext(name)
             kind = "RAF" if ext.upper() == ".RAF" else ("JPG" if ext.upper() in (".JPG", ".JPEG") else ext.upper().lstrip("."))
             files.append({
