@@ -422,3 +422,10 @@ html.native.mac .metapane.side dl{gap:5px 12px}
 @media (prefers-color-scheme: light){ html:not([data-theme=dark]) .brand .lg-light{display:block} html:not([data-theme=dark]) .brand .lg-dark{display:none} }
 html[data-theme=light] .brand .lg-light{display:block}
 html[data-theme=light] .brand .lg-dark{display:none}
+/* etichette dei file: META sempre su una riga sua a destra, cosi' JPG e RAF restano affiancati anche con la spunta ✓ */
+.kinds .kind.meta{margin-left:auto}
+.kinds .kind:not(.meta){flex:0 1 auto;min-width:0}
+.kinds:has(.kind:not(.meta) ~ .kind:not(.meta)) .kind.meta{flex-basis:100%;text-align:right;border-color:transparent}
+html.native .kinds{gap:5px}
+html.native .kind.onmac::after{content:none}   /* scaricato: basta il verde, cosi' le etichette restano su una riga */
+html.native.mac .kind{padding:2px 7px}

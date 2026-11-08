@@ -226,7 +226,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
     let camItem = NSMenuToolbarItem(itemIdentifier: .camera)
     let goBtn = NSButton(title: "", target: nil, action: nil)
     let panelBtn = NSButton(image: NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: nil)!, target: nil, action: nil)
-    let ring = NSProgressIndicator()
+    let ring = RingView()
     let ringBtn = NSButton(title: "", target: nil, action: nil)
     let ringBox = NSView()
     var trPopover: NSPopover?
@@ -325,11 +325,6 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         panelBtn.target = self
         panelBtn.action = #selector(onPanel)
 
-        ring.style = .spinning
-        ring.isIndeterminate = false
-        ring.minValue = 0
-        ring.maxValue = 100
-        ring.controlSize = .small
         ring.translatesAutoresizingMaskIntoConstraints = false
         ringBtn.isBordered = false
         ringBtn.title = ""
@@ -343,6 +338,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         NSLayoutConstraint.activate([
             ringBox.widthAnchor.constraint(equalToConstant: 28), ringBox.heightAnchor.constraint(equalToConstant: 28),
             ring.centerXAnchor.constraint(equalTo: ringBox.centerXAnchor), ring.centerYAnchor.constraint(equalTo: ringBox.centerYAnchor),
+            ring.widthAnchor.constraint(equalToConstant: 20), ring.heightAnchor.constraint(equalToConstant: 20),
             ringBtn.leadingAnchor.constraint(equalTo: ringBox.leadingAnchor), ringBtn.trailingAnchor.constraint(equalTo: ringBox.trailingAnchor),
             ringBtn.topAnchor.constraint(equalTo: ringBox.topAnchor), ringBtn.bottomAnchor.constraint(equalTo: ringBox.bottomAnchor),
         ])
@@ -616,7 +612,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         case "run":
             ring.isHidden = false
             ringBtn.image = nil
-            ring.doubleValue = max(3, pct)
+            ring.progress = CGFloat(max(3, pct)) / 100
         case "ok":
             ring.isHidden = true
             ringBtn.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)?
@@ -676,6 +672,47 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
 
     func windowWillClose(_ notification: Notification) { NSApp.terminate(nil) }
+}
+
+// MARK: - anello dell'avanzamento (colore principale del sistema, ben visibile mentre scarica)
+
+final class RingView: NSView {
+    private let track = CAShapeLayer()
+    private let bar = CAShapeLayer()
+    var progress: CGFloat = 0 { didSet { bar.strokeEnd = max(0, min(1, progress)) } }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        for l in [track, bar] {
+            l.fillColor = NSColor.clear.cgColor
+            l.lineWidth = 3
+            l.lineCap = .round
+            layer?.addSublayer(l)
+        }
+        bar.strokeEnd = 0
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layout() {
+        super.layout()
+        let r = bounds.insetBy(dx: 2, dy: 2)
+        // parte da mezzogiorno e gira in senso orario
+        let path = CGMutablePath()
+        let c = CGPoint(x: r.midX, y: r.midY), rad = r.width / 2
+        path.addArc(center: c, radius: rad, startAngle: .pi / 2, endAngle: .pi / 2 - 2 * .pi, clockwise: true)
+        for l in [track, bar] { l.frame = bounds; l.path = path }
+        updateColors()
+    }
+
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); updateColors() }
+
+    func updateColors() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            self.track.strokeColor = NSColor.controlAccentColor.withAlphaComponent(0.22).cgColor
+            self.bar.strokeColor = NSColor.controlAccentColor.cgColor
+        }
+    }
 }
 
 // MARK: - riquadro dell'avanzamento
