@@ -535,7 +535,7 @@ function wizard(){
   h += `</div><div class="wizbar"><button class="go" id="wizGo">${t("wiz.start")}</button>`;
   if(cam.methods.includes("home")) h += `<button class="linkish" id="wizReg">${t("wiz.register")}</button>`;
   // nelle app vere la lingua sta nelle Impostazioni e la versione in "Informazioni su Provino"
-  h += NATIVE ? `</div>` : `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
+  h += NATIVE ? `</div><p class="nativefoot">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p>` : `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
   return h;
 }
 document.addEventListener("click", e=>{
