@@ -49,7 +49,7 @@
   </supports>
   <!-- schermate: da aggiungere con la 1.0 (foto vere, numero di serie nascosto) -->
   <releases>
-    <release version="1.0.0" date="2026-11-08" type="development">
+    <release version="1.0.0" date="2026-11-09" type="development">
       <description>
         <p>First release.</p>
       </description>

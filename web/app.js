@@ -42,7 +42,9 @@ function M(k){
 function loc(o){ return o ? (o[LANG] || o.en || o.it) : ""; }
 function serverMsg(){
   if(!S.message_key) return "";
-  return t("msg."+S.message_key, S.message_params||{});
+  // i dettagli vengono da errori e dispositivi: testo, mai HTML
+  const p = {}; for(const [k,v] of Object.entries(S.message_params||{})) p[k] = esc(v);
+  return t("msg."+S.message_key, p);
 }
 
 // ---------------------------------------------------------------- dati

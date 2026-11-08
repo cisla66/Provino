@@ -26,8 +26,13 @@ jobs:
 
       - name: appimagetool
         run: |
-          curl -sSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          # versione con etichetta quando esiste (riproducibile), altrimenti "continuous"; l'impronta resta nel log
+          for tag in 1.9.1 1.9.0 continuous; do
+            if curl -fsSL -o appimagetool "https://github.com/AppImage/appimagetool/releases/download/$tag/appimagetool-x86_64.AppImage"; then
+              echo "appimagetool: $tag"; break; fi
+          done
           chmod +x appimagetool
+          sha256sum appimagetool
 
       - name: Costruisci l'AppImage
         run: APPIMAGETOOL=$PWD/appimagetool sh packaging/linux/build-appimage.sh

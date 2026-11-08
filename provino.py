@@ -164,7 +164,7 @@ os.makedirs(DATA, exist_ok=True)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc18"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.0.0-rc19"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):

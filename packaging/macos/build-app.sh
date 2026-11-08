@@ -5,8 +5,8 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 VER=$(sed -n 's/^APP_VERSION = "\([^"]*\)".*/\1/p' provino.py)
-PBS_TAG=${PBS_TAG:-20241016}
-PY_VER=${PY_VER:-3.12.7}
+PBS_TAG=${PBS_TAG:-20261026}
+PY_VER=${PY_VER:-3.12.16}
 B=build/macos
 APP=dist/Provino.app
 rm -rf "$B" "$APP" && mkdir -p "$B" dist "$APP/Contents/MacOS" "$APP/Contents/Resources/app" "$APP/Contents/Resources/bin"
@@ -25,7 +25,7 @@ done
 lipo -create "$B/fujiusb-x86_64" "$B/fujiusb-arm64" -output "$APP/Contents/Resources/bin/fujiusb"
 
 echo "== motore e pagina"
-cp provino.py fuji_wifi.py fuji_usb.py fuji_usb_linux.py fuji_sd.py fuji_meta.py cameras.json LICENSE "$APP/Contents/Resources/app/"
+cp provino.py fuji_*.py cameras.json LICENSE "$APP/Contents/Resources/app/"
 cp -R web "$APP/Contents/Resources/app/web"
 cp assets/icon/provino.icns "$APP/Contents/Resources/Provino.icns"
 BUILD=$(date +%Y%m%d%H%M)
@@ -42,6 +42,8 @@ for pa in x86_64:x86_64 aarch64:arm64; do
   case "$PBS_TAG-$PY_VER-$src" in
     20241016-3.12.7-x86_64)  want=848405b92bda20fad1f9bba99234c7d3f11e0b31e46f89835d1cb3d735e932aa ;;
     20241016-3.12.7-aarch64) want=95dd397e3aef4cc1846867cf20be704bdd74edd16ea8032caf01e48f0c53d65d ;;
+    20261026-3.12.16-x86_64)  want=37c38fda76fec1fbf310adcbafb7f0d96af13b5511bf8ea954c3aa8eec185734 ;;
+    20261026-3.12.16-aarch64) want=353d5f1b4fd2715e7053f12f068435d5bbad16b91e057006b5d01e0925709a7e ;;
     *) echo "Impronta sconosciuta per $PBS_TAG $PY_VER $src: aggiungila allo script" >&2; exit 1 ;;
   esac
   got=$(shasum -a 256 "$tgz" | cut -d' ' -f1)
@@ -56,6 +58,10 @@ for pa in x86_64:x86_64 aarch64:arm64; do
   find "$P" -name "__pycache__" -type d -prune -exec rm -rf {} +
   find "$P" -name "*.a" -delete
 done
+
+echo "== prova: il Python incluso carica tutti i moduli di Provino"
+HA=$(uname -m); [ "$HA" = arm64 ] || HA=x86_64
+(cd "$APP/Contents/Resources/app" && ../python-$HA/bin/python3 -B -c "import provino, fuji_wifi, fuji_usb, fuji_sd, fuji_meta, fuji_pdf; print('moduli ok', provino.APP_VERSION)")
 
 echo "== firma (ad hoc)"
 codesign --force --sign - "$APP/Contents/Resources/bin/fujiusb"

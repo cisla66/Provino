@@ -69,7 +69,7 @@ Release candidate `1.0.0-rc`: native apps for Mac (`.dmg`) and GNOME/Linux (AppI
 Dai sorgenti: `python3 provino_finestra.py` (finestra GNOME) oppure `python3 provino.py` (nel browser, anche su Mac).
 
 ### Sicurezza
-Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non sovrascrive file sul computer senza chiederlo. Nella cartella `log` c'è un file per ogni avvio, utile se qualcosa non va.
+Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non sovrascrive file sul computer senza chiederlo. Nella cartella `log` c'è un file per ogni avvio, utile se qualcosa non va. Dettagli e controlli fatti: [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -106,7 +106,7 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 From source: `python3 provino_finestra.py` (GNOME window) or `python3 provino.py` (in the browser, Mac too).
 
 ### Safety
-Provino never deletes, changes or formats anything on the card. It never overwrites files on your computer without asking. The `log` folder has one file per run, useful if something goes wrong.
+Provino never deletes, changes or formats anything on the card. It never overwrites files on your computer without asking. The `log` folder has one file per run, useful if something goes wrong. Details and checks: [SECURITY.md](SECURITY.md).
 
 ---
 
