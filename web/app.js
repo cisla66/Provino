@@ -534,7 +534,8 @@ function wizard(){
   }
   h += `</div><div class="wizbar"><button class="go" id="wizGo">${t("wiz.start")}</button>`;
   if(cam.methods.includes("home")) h += `<button class="linkish" id="wizReg">${t("wiz.register")}</button>`;
-  h += `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
+  // nelle app vere la lingua sta nelle Impostazioni e la versione in "Informazioni su Provino"
+  h += NATIVE ? `</div>` : `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
   return h;
 }
 document.addEventListener("click", e=>{
@@ -1080,7 +1081,7 @@ function metaHTML(g){
     <h3>${t("meta.recipe")}</h3>${dl(recipeRows(m))}
     <h3>${t("meta.shot")}</h3>${dl(shotRows(m).concat(pixelRow(m), slotRow(g)))}
     <div class="mfoot"><button class="quiet" data-copy="${esc(g.base)}">${t("meta.copy")}</button><span>${esc(t("meta.readFrom",{f:m.from||""}))}</span></div>
-    <p class="soon">${t("meta.editSoon")}</p>`;
+`;
 }
 const metaAsked = new Set();
 function renderMeta(){
