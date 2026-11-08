@@ -1658,7 +1658,9 @@ def make_handler(app):
                       "/style.css": ("style.css", "text/css; charset=utf-8"),
                       "/app.js": ("app.js", "text/javascript; charset=utf-8"),
                       "/i18n.js": ("i18n.js", "text/javascript; charset=utf-8"),
-                      "/icon.png": ("icon.png", "image/png")}
+                      "/icon.png": ("icon.png", "image/png"),
+                      "/logo-light.png": ("logo-light.png", "image/png"),
+                      "/logo-dark.png": ("logo-dark.png", "image/png")}
             if self.path in static:
                 name, ctype = static[self.path]
                 with open(os.path.join(HERE, "web", name), "rb") as fh:

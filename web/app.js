@@ -535,7 +535,7 @@ function wizard(){
   h += `</div><div class="wizbar"><button class="go" id="wizGo">${t("wiz.start")}</button>`;
   if(cam.methods.includes("home")) h += `<button class="linkish" id="wizReg">${t("wiz.register")}</button>`;
   // nelle app vere la lingua sta nelle Impostazioni e la versione in "Informazioni su Provino"
-  h += NATIVE ? `</div><p class="nativefoot">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p>` : `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
+  h += NATIVE ? `</div>` : `</div><div class="foot"><div class="langrow"><span class="lbl">${t("lang.label")}</span>${langSeg("data-lang", LANG, t("lang.label"))}</div><p class="disc">Provino ${esc(S.version)} · ${t("app.disclaimer")}</p></div>`;
   return h;
 }
 document.addEventListener("click", e=>{
@@ -630,7 +630,12 @@ function render(){
   tray();
   const c = S.choice||{}, cam = c.camera || "";
   const msg = serverMsg();
-  if(S.status==="setup"){ notice(t("wiz.title"), msg? `<span class="ok">${msg}</span>`:"", false, "", wizard()); return; }
+  if(S.status==="setup"){
+    notice(t("wiz.title"), msg? `<span class="ok">${msg}</span>`:"", false, "", wizard());
+    const nt = $("#main .notice");
+    if(nt && !nt.querySelector(".brand")) nt.insertAdjacentHTML("afterbegin", `<div class="brand"><img class="lg-light" src="/logo-light.png" alt="Provino"><img class="lg-dark" src="/logo-dark.png" alt="Provino"></div>`);
+    return;
+  }
   if(S.status==="registering"){ const reg = ((CAMS.cameras[cam]||{}).steps||{}).register; notice(t("register.title"), t(loc(reg)), true, back); return; }
   const isCable = c.method==="cable";
   if(isCable) checkXA();

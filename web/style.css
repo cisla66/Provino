@@ -402,8 +402,6 @@ html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .devnote{margin:-14px 0 18px;font-size:13px;color:var(--ok-ink,#1b7a4a)}
 .livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:7px;vertical-align:0}
 .opt.camcard b{white-space:nowrap}
-/* app vere: una sola riga centrata in fondo alla finestra */
-.nativefoot{position:fixed;left:0;right:0;bottom:14px;margin:0;text-align:center;white-space:nowrap;font-size:12px;color:var(--ink-soft);pointer-events:none}
 /* pannello META nelle app vere: valori a peso normale, piu' leggibili (come le proprieta' di GNOME e del Finder) */
 html.native .metapane dd{font-weight:400}
 html.native .metapane dd.film{font-weight:600;font-stretch:normal}
@@ -417,3 +415,10 @@ html.native:not(.mac) .metapane.side dd:last-child{border-bottom:0;margin-bottom
 html.native.mac .metapane dt{font-size:12.5px;text-align:right}
 html.native.mac .metapane dd{font-size:13px}
 html.native.mac .metapane.side dl{gap:5px 12px}
+/* logo di Provino in cima alla prima schermata */
+.brand{margin:0 0 26px}
+.brand img{height:46px;width:auto;display:block}
+.brand .lg-light{display:none}
+@media (prefers-color-scheme: light){ html:not([data-theme=dark]) .brand .lg-light{display:block} html:not([data-theme=dark]) .brand .lg-dark{display:none} }
+html[data-theme=light] .brand .lg-light{display:block}
+html[data-theme=light] .brand .lg-dark{display:none}
