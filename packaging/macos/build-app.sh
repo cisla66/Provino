@@ -64,12 +64,22 @@ codesign --force --sign - "$APP"
 codesign --verify --verbose=1 "$APP" || true
 
 echo "== dmg"
+DMG="dist/Provino-$VER-mac.dmg"
+rm -f "$DMG"
 STAGE="$B/dmg"
 rm -rf "$STAGE" && mkdir -p "$STAGE"
 cp -R "$APP" "$STAGE/"
-ln -s /Applications "$STAGE/Applications"
-DMG="dist/Provino-$VER-mac.dmg"
-rm -f "$DMG"
-hdiutil create -volname "Provino" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+# finestra del disco come nelle app curate: icona di Provino sul disco, sfondo con la freccia verso Applicazioni
+if command -v create-dmg >/dev/null 2>&1; then
+  tiffutil -cathidpicheck packaging/macos/dmg-background.png packaging/macos/dmg-background@2x.png -out "$B/dmg-bg.tiff" >/dev/null
+  create-dmg --volname "Provino" --volicon assets/icon/provino.icns --background "$B/dmg-bg.tiff" \
+    --window-pos 200 160 --window-size 600 400 --icon-size 112 --text-size 13 \
+    --icon "Provino.app" 150 200 --hide-extension "Provino.app" --app-drop-link 450 200 \
+    --no-internet-enable "$DMG" "$STAGE" || rm -f "$DMG"
+fi
+if [ ! -f "$DMG" ]; then   # ripiego: disco semplice, sempre funzionante
+  ln -s /Applications "$STAGE/Applications"
+  hdiutil create -volname "Provino" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+fi
 du -sh "$APP" "$DMG"
 echo "Fatto: $DMG"
