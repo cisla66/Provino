@@ -164,7 +164,7 @@ os.makedirs(DATA, exist_ok=True)
 import fuji_wifi as fw
 import fuji_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc19"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.0.0-rc20"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
@@ -488,8 +488,11 @@ class App:
             bindir = os.path.join(DATA, ".provino_bin")
             first = sys.platform == "darwin" and not (os.path.isdir(bindir) and any(n.startswith("fujiusb_") for n in os.listdir(bindir)))
             self.set_status("waiting", "usb_prepare" if first else "")
-            hint = (load_cameras()["cameras"].get(camera) or {}).get("usb_hint") or camera.lower().replace("-", "")
+            cams = load_cameras()["cameras"]
+            hint_of = lambda k: (cams.get(k) or {}).get("usb_hint") or k.lower().replace("-", "")
+            hint = hint_of(camera)
             sess = fuji_usb.UsbSession(DATA, hint, self.log, self._usb_event)
+            sess.others = [hint_of(k) for k in cams if k != camera and k != "Fujifilm" and hint_of(k) != hint]
             sess.start()
             self.usb = sess
             self.set_status("waiting", "")
@@ -538,7 +541,7 @@ class App:
             with self.state_lock:
                 self.camera_name = (ev.get("name") or self.camera_name)
             if self.choice.get("method") == "cable" and ev.get("name"):
-                self._learn_usb_model(ev.get("name"))
+                self._learn_usb_model(ev.get("name"), ev.get("pid"))
             self.set_status("connecting", "reading_card")
         elif k == "file":
             name = safe_filename(ev.get("name") or "")
@@ -907,18 +910,28 @@ class App:
                         x["date_text"] = iso_to_text(x["date"])
         return sorted(files, key=lambda x: (x["date"], x["base"], x["kind"]), reverse=True)
 
-    def _learn_usb_model(self, name):
-        """Collegata col cavo: abbino il codice prodotto USB al nome del modello (per il pallino verde)."""
+    def _learn_usb_model(self, name, pid=None):
+        """Collegata col cavo: abbino il codice prodotto USB al nome del modello (per il pallino verde).
+        Il codice arriva dall'aiutante (Mac); altrimenti lo deduco: l'unica Fujifilm collegata,
+        oppure l'unica collegata con un codice non ancora abbinato."""
         try:
-            fuji = [x for x in connected_devices(fresh=True)["usb"]]
-            if len(fuji) != 1 or not fuji[0]["pid"]:
+            model = str(name).replace("FUJIFILM", "").replace("Fujifilm", "").strip()
+            if not model:
                 return
-            model = str(name).replace("FUJIFILM", "").strip()
             known = self.settings.setdefault("usb_models", {})
-            if known.get(str(fuji[0]["pid"])) != model:
-                known[str(fuji[0]["pid"])] = model
+            if not pid:
+                pids = [x["pid"] for x in connected_devices(fresh=True)["usb"] if x["pid"]]
+                if len(pids) == 1:
+                    pid = pids[0]
+                else:
+                    unknown = [p for p in pids if str(p) not in known]
+                    if len(unknown) != 1 or model in known.values():
+                        return
+                    pid = unknown[0]
+            if known.get(str(pid)) != model:
+                known[str(pid)] = model
                 self.save_settings()
-                self.log.info("Cavo: codice USB %d = %s" % (fuji[0]["pid"], model))
+                self.log.info("Cavo: codice USB %s = %s" % (pid, model))
         except Exception as e:  # noqa: BLE001
             self.log.debug("abbinamento USB: %r" % e)
 

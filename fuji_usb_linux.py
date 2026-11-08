@@ -117,6 +117,7 @@ class UsbSession:
     def __init__(self, base_dir, camera_hint, log, on_event):
         self.base_dir = base_dir
         self.camera_hint = (camera_hint or "").lower().replace("-", "")
+        self.others = []   # le altre fotocamere supportate (le salto se collegate insieme)
         self.log = log
         self.on_event = on_event
         self.g = None
@@ -197,7 +198,8 @@ class UsbSession:
         name = self._model(cam) or "Fotocamera"
         norm = name.lower().replace("-", "").replace(" ", "")
         self._emit({"event": "device", "name": name})
-        if self.camera_hint and self.camera_hint not in norm and "fuji" not in norm:
+        other = any(o and o in norm for o in self.others)
+        if self.camera_hint and self.camera_hint not in norm and (other or "fuji" not in norm):
             self._emit({"event": "skip", "name": name})
             g.gp_camera_exit(cam, self.ctx)
             g.gp_camera_unref(cam)

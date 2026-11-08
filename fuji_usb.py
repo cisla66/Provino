@@ -33,6 +33,8 @@ func emit(_ d: [String: Any]) {
 let args = CommandLine.arguments
 let thumbDir = args.count > 1 ? args[1] : NSTemporaryDirectory()
 let wanted = args.count > 2 ? args[2].lowercased() : ""
+// le altre fotocamere supportate: se ne e' collegata piu' d'una, apro solo quella scelta
+let others = args.count > 3 ? args[3].lowercased().split(separator: ",").map(String.init).filter { !$0.isEmpty } : []
 
 let df = DateFormatter()
 df.locale = Locale(identifier: "en_US_POSIX")
@@ -61,13 +63,14 @@ final class Ctl: NSObject, ICDeviceBrowserDelegate, ICCameraDeviceDelegate {
         emit(["event": "device", "name": name])
         guard camera == nil, let cam = device as? ICCameraDevice else { return }
         let norm = name.lowercased().replacingOccurrences(of: "-", with: "").replacingOccurrences(of: " ", with: "")
-        if !wanted.isEmpty && !norm.contains(wanted) && !norm.contains("fuji") {
+        let isOther = others.contains { norm.contains($0) }
+        if !wanted.isEmpty && !norm.contains(wanted) && (isOther || !norm.contains("fuji")) {
             emit(["event": "skip", "name": name])
             return
         }
         camera = cam
         cam.delegate = self
-        emit(["event": "opening", "name": name])
+        emit(["event": "opening", "name": name, "pid": cam.usbProductID])
         cam.requestOpenSession()
     }
     func deviceBrowser(_ browser: ICDeviceBrowser, didRemove device: ICDevice, moreGoing: Bool) {
@@ -279,6 +282,7 @@ class UsbSession:
     def __init__(self, base_dir, camera_hint, log, on_event):
         self.base_dir = base_dir
         self.camera_hint = camera_hint
+        self.others = []   # le altre fotocamere supportate (le salto se collegate insieme)
         self.log = log
         self.on_event = on_event
         self.proc = None
@@ -297,7 +301,7 @@ class UsbSession:
                 except OSError:
                     pass
         os.makedirs(self.thumb_dir, exist_ok=True)
-        self.proc = subprocess.Popen([exe, self.thumb_dir, self.camera_hint], stdin=subprocess.PIPE,
+        self.proc = subprocess.Popen([exe, self.thumb_dir, self.camera_hint, ",".join(self.others)], stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
         threading.Thread(target=self._reader, daemon=True).start()
 
