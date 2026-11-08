@@ -1514,7 +1514,27 @@ def make_handler(app):
             except ValueError:
                 return {}
 
+        def _local_only(self):
+            """Difesa contro siti esterni (DNS rebinding, richieste da altre pagine): solo 127.0.0.1/localhost."""
+            from urllib.parse import urlsplit
+            host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]").lower()
+            if host not in ("127.0.0.1", "localhost"):
+                self._send(403, {"error": "host non ammesso"})
+                return False
+            origin = self.headers.get("Origin") or ""
+            if origin and origin != "null":
+                try:
+                    oh = (urlsplit(origin).hostname or "").lower()
+                except ValueError:
+                    oh = ""
+                if oh not in ("127.0.0.1", "localhost"):
+                    self._send(403, {"error": "origine non ammessa"})
+                    return False
+            return True
+
         def do_GET(self):
+            if not self._local_only():
+                return
             static = {"/": ("index.html", "text/html; charset=utf-8"),
                       "/index.html": ("index.html", "text/html; charset=utf-8"),
                       "/style.css": ("style.css", "text/css; charset=utf-8"),
@@ -1565,9 +1585,8 @@ def make_handler(app):
 
         def do_POST(self):
             # accetta richieste solo dalla pagina locale
-            origin = self.headers.get("Origin") or ""
-            if origin and not origin.startswith(("http://127.0.0.1", "http://localhost")):
-                return self._send(403, {"error": "origine non ammessa"})
+            if not self._local_only():
+                return
             body = self._json()
             if self.path == "/api/start":
                 cam = body.get("camera")
