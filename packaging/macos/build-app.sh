@@ -38,6 +38,14 @@ for pa in x86_64:x86_64 aarch64:arm64; do
   tgz="$B/py-$src.tar.gz"
   url="https://github.com/astral-sh/python-build-standalone/releases/download/$PBS_TAG/cpython-$PY_VER%2B$PBS_TAG-$src-apple-darwin-install_only_stripped.tar.gz"
   [ -f "$tgz" ] || curl -fsSL -o "$tgz" "$url"
+  # impronta pubblicata da python-build-standalone (SHA256SUMS del rilascio): se il file e' diverso, mi fermo
+  case "$PBS_TAG-$PY_VER-$src" in
+    20241016-3.12.7-x86_64)  want=848405b92bda20fad1f9bba99234c7d3f11e0b31e46f89835d1cb3d735e932aa ;;
+    20241016-3.12.7-aarch64) want=95dd397e3aef4cc1846867cf20be704bdd74edd16ea8032caf01e48f0c53d65d ;;
+    *) echo "Impronta sconosciuta per $PBS_TAG $PY_VER $src: aggiungila allo script" >&2; exit 1 ;;
+  esac
+  got=$(shasum -a 256 "$tgz" | cut -d' ' -f1)
+  [ "$got" = "$want" ] || { echo "Impronta sbagliata per $tgz: $got" >&2; exit 1; }
   mkdir -p "$B/py-$src" && tar -xzf "$tgz" -C "$B/py-$src"
   mv "$B/py-$src/python" "$APP/Contents/Resources/python-$dst"
   P="$APP/Contents/Resources/python-$dst"
