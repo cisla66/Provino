@@ -243,10 +243,10 @@ def helper_path(base_dir, log):
             pass
     os.makedirs(bindir, exist_ok=True)
     digest = hashlib.sha1(SWIFT_SOURCE.encode("utf-8")).hexdigest()[:10]
-    exe = os.path.join(bindir, "fujiusb_" + digest)
+    exe = os.path.join(bindir, "provino-usb_" + digest)
     if os.path.exists(exe):
         return exe
-    src = os.path.join(bindir, "fujiusb.swift")
+    src = os.path.join(bindir, "provino-usb.swift")
     with open(src, "w", encoding="utf-8") as fh:
         fh.write(SWIFT_SOURCE)
     swiftc = shutil.which("swiftc") or "/usr/bin/swiftc"
@@ -264,7 +264,7 @@ def helper_path(base_dir, log):
         log.info("ERRORE DI COMPILAZIONE dell'aiutante USB:\n" + out[-6000:])
         # riserva: l'ultima versione gia' compilata funziona ancora (senza le novita')
         prev = sorted((os.path.join(bindir, n) for n in os.listdir(bindir)
-                       if n.startswith("fujiusb_") and os.access(os.path.join(bindir, n), os.X_OK)),
+                       if n.startswith("provino-usb_") and os.access(os.path.join(bindir, n), os.X_OK)),
                       key=os.path.getmtime, reverse=True)
         if prev:
             log.info("Uso la versione precedente dell'aiutante: %s" % os.path.basename(prev[0]))

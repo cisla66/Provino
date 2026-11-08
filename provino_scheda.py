@@ -6,7 +6,7 @@ La scheda nel lettore il sistema la monta come un disco con la cartella DCIM.
 Qui la si legge SOLTANTO: i file si aprono in sola lettura, sulla scheda non si
 scrive, non si sposta e non si cancella nulla.
 
-Stessa interfaccia di fuji_usb.UsbSession / fuji_usb_linux.UsbSession, cosi' provino.py
+Stessa interfaccia di provino_usb.UsbSession / provino_usb_linux.UsbSession, cosi' provino.py
 la usa come il cavo: eventi -> callback (device, session, file, ready, removed, progress, error),
 comandi -> metodi (thumbnail, read, download, stop).
 
@@ -268,7 +268,7 @@ class CardSession:
             return None
         if f[1].upper().endswith(".HIF"):
             return self.heif_jpeg(fid, 480)
-        import fuji_wifi as fw
+        import provino_wifi as fw
         try:
             with open(f[0], "rb") as fh:
                 head = fh.read(0x80000)

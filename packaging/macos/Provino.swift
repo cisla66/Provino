@@ -137,7 +137,7 @@ final class Engine {
         env["PROVINO_APP"] = "mac"
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         env["PYTHONIOENCODING"] = "utf-8"
-        let helper = res.appendingPathComponent("bin/fujiusb").path
+        let helper = res.appendingPathComponent("bin/provino-usb").path
         if fm.isExecutableFile(atPath: helper) { env["PROVINO_USB_HELPER"] = helper }
         if env["LANG"] == nil { env["LANG"] = (LANG == "it" ? "it_IT" : "en_US") + ".UTF-8" }
         p.environment = env

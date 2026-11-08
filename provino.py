@@ -89,8 +89,8 @@ def connected_devices(fresh=False):
     except Exception:  # noqa: BLE001
         pass
     try:
-        import fuji_sd
-        cards = [os.path.basename(v.rstrip("/")) for v in fuji_sd.find_cards()]
+        import provino_scheda
+        cards = [os.path.basename(v.rstrip("/")) for v in provino_scheda.find_cards()]
     except Exception:  # noqa: BLE001
         cards = []
     seen, devs = set(), []
@@ -161,10 +161,10 @@ def default_dest():
 
 DATA = _data_dir()
 os.makedirs(DATA, exist_ok=True)
-import fuji_wifi as fw
-import fuji_meta  # noqa: E402
+import provino_wifi as fw
+import provino_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc20"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.0.0-rc21"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
@@ -265,8 +265,8 @@ def local_capture_date(path):
         dt = _exif_datetime(head)
         if not dt and head[4:8] == b"ftyp":        # HEIF: l'EXIF sta dentro il contenitore
             try:
-                import fuji_meta
-                raw = str((fuji_meta.parse(head) or {}).get("date") or "")
+                import provino_meta
+                raw = str((provino_meta.parse(head) or {}).get("date") or "")
                 dt = (raw[:10].replace(":", "") + "T" + raw[11:19].replace(":", "")) if len(raw) >= 19 else None
             except Exception:
                 dt = None
@@ -327,9 +327,9 @@ def choose_folder(start, prompt="Provino"):
 def _usb_module():
     """Modulo del cavo USB: ImageCaptureCore sul Mac, libgphoto2 su Linux (stesse funzioni)."""
     if sys.platform.startswith("linux"):
-        import fuji_usb_linux as m
+        import provino_usb_linux as m
     else:
-        import fuji_usb as m
+        import provino_usb as m
     return m
 
 
@@ -393,7 +393,7 @@ class App:
         self.big_order = []
         self.big_lock = threading.Lock()
         self.big_want = None
-        self.meta = {}         # scatto (base) -> metadati e ricetta (fuji_meta.parse)
+        self.meta = {}         # scatto (base) -> metadati e ricetta (provino_meta.parse)
         self.prefetching = False
         self.pending_names = []   # download interrotti dal distacco del cavo (per nome)
         self.meta_tries = {}
@@ -472,7 +472,7 @@ class App:
 
     # ------------------------------------------------------------ cavo USB (macOS e Linux)
     def _connect_usb(self, camera):
-        fuji_usb = _usb_module()
+        provino_usb = _usb_module()
         if self.usb_starting:
             return  # gia' in partenza: niente seconda copia dell'aiutante
         self.usb_starting = True
@@ -486,12 +486,12 @@ class App:
         self.thumb_tries = {}
         try:
             bindir = os.path.join(DATA, ".provino_bin")
-            first = sys.platform == "darwin" and not (os.path.isdir(bindir) and any(n.startswith("fujiusb_") for n in os.listdir(bindir)))
+            first = sys.platform == "darwin" and not (os.path.isdir(bindir) and any(n.startswith("provino-usb_") for n in os.listdir(bindir)))
             self.set_status("waiting", "usb_prepare" if first else "")
             cams = load_cameras()["cameras"]
             hint_of = lambda k: (cams.get(k) or {}).get("usb_hint") or k.lower().replace("-", "")
             hint = hint_of(camera)
-            sess = fuji_usb.UsbSession(DATA, hint, self.log, self._usb_event)
+            sess = provino_usb.UsbSession(DATA, hint, self.log, self._usb_event)
             sess.others = [hint_of(k) for k in cams if k != camera and k != "Fujifilm" and hint_of(k) != hint]
             sess.start()
             self.usb = sess
@@ -508,16 +508,16 @@ class App:
     def _heif_ok(self):
         if App._heif_cache is None:
             try:
-                import fuji_sd
-                App._heif_cache = fuji_sd.can_heif()
+                import provino_scheda
+                App._heif_cache = provino_scheda.can_heif()
             except Exception:  # noqa: BLE001
                 App._heif_cache = False
         return App._heif_cache
 
     # ------------------------------------------------------------ lettore di schede (macOS e Linux)
     def _connect_card(self):
-        """La scheda nel lettore: si legge come un disco, in sola lettura (fuji_sd)."""
-        import fuji_sd
+        """La scheda nel lettore: si legge come un disco, in sola lettura (provino_scheda)."""
+        import provino_scheda
         if self.usb:
             try:
                 self.usb.stop()
@@ -526,7 +526,7 @@ class App:
             self.usb = None
         self._usb_files = []
         self.thumb_tries = {}
-        sess = fuji_sd.CardSession(HERE, "", self.log, self._usb_event, dest_dir=self.dest)
+        sess = provino_scheda.CardSession(HERE, "", self.log, self._usb_event, dest_dir=self.dest)
         sess.start()
         self.usb = sess
         self.set_status("waiting", "")
@@ -624,13 +624,13 @@ class App:
         tmp_name = name + ".part"
         tmp = os.path.join(d, tmp_name)
         _remove_quiet(tmp)
-        fuji_usb = _usb_module()
-        import fuji_sd
+        provino_usb = _usb_module()
+        import provino_scheda
         try:
             got = self.usb.download(f["handle"], d, tmp_name, True, lambda: self.cancel)
             if got != tmp and os.path.exists(got):
                 os.replace(got, tmp)
-        except (fuji_usb.UsbError, fuji_sd.CardError) as e:
+        except (provino_usb.UsbError, provino_scheda.CardError) as e:
             _remove_quiet(tmp)
             raise fw.FujiError(str(e))
         size = os.path.getsize(tmp) if os.path.exists(tmp) else -1
@@ -966,7 +966,7 @@ class App:
         return None
 
     def _set_meta(self, f, head):
-        m = fuji_meta.parse(head or b"")
+        m = provino_meta.parse(head or b"")
         if not m:
             return None
         if f.get("kind") == "RAF":
@@ -1819,7 +1819,7 @@ def make_handler(app):
                                       "line2": str(body.get("line2") or "")[:80], "line3": str(body.get("line3") or "")[:80]})
                 return self._send(200, {"ok": True, "n": len(app.pdf_items)})
             if self.path == "/api/pdf/finish":
-                import fuji_pdf
+                import provino_pdf
                 title = (str(body.get("title") or "").strip() or "Provino")[:120]
                 path = body.get("path") or ""
                 if not path:
@@ -1834,7 +1834,7 @@ def make_handler(app):
                     path += ".pdf"
                 try:
                     os.makedirs(os.path.dirname(path), exist_ok=True)
-                    pages = fuji_pdf.build(path, getattr(app, "pdf_items", []), title,
+                    pages = provino_pdf.build(path, getattr(app, "pdf_items", []), title,
                                            str(body.get("subtitle") or ""),
                                            check_label=str(body.get("check_label") or "")[:30])
                 except OSError as e:
@@ -1844,9 +1844,9 @@ def make_handler(app):
                 app.log.info("PDF creato: %s (%d pagine)" % (path, pages))
                 return self._send(200, {"ok": True, "path": path, "pages": pages})
             if self.path == "/api/pdf/read":
-                import fuji_pdf
+                import provino_pdf
                 try:
-                    names = fuji_pdf.read_choices(str(body.get("path") or ""))
+                    names = provino_pdf.read_choices(str(body.get("path") or ""))
                 except (OSError, ValueError) as e:
                     return self._send(400, {"error": str(e)})
                 app.log.info("Scelte lette dal PDF: %d foto" % len(names))

@@ -36,7 +36,7 @@ except (ImportError, ValueError) as e:
 
 import json  # noqa: E402
 import provino as pv  # noqa: E402
-import fuji_wifi as fw  # noqa: E402
+import provino_wifi as fw  # noqa: E402
 
 APP_ID = "io.github.cisla66.Provino"
 

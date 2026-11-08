@@ -18,14 +18,14 @@ done
 lipo -create "$B/Provino-x86_64" "$B/Provino-arm64" -output "$APP/Contents/MacOS/Provino"
 
 echo "== aiutante USB (ImageCaptureCore)"
-python3 -c "import sys; sys.path.insert(0, '.'); import fuji_usb; open('$B/fujiusb.swift', 'w').write(fuji_usb.SWIFT_SOURCE)"
+python3 -c "import sys; sys.path.insert(0, '.'); import provino_usb; open('$B/provino-usb.swift', 'w').write(provino_usb.SWIFT_SOURCE)"
 for a in x86_64 arm64; do
-  swiftc -O -target $a-apple-macos11.0 -o "$B/fujiusb-$a" "$B/fujiusb.swift"
+  swiftc -O -target $a-apple-macos11.0 -o "$B/provino-usb-$a" "$B/provino-usb.swift"
 done
-lipo -create "$B/fujiusb-x86_64" "$B/fujiusb-arm64" -output "$APP/Contents/Resources/bin/fujiusb"
+lipo -create "$B/provino-usb-x86_64" "$B/provino-usb-arm64" -output "$APP/Contents/Resources/bin/provino-usb"
 
 echo "== motore e pagina"
-cp provino.py fuji_*.py cameras.json LICENSE "$APP/Contents/Resources/app/"
+cp provino.py provino_wifi.py provino_usb.py provino_usb_linux.py provino_scheda.py provino_meta.py provino_pdf.py cameras.json LICENSE "$APP/Contents/Resources/app/"
 cp -R web "$APP/Contents/Resources/app/web"
 cp assets/icon/provino.icns "$APP/Contents/Resources/Provino.icns"
 BUILD=$(date +%Y%m%d%H%M)
@@ -61,10 +61,10 @@ done
 
 echo "== prova: il Python incluso carica tutti i moduli di Provino"
 HA=$(uname -m); [ "$HA" = arm64 ] || HA=x86_64
-(cd "$APP/Contents/Resources/app" && ../python-$HA/bin/python3 -B -c "import provino, fuji_wifi, fuji_usb, fuji_sd, fuji_meta, fuji_pdf; print('moduli ok', provino.APP_VERSION)")
+(cd "$APP/Contents/Resources/app" && ../python-$HA/bin/python3 -B -c "import provino, provino_wifi, provino_usb, provino_scheda, provino_meta, provino_pdf; print('moduli ok', provino.APP_VERSION)")
 
 echo "== firma (ad hoc)"
-codesign --force --sign - "$APP/Contents/Resources/bin/fujiusb"
+codesign --force --sign - "$APP/Contents/Resources/bin/provino-usb"
 find "$APP/Contents/Resources" -type f \( -name "*.so" -o -name "*.dylib" -o -perm -u+x \) -exec sh -c 'file "$1" | grep -q Mach-O && codesign --force --sign - "$1"' _ {} \; 2>/dev/null || true
 codesign --force --sign - "$APP"
 codesign --verify --verbose=1 "$APP" || true

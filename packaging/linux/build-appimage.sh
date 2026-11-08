@@ -7,7 +7,7 @@ VER="$(sed -n 's/^APP_VERSION = "\([^"]*\)".*/\1/p' "$ROOT/provino.py")"
 OUT="${OUT:-$ROOT/dist}"
 APPDIR="$OUT/Provino.AppDir"
 rm -rf "$APPDIR"; mkdir -p "$APPDIR/usr/share/provino" "$APPDIR/usr/share/applications"
-for f in provino.py provino_finestra.py fuji_wifi.py fuji_usb_linux.py fuji_sd.py fuji_meta.py fuji_pdf.py cameras.json; do
+for f in provino.py provino_finestra.py provino_wifi.py provino_usb_linux.py provino_scheda.py provino_meta.py provino_pdf.py cameras.json; do
   cp "$ROOT/$f" "$APPDIR/usr/share/provino/"
 done
 cp -r "$ROOT/web" "$APPDIR/usr/share/provino/web"
@@ -24,7 +24,7 @@ done
 mkdir -p "$APPDIR/usr/share/icons/hicolor/scalable/apps"
 cp "$ROOT/assets/icon/provino-linux.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/io.github.cisla66.Provino.svg"
 # prova: tutti i moduli si caricano dalla cartella dell'app
-(cd "$APPDIR/usr/share/provino" && python3 -B -c "import provino, fuji_wifi, fuji_usb_linux, fuji_sd, fuji_meta, fuji_pdf; print('moduli ok', provino.APP_VERSION)")
+(cd "$APPDIR/usr/share/provino" && python3 -B -c "import provino, provino_wifi, provino_usb_linux, provino_scheda, provino_meta, provino_pdf; print('moduli ok', provino.APP_VERSION)")
 TOOL="${APPIMAGETOOL:-appimagetool}"
 ARCH=x86_64 "$TOOL" --appimage-extract-and-run "$APPDIR" "$OUT/Provino-$VER-x86_64.AppImage" 2>/dev/null \
   || ARCH=x86_64 "$TOOL" "$APPDIR" "$OUT/Provino-$VER-x86_64.AppImage"

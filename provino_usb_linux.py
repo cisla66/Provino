@@ -5,7 +5,7 @@ Usa libgphoto2, la libreria per fotocamere gia' presente nei sistemi Linux con G
 stessa che usa File per mostrare le fotocamere), chiamata direttamente da Python con ctypes:
 nessun pacchetto da installare.
 
-Ha le stesse funzioni e gli stessi eventi di fuji_usb.py (macOS, ImageCaptureCore), cosi'
+Ha le stesse funzioni e gli stessi eventi di provino_usb.py (macOS, ImageCaptureCore), cosi'
 provino.py non cambia: elenco dei file, miniature, letture parziali, download.
 
 Fotocamera in modalita' "USB CARD READER" / "LETTORE SCHEDA USB", come sul Mac:
@@ -112,7 +112,7 @@ def _exif_date(buf):
 
 
 class UsbSession:
-    """Stessa interfaccia di fuji_usb.UsbSession (macOS): eventi -> callback, comandi -> metodi."""
+    """Stessa interfaccia di provino_usb.UsbSession (macOS): eventi -> callback, comandi -> metodi."""
 
     def __init__(self, base_dir, camera_hint, log, on_event):
         self.base_dir = base_dir
@@ -340,7 +340,7 @@ class UsbSession:
                             "date": self._date_of(mtime), "folder": shown})
         self._emit({"event": "ready", "count": len(entries), "name": getattr(self, "camera_name", "")})
 
-    # ------------------------------------------------------------ comandi (come fuji_usb)
+    # ------------------------------------------------------------ comandi (come provino_usb)
     def _read_locked(self, folder, name, offset, length):
         out = bytearray()
         while len(out) < length:
