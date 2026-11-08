@@ -267,7 +267,10 @@ class ProvinoApp(Adw.Application):
                   "inst_yes_move": "Sposta e aggiungi", "inst_no": "Non ora",
                   "un_row": "Disinstalla Provino…", "un_h": "Disinstallare Provino?",
                   "un_b": "Tolgo Provino dalle applicazioni, cancello impostazioni e registri e metto il programma nel Cestino.\n\nLe foto scaricate (%(photos)s) non vengono toccate.",
-                  "un_yes": "Disinstalla"},
+                  "un_yes": "Disinstalla",
+                  "upd_h": "Aggiornare Provino?",
+                  "upd_b": "In %(dir)s c'è già Provino (%(old)s). Metto questa versione al suo posto e la vecchia nel Cestino. Impostazioni e foto restano come sono.",
+                  "upd_yes": "Aggiorna", "upd_done": "Provino è aggiornato"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -303,7 +306,10 @@ class ProvinoApp(Adw.Application):
                   "inst_yes_move": "Move and Add", "inst_no": "Not Now",
                   "un_row": "Uninstall Provino…", "un_h": "Uninstall Provino?",
                   "un_b": "I'll remove Provino from your applications, delete its settings and logs and move the program to the Trash.\n\nYour downloaded photos (%(photos)s) are not touched.",
-                  "un_yes": "Uninstall"}}
+                  "un_yes": "Uninstall",
+                  "upd_h": "Update Provino?",
+                  "upd_b": "Provino is already in %(dir)s (%(old)s). I'll put this version in its place and move the old one to the Trash. Settings and photos stay as they are.",
+                  "upd_yes": "Update", "upd_done": "Provino is up to date"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -855,8 +861,11 @@ class ProvinoApp(Adw.Application):
         if not img:
             return False
         cur = menu_entry_path()
+        if cur and os.path.isfile(cur) and not os.path.samefile(cur, img):
+            self._offer_update(img, cur)          # nuova versione aperta, quella installata c'e' ancora
+            return False
         if cur:
-            install_menu_entry()
+            install_menu_entry()   # aggiorna percorso e icona (una nuova versione puo' avere un'icona nuova)
             return False
         S = self.core[0].settings
         if S.get("menu_entry_asked"):
@@ -886,6 +895,39 @@ class ProvinoApp(Adw.Application):
         dlg.present(self.win)
         self.inst_dlg = dlg
         return False
+
+    def _offer_update(self, img, old):
+        """Si apre una versione nuova mentre quella installata e' ancora in ~/Applicazioni: propone di sostituirla."""
+        dlg = Adw.AlertDialog(heading=self.t("upd_h"),
+                              body=self.t("upd_b") % {"old": os.path.basename(old), "dir": self._nice(os.path.dirname(old))})
+        dlg.add_response("no", self.t("inst_no"))
+        dlg.add_response("yes", self.t("upd_yes"))
+        dlg.set_response_appearance("yes", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("yes")
+        dlg.set_close_response("no")
+
+        def done(_d, resp):
+            if resp != "yes":
+                return
+            ok = False
+            try:
+                d = os.path.dirname(old)
+                dest = os.path.join(d, os.path.basename(img))
+                if os.path.realpath(os.path.dirname(img)) != os.path.realpath(d):
+                    if os.path.exists(dest) and not os.path.samefile(dest, img):
+                        os.remove(dest)
+                    shutil.move(img, dest)
+                    os.chmod(dest, 0o755)
+                    _MOVED[0] = dest
+                if os.path.exists(old) and not os.path.samefile(old, dest):
+                    Gio.File.new_for_path(old).trash(None)     # la versione vecchia nel Cestino
+                ok = install_menu_entry(dest)
+            except (OSError, GLib.Error) as e:
+                self.log.info("Aggiornamento non riuscito: %s" % e)
+            self.toasts.add_toast(Adw.Toast(title=self.t("upd_done" if ok else "menu_fail"), timeout=5))
+        dlg.connect("response", done)
+        dlg.present(self.win)
+        self.inst_dlg = dlg
 
     def uninstall(self, *_):
         dlg = Adw.AlertDialog(heading=self.t("un_h"), body=self.t("un_b") % {"photos": self._nice(self.core[0].dest)})
