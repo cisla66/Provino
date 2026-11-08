@@ -816,8 +816,7 @@ class ProvinoApp(Adw.Application):
             return False
         cur = menu_entry_path()
         if cur:
-            if cur != img:
-                install_menu_entry()
+            install_menu_entry()   # aggiorna percorso e icona (una nuova versione puo' avere un'icona nuova)
             return False
         S = self.core[0].settings
         if S.get("menu_entry_asked"):
