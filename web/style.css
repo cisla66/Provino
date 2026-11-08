@@ -399,3 +399,6 @@ html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
 .opt.camcard:not(:has(.live)) .camtxt::after{content:"";height:17px}
 .opt.camcard .live::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:6px;vertical-align:0}
 @media (max-width:480px){ .pick.cams{flex-wrap:wrap} }
+.devnote{margin:-14px 0 18px;font-size:13px;color:var(--ok-ink,#1b7a4a)}
+.livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#34c759;margin-right:7px;vertical-align:0}
+.opt.camcard b{white-space:nowrap}

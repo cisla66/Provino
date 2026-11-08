@@ -490,8 +490,6 @@ function devOf(c){
   const cam = CAMS.cameras[c] || {};
   if(cam.icon === "reader") return DEV.cards.length ? t("dev.card", {v: DEV.cards.join(", ")}) : "";
   if(DEV.usb.some(u => u!=="?" && (norm(u) === norm(c) || norm(u).endsWith(norm(c))))) return t("dev.usb");
-  // una Fujifilm sul cavo di cui non so ancora il modello (lo imparo al primo collegamento col cavo)
-  if(DEV.usb.includes("?") && (cam.methods||[]).includes("cable")) return t("dev.usbAny");
   return "";
 }
 async function pollDevices(){
@@ -521,6 +519,9 @@ function wizard(){
   const ml = ((S.settings||{}).menu_lang||{})[wiz.camera] || LANG;
   const camLabel = cam.label? loc(cam.label) : wiz.camera;
   h += `</div>`;
+  // una Fujifilm sul cavo di cui non so ancora il modello: lo dico una volta sola, sotto la riga, senza
+  // attribuirlo a una fotocamera (il modello lo imparo al primo collegamento col cavo)
+  if(DEV.usb.includes("?")) h += `<p class="devnote"><span class="livedot"></span>${esc(t("dev.usbAny"))}</p>`;
   if(cam.methods.some(m=>m!=="card")) h += `<div class="langrow"><span class="lbl">${t("wiz.menuLang",{cam:esc(camLabel)})}</span>${langSeg("data-ml", ml, t("wiz.menuLang",{cam:camLabel}))}</div>`;
   else if(cam.note) h += `<p class="tip">${esc(loc(cam.note))}</p>`;
   const onlyCard = cam.methods.length===1 && cam.methods[0]==="card";   // "Lettore di schede": niente da scegliere
