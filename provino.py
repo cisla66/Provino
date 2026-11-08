@@ -50,11 +50,11 @@ def _data_dir():
 _DEV_CACHE = [0.0, None]
 
 
-def connected_devices():
+def connected_devices(fresh=False):
     """Cosa c'e' collegato adesso: fotocamere Fujifilm sul cavo USB (nome del modello) e schede nel lettore.
     Lettura veloce e senza toccare i dispositivi: ioreg sul Mac, /sys su Linux. Risultato tenuto 2 secondi."""
     now = time.time()
-    if _DEV_CACHE[1] is not None and now - _DEV_CACHE[0] < 2:
+    if not fresh and _DEV_CACHE[1] is not None and now - _DEV_CACHE[0] < 2:
         return _DEV_CACHE[1]
     usb = []
     try:
@@ -69,8 +69,9 @@ def connected_devices():
                     if fuji:
                         m = re.search(r'"(?:USB Product Name|kUSBProductString)" = "([^"]+)"', block) or \
                             re.match(r"([^@<]+)", block)
+                        p = re.search(r'"idProduct" = (\d+)', block)
                         if m:
-                            usb.append(m.group(1).strip())
+                            usb.append((m.group(1).strip(), int(p.group(1)) if p else 0))
                 if usb:
                     break
         elif sys.platform.startswith("linux"):
@@ -80,7 +81,9 @@ def connected_devices():
                         if fh.read().strip().lower() != "04cb":
                             continue
                     with open(os.path.join(d, "product")) as fh:
-                        usb.append(fh.read().strip())
+                        name = fh.read().strip()
+                    with open(os.path.join(d, "idProduct")) as fh:
+                        usb.append((name, int(fh.read().strip() or "0", 16)))
                 except OSError:
                     continue
     except Exception:  # noqa: BLE001
@@ -90,7 +93,12 @@ def connected_devices():
         cards = [os.path.basename(v.rstrip("/")) for v in fuji_sd.find_cards()]
     except Exception:  # noqa: BLE001
         cards = []
-    res = {"usb": sorted(set(u for u in usb if u)), "cards": cards}
+    seen, devs = set(), []
+    for name, pid in usb:
+        if name and (name, pid) not in seen:
+            seen.add((name, pid))
+            devs.append({"name": name, "pid": pid})
+    res = {"usb": devs, "cards": cards}
     _DEV_CACHE[0], _DEV_CACHE[1] = now, res
     return res
 
@@ -495,6 +503,8 @@ class App:
         elif k in ("opening", "session"):
             with self.state_lock:
                 self.camera_name = (ev.get("name") or self.camera_name)
+            if self.choice.get("method") == "cable" and ev.get("name"):
+                self._learn_usb_model(ev.get("name"))
             self.set_status("connecting", "reading_card")
         elif k == "file":
             name = safe_filename(ev.get("name") or "")
@@ -862,6 +872,21 @@ class App:
                         x["date"] = (c + diff).strftime("%Y%m%dT%H%M%S")
                         x["date_text"] = iso_to_text(x["date"])
         return sorted(files, key=lambda x: (x["date"], x["base"], x["kind"]), reverse=True)
+
+    def _learn_usb_model(self, name):
+        """Collegata col cavo: abbino il codice prodotto USB al nome del modello (per il pallino verde)."""
+        try:
+            fuji = [x for x in connected_devices(fresh=True)["usb"]]
+            if len(fuji) != 1 or not fuji[0]["pid"]:
+                return
+            model = str(name).replace("FUJIFILM", "").strip()
+            known = self.settings.setdefault("usb_models", {})
+            if known.get(str(fuji[0]["pid"])) != model:
+                known[str(fuji[0]["pid"])] = model
+                self.save_settings()
+                self.log.info("Cavo: codice USB %d = %s" % (fuji[0]["pid"], model))
+        except Exception as e:  # noqa: BLE001
+            self.log.debug("abbinamento USB: %r" % e)
 
     def _raf_size(self, f):
         """Dimensioni della foto da un RAF (tag 0x111 'RawImageCroppedSize' dell'intestazione CFA): (larghezza, altezza)."""
@@ -1608,7 +1633,15 @@ def make_handler(app):
                 with open(CAMERAS_PATH, "rb") as fh:
                     return self._send(200, fh.read(), "application/json")
             if self.path == "/api/devices":
-                return self._send(200, connected_devices())
+                d = connected_devices()
+                # le Fujifilm sul cavo si presentano come "USB PTP Camera": il modello lo ricordo dal codice
+                # prodotto, imparato la prima volta che Provino ci si collega col cavo
+                known = app.settings.get("usb_models") or {}
+                usb = []
+                for x in d["usb"]:
+                    model = known.get(str(x["pid"])) or ("" if "PTP" in x["name"].upper() else x["name"])
+                    usb.append(model or "?")
+                return self._send(200, {"usb": usb, "cards": d["cards"]})
             if self.path == "/api/state":
                 st = app.snapshot()
                 st["platform"] = sys.platform   # la UI disattiva il cavo dove non c'e' ancora

@@ -489,7 +489,10 @@ const norm = x => String(x||"").toUpperCase().replace(/[^A-Z0-9]/g, "");
 function devOf(c){
   const cam = CAMS.cameras[c] || {};
   if(cam.icon === "reader") return DEV.cards.length ? t("dev.card", {v: DEV.cards.join(", ")}) : "";
-  return DEV.usb.some(u => norm(u) === norm(c) || norm(u).endsWith(norm(c))) ? t("dev.usb") : "";
+  if(DEV.usb.some(u => u!=="?" && (norm(u) === norm(c) || norm(u).endsWith(norm(c))))) return t("dev.usb");
+  // una Fujifilm sul cavo di cui non so ancora il modello (lo imparo al primo collegamento col cavo)
+  if(DEV.usb.includes("?") && (cam.methods||[]).includes("cable")) return t("dev.usbAny");
+  return "";
 }
 async function pollDevices(){
   clearTimeout(devTimer);
