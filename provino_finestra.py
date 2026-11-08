@@ -129,8 +129,11 @@ DESK_FILE = os.path.join(GLib.get_user_data_dir(), "applications", APP_ID + ".de
 ICON_DIR = os.path.join(GLib.get_user_data_dir(), "icons", "hicolor")
 
 
+_MOVED = [None]   # dove e' finito l'AppImage se l'ho spostato mentre Provino era aperto
+
+
 def appimage_path():
-    p = os.environ.get("APPIMAGE")
+    p = _MOVED[0] or os.environ.get("APPIMAGE")
     return p if p and os.path.isfile(p) else None
 
 
@@ -146,9 +149,9 @@ def menu_entry_path():
     return None
 
 
-def install_menu_entry():
+def install_menu_entry(img=None):
     """Copia icona e voce .desktop nella cartella dell'utente (niente sudo): Provino compare in Attivita' e nel dock."""
-    img, appdir = appimage_path(), os.environ.get("APPDIR") or ""
+    img, appdir = img or appimage_path(), os.environ.get("APPDIR") or ""
     if not img or not appdir:
         return False
     with open(os.path.join(appdir, APP_ID + ".desktop"), encoding="utf-8") as fh:
@@ -177,6 +180,33 @@ def install_menu_entry():
         except (OSError, subprocess.SubprocessError):
             pass
     return True
+
+
+def apps_dir():
+    """La cartella delle applicazioni nella home: ~/Applicazioni (o ~/Applications se esiste gia' quella)."""
+    home = os.path.expanduser("~")
+    for n in ("Applicazioni", "Applications", "AppImages"):
+        if os.path.isdir(os.path.join(home, n)):
+            return os.path.join(home, n)
+    it = (GLib.get_language_names() or ["en"])[0].startswith("it")
+    return os.path.join(home, "Applicazioni" if it else "Applications")
+
+
+def in_apps_dir(img):
+    return os.path.dirname(os.path.realpath(img)) == os.path.realpath(apps_dir())
+
+
+def move_to_apps(img):
+    """Sposta l'AppImage nella cartella delle applicazioni (il programma in esecuzione non se ne accorge)."""
+    d = apps_dir()
+    os.makedirs(d, exist_ok=True)
+    dest = os.path.join(d, os.path.basename(img))
+    if os.path.exists(dest) and not os.path.samefile(dest, img):
+        os.remove(dest)                      # una versione precedente con lo stesso nome
+    shutil.move(img, dest)
+    os.chmod(dest, 0o755)
+    _MOVED[0] = dest
+    return dest
 
 
 def remove_menu_entry():
@@ -230,7 +260,14 @@ class ProvinoApp(Adw.Application):
                   "k_app": "Generale", "k_dl": "Scarica i file scelti",
                   "menu_q": "Vuoi Provino tra le applicazioni, con la sua icona?", "menu_add": "Aggiungi",
                   "menu_done": "Provino è tra le applicazioni", "menu_fail": "Non sono riuscito ad aggiungerlo",
-                  "menu_row": "Tra le applicazioni", "menu_row_sub": "Icona di Provino in Attività e nel dock"},
+                  "menu_row": "Tra le applicazioni", "menu_row_sub": "Icona di Provino in Attività e nel dock",
+                  "inst_h": "Installare Provino?",
+                  "inst_b_move": "Lo sposto nella cartella %(dir)s, così non rischi di cancellarlo con i download, e lo aggiungo alle applicazioni con la sua icona.",
+                  "inst_b": "Lo aggiungo alle applicazioni con la sua icona, così lo trovi in Attività e nel dock.",
+                  "inst_yes_move": "Sposta e aggiungi", "inst_no": "Non ora",
+                  "un_row": "Disinstalla Provino…", "un_h": "Disinstallare Provino?",
+                  "un_b": "Tolgo Provino dalle applicazioni, cancello impostazioni e registri e metto il programma nel Cestino.\n\nLe foto scaricate (%(photos)s) non vengono toccate.",
+                  "un_yes": "Disinstalla"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -259,7 +296,14 @@ class ProvinoApp(Adw.Application):
                   "k_app": "General", "k_dl": "Download the picked files",
                   "menu_q": "Add Provino to your applications, with its icon?", "menu_add": "Add",
                   "menu_done": "Provino is in your applications", "menu_fail": "Couldn't add it",
-                  "menu_row": "In applications", "menu_row_sub": "Provino's icon in Activities and the dock"}}
+                  "menu_row": "In applications", "menu_row_sub": "Provino's icon in Activities and the dock",
+                  "inst_h": "Install Provino?",
+                  "inst_b_move": "I'll move it to %(dir)s, so you won't delete it along with your downloads, and add it to your applications with its icon.",
+                  "inst_b": "I'll add it to your applications with its icon, so you'll find it in Activities and the dock.",
+                  "inst_yes_move": "Move and Add", "inst_no": "Not Now",
+                  "un_row": "Uninstall Provino…", "un_h": "Uninstall Provino?",
+                  "un_b": "I'll remove Provino from your applications, delete its settings and logs and move the program to the Trash.\n\nYour downloaded photos (%(photos)s) are not touched.",
+                  "un_yes": "Uninstall"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -586,10 +630,6 @@ class ProvinoApp(Adw.Application):
         prev.add_css_class("monospace")
         prev.set_margin_top(4)
         g2.add(prev)
-        if appimage_path():
-            mrow = Adw.SwitchRow(title=self.t("menu_row"), subtitle=self.t("menu_row_sub"), active=bool(menu_entry_path()))
-            mrow.connect("notify::active", lambda r, _p: install_menu_entry() if r.get_active() else remove_menu_entry())
-            g2.add(mrow)
         page.add(g2)
         tb.set_content(page)
         dlg.set_child(tb)
@@ -809,29 +849,66 @@ class ProvinoApp(Adw.Application):
             self.js("trayClosed")
 
     def _offer_menu_entry(self):
-        """Avviato da AppImage: propone (una volta) di mettere Provino nel menu; se l'AppImage e' stato
-        spostato o aggiornato, la voce gia' presente viene aggiornata da sola."""
+        """Avviato da AppImage. Se e' ancora in Scaricati (o altrove), propone una volta di spostarlo in
+        ~/Applicazioni e di aggiungerlo alle applicazioni; se la voce c'e' gia', la aggiorna (percorso e icona)."""
         img = appimage_path()
         if not img:
             return False
         cur = menu_entry_path()
         if cur:
-            install_menu_entry()   # aggiorna percorso e icona (una nuova versione puo' avere un'icona nuova)
+            install_menu_entry()
             return False
         S = self.core[0].settings
         if S.get("menu_entry_asked"):
             return False
-        t = Adw.Toast(title=self.t("menu_q"), timeout=0)
-        t.set_button_label(self.t("menu_add"))
-
-        def add(*_):
-            ok = install_menu_entry()
-            self.toasts.add_toast(Adw.Toast(title=self.t("menu_done" if ok else "menu_fail"), timeout=4))
-        t.connect("button-clicked", add)
         S["menu_entry_asked"] = True
         self.core[0].save_settings()
-        self.toasts.add_toast(t)
+        move = not in_apps_dir(img)
+        dlg = Adw.AlertDialog(heading=self.t("inst_h"),
+                              body=self.t("inst_b_move" if move else "inst_b") % {"dir": self._nice(apps_dir())})
+        dlg.add_response("no", self.t("inst_no"))
+        dlg.add_response("yes", self.t("inst_yes_move" if move else "menu_add"))
+        dlg.set_response_appearance("yes", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("yes")
+        dlg.set_close_response("no")
+
+        def done(_d, resp):
+            if resp != "yes":
+                return
+            try:
+                path = move_to_apps(img) if move else img
+                ok = install_menu_entry(path)
+            except OSError as e:
+                self.log.info("Installazione nelle applicazioni non riuscita: %s" % e)
+                ok = False
+            self.toasts.add_toast(Adw.Toast(title=self.t("menu_done" if ok else "menu_fail"), timeout=5))
+        dlg.connect("response", done)
+        dlg.present(self.win)
+        self.inst_dlg = dlg
         return False
+
+    def uninstall(self, *_):
+        dlg = Adw.AlertDialog(heading=self.t("un_h"), body=self.t("un_b") % {"photos": self._nice(self.core[0].dest)})
+        dlg.add_response("no", self.t("cancel"))
+        dlg.add_response("yes", self.t("un_yes"))
+        dlg.set_response_appearance("yes", Adw.ResponseAppearance.DESTRUCTIVE)
+        dlg.set_close_response("no")
+
+        def done(_d, resp):
+            if resp != "yes":
+                return
+            remove_menu_entry()
+            img = appimage_path()
+            if img:
+                try:
+                    Gio.File.new_for_path(img).trash(None)
+                except GLib.Error as e:
+                    self.log.info("Cestino non riuscito: %s" % e.message)
+            self.uninstalling = True      # impostazioni e registro si tolgono dopo la chiusura
+            self.quit()
+        dlg.connect("response", done)
+        self.un_dlg = dlg
+        dlg.present(self.prefs_dlg if getattr(self, "prefs_dlg", None) else self.win)
 
     def _nice(self, path):
         home = os.path.expanduser("~")
@@ -924,11 +1001,30 @@ class ProvinoApp(Adw.Application):
                           if self.theme_action.get_state().get_string() in themes else 0)
         trow.connect("notify::selected", lambda r, _p: self.theme_action.activate(GLib.Variant("s", themes[r.get_selected()])))
         g2.add(trow)
+        if appimage_path():
+            mrow = Adw.SwitchRow(title=self.t("menu_row"), subtitle=self.t("menu_row_sub"), active=bool(menu_entry_path()))
+            mrow.connect("notify::active", lambda r, _p: install_menu_entry() if r.get_active() else remove_menu_entry())
+            g2.add(mrow)
         page.add(g2)
 
+        if appimage_path():
+            gu = Adw.PreferencesGroup()
+            urow = Adw.ButtonRow(title=self.t("un_row")) if hasattr(Adw, "ButtonRow") else None
+            if urow is not None:
+                urow.add_css_class("destructive-action")
+                urow.connect("activated", self.uninstall)
+            else:
+                urow = Adw.ActionRow(title=self.t("un_row"), activatable=True)
+                urow.add_css_class("error")
+                urow.connect("activated", self.uninstall)
+            gu.add(urow)
+            self._uninstall_group = gu
         g3 = Adw.PreferencesGroup(title=self.t("p_safe"))
         g3.add(Adw.ActionRow(title=self.t("p_safe_t"), subtitle=self.t("p_safe_s")))
         page.add(g3)
+        if getattr(self, "_uninstall_group", None) is not None and appimage_path():
+            page.add(self._uninstall_group)
+            self._uninstall_group = None
         dlg.add(page)
         self.prefs_dlg = dlg
         try:
@@ -998,6 +1094,8 @@ class ProvinoApp(Adw.Application):
         finally:
             log.info("Chiuso.")
             log.close()
+            if getattr(self, "uninstalling", False):
+                shutil.rmtree(pv.DATA, ignore_errors=True)   # impostazioni e registri; le foto restano dove sono
 
 
 def main():
