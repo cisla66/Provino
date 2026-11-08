@@ -1791,6 +1791,61 @@ def make_handler(app):
             if self.path == "/api/reconnect":
                 app.start_connect()
                 return self._send(200, {"ok": True})
+            if self.path == "/api/pdf/start":
+                app.pdf_items = []
+                return self._send(200, {"ok": True})
+            if self.path == "/api/pdf/add":
+                import base64
+                try:
+                    data = base64.b64decode(body.get("jpeg") or "")
+                except ValueError:
+                    data = b""
+                if data[:2] != b"\xff\xd8" or len(getattr(app, "pdf_items", [])) >= 2000:
+                    return self._send(400, {"error": "immagine"})
+                app.pdf_items.append({"jpeg": data, "name": str(body.get("name") or "")[:80],
+                                      "line2": str(body.get("line2") or "")[:80], "line3": str(body.get("line3") or "")[:80]})
+                return self._send(200, {"ok": True, "n": len(app.pdf_items)})
+            if self.path == "/api/pdf/finish":
+                import fuji_pdf
+                title = (str(body.get("title") or "").strip() or "Provino")[:120]
+                path = body.get("path") or ""
+                if not path:
+                    safe = re.sub(r'[\\/:*?"<>|]+', "-", title).strip(" .") or "Provino"
+                    path = os.path.join(app.dest, safe + ".pdf")
+                    n = 2
+                    while os.path.exists(path):
+                        path = os.path.join(app.dest, "%s (%d).pdf" % (safe, n))
+                        n += 1
+                path = os.path.abspath(os.path.expanduser(path))
+                if not path.lower().endswith(".pdf"):
+                    path += ".pdf"
+                try:
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    pages = fuji_pdf.build(path, getattr(app, "pdf_items", []), title,
+                                           str(body.get("subtitle") or ""),
+                                           check_label=str(body.get("check_label") or "")[:30])
+                except OSError as e:
+                    return self._send(500, {"error": str(e)})
+                finally:
+                    app.pdf_items = []
+                app.log.info("PDF creato: %s (%d pagine)" % (path, pages))
+                return self._send(200, {"ok": True, "path": path, "pages": pages})
+            if self.path == "/api/pdf/read":
+                import fuji_pdf
+                try:
+                    names = fuji_pdf.read_choices(str(body.get("path") or ""))
+                except (OSError, ValueError) as e:
+                    return self._send(400, {"error": str(e)})
+                app.log.info("Scelte lette dal PDF: %d foto" % len(names))
+                return self._send(200, {"ok": True, "names": names})
+            if self.path == "/api/open-file":
+                pth = str(body.get("path") or "")
+                if pth.lower().endswith(".pdf") and os.path.isfile(pth):
+                    try:
+                        subprocess.Popen(["open", pth] if sys.platform == "darwin" else ["xdg-open", pth])
+                    except OSError:
+                        pass
+                return self._send(200, {"ok": True})
             if self.path == "/api/open-folder":
                 last = app.done[-1]["path"] if app.done and app.done[-1].get("path") else ""
                 try:

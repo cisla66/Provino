@@ -33,7 +33,7 @@ let TXT: [String: [String: String]] = [
         "comments": "Progetto indipendente, non affiliato a FUJIFILM Corporation.",
         "starting": "Avvio di Provino…", "noPython": "Non trovo il motore di Provino dentro l'app.",
         "crash": "Il motore di Provino si è chiuso. Il registro è nella cartella log.",
-        "openLog": "Apri il registro", "checkUpd": "Controlla aggiornamenti…", "updNew": "È disponibile Provino {v}",
+        "openLog": "Apri il registro", "checkUpd": "Controlla aggiornamenti…", "pdfSel": "Crea PDF delle foto scelte…", "pdfVis": "Crea PDF di quello che vedi…", "pdfMenu": "Crea PDF…", "pdfRead": "Leggi le scelte da un PDF…", "updNew": "È disponibile Provino {v}",
         "updInfo": "Hai la versione {c}.", "updGet": "Scarica", "updLater": "Più tardi", "updNone": "Provino è aggiornato",
         "updNoneInfo": "Hai la versione più recente ({c}).", "updErr": "Non riesco a controllare gli aggiornamenti",
         "updErrInfo": "Controlla la connessione e riprova più tardi.", "autoUpd": "Controlla gli aggiornamenti all'avvio",
@@ -63,7 +63,7 @@ let TXT: [String: [String: String]] = [
         "comments": "Independent project, not affiliated with FUJIFILM Corporation.",
         "starting": "Starting Provino…", "noPython": "Provino's engine is missing from the app.",
         "crash": "Provino's engine has quit. The log is in the log folder.",
-        "openLog": "Open the Log", "checkUpd": "Check for Updates…", "updNew": "Provino {v} is available",
+        "openLog": "Open the Log", "checkUpd": "Check for Updates…", "pdfSel": "Create PDF of Picked Photos…", "pdfVis": "Create PDF of What You See…", "pdfMenu": "Create PDF…", "pdfRead": "Read Choices from a PDF…", "updNew": "Provino {v} is available",
         "updInfo": "You have version {c}.", "updGet": "Download", "updLater": "Later", "updNone": "Provino is up to date",
         "updNoneInfo": "You have the latest version ({c}).", "updErr": "Can't check for updates",
         "updErrInfo": "Check your connection and try again later.", "autoUpd": "Check for updates at launch",
@@ -415,6 +415,13 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         case "askDest": askDest(o)
         case "conflicts": askConflicts(o)
         case "transfer": onTransfer(o)
+        case "pdfAsk": askPdf(o)
+        case "pdfDone": pdfDone(o)
+        case "toast":
+            if let w = window {
+                let a = NSAlert(); a.messageText = (o["text"] as? String) ?? ""
+                a.beginSheetModal(for: w, completionHandler: nil)
+            }
         case "error": showError((o["text"] as? String) ?? "")
         default: applyState(o)
         }
@@ -489,6 +496,13 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         m.addItem(sel(T("sel_visible"), "visible"))
         m.addItem(.separator())
         m.addItem(sel(T("deselect"), "none"))
+        m.addItem(.separator())
+        let pi = NSMenuItem(title: n > 0 ? T("pdfSel") : T("pdfVis"), action: #selector(onPdf), keyEquivalent: "")
+        pi.target = self
+        m.addItem(pi)
+        let pr = NSMenuItem(title: T("pdfRead"), action: #selector(readPdf), keyEquivalent: "")
+        pr.target = self
+        m.addItem(pr)
         if n > 0, let sum = st["sum"] as? String, !sum.isEmpty {
             m.addItem(.separator())
             let s = NSMenuItem(title: sum, action: nil, keyEquivalent: "")
@@ -512,6 +526,16 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         js("film", i >= 0 && i < filmValues.count ? filmValues[i] : "")
     }
     @objc func onGo() { js("download") }
+    @objc func onPdf() { js("pdf") }
+    @objc func readPdf() {
+        guard let w = window else { return }
+        let p = NSOpenPanel()
+        p.allowedFileTypes = ["pdf"]
+        p.canChooseDirectories = false
+        p.beginSheetModal(for: w) { r in
+            if r == .OK, let u = p.url { self.js("pdfRead", u.path) }
+        }
+    }
     @objc func onPanel() { js("split") }
 
     func showError(_ text: String) {
@@ -536,6 +560,44 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         confSheet = s
         if let d = destSheet?.window, d.isVisible { w.endSheet(d) }
         w.beginSheet(s.window) { _ in self.confSheet = nil }
+    }
+
+    // MARK: PDF (titolo, poi dove salvarlo)
+    func askPdf(_ req: [String: Any]) {
+        guard let w = window else { return }
+        let L = (req["labels"] as? [String: String]) ?? [:]
+        let a = NSAlert()
+        a.messageText = L["head"] ?? ""
+        a.informativeText = L["body"] ?? ""
+        let field = NSTextField(string: (req["title"] as? String) ?? "")
+        field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        field.placeholderString = L["title"]
+        a.accessoryView = field
+        a.addButton(withTitle: L["ok"] ?? "PDF")
+        a.addButton(withTitle: L["cancel"] ?? T("cancel"))
+        a.window.initialFirstResponder = field
+        a.beginSheetModal(for: w) { resp in
+            guard resp == .alertFirstButtonReturn else { return }
+            var title = field.stringValue.trimmingCharacters(in: .whitespaces)
+            if title.isEmpty { title = (req["title"] as? String) ?? "Provino" }
+            let safe = title.components(separatedBy: CharacterSet(charactersIn: "/\\:*?\"<>|")).joined(separator: "-")
+            let p = NSSavePanel()
+            p.nameFieldStringValue = safe + ".pdf"
+            p.allowedFileTypes = ["pdf"]
+            p.canCreateDirectories = true
+            DispatchQueue.main.async {
+                p.beginSheetModal(for: w) { r in
+                    if r == .OK, let u = p.url { self.js("pdfGo", ["title": title, "path": u.path]) }
+                }
+            }
+        }
+    }
+
+    func pdfDone(_ o: [String: Any]) {
+        guard let path = o["path"] as? String else { return }
+        let u = URL(fileURLWithPath: path)
+        NSWorkspace.shared.activateFileViewerSelecting([u])   // il PDF nel Finder
+        NSWorkspace.shared.open(u)                            // e aperto in Anteprima per controllarlo
     }
 
     // MARK: avanzamento
@@ -1178,6 +1240,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sub(T("file"), [
             it(T("download"), #selector(download), "\r", target: self),
             it(T("change"), #selector(changeCamera(_:)), "k", [.command, .shift], target: self), sep(),
+            it(T("pdfMenu"), #selector(makePdf), "p", target: self),
+            it(T("pdfRead"), #selector(readPdfMenu), "o", [.command, .option], target: self), sep(),
             it(T("openFolder"), #selector(openFolder), "o", [.command, .shift], target: self),
         ])
         sub(T("edit"), [
@@ -1271,6 +1335,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func download() { main.js("download") }
     @objc func changeCamera(_ s: Any?) { main.js("change") }
     @objc func openFolder() { main.js("openFolder") }
+    @objc func makePdf() { main.js("pdf") }
+    @objc func readPdfMenu() { main.readPdf() }
     @objc func selectAll() {
         if let r = NSApp.keyWindow?.firstResponder, r is NSTextView { NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil); return }
         main.js("select", "visible")

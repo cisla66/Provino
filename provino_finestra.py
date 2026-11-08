@@ -304,7 +304,9 @@ class ProvinoApp(Adw.Application):
                   "upd_check": "Controlla aggiornamenti…", "upd_err": "Non riesco a controllare gli aggiornamenti adesso",
                   "upd_none": "Provino è aggiornato (%(c)s)", "upd_new": "È disponibile Provino %(v)s",
                   "upd_info": "Hai la versione %(c)s.", "upd_get": "Scarica", "upd_later": "Più tardi",
-                  "upd_auto": "Controlla gli aggiornamenti all'avvio"},
+                  "upd_auto": "Controlla gli aggiornamenti all'avvio",
+                  "pdf_sel": "Crea PDF delle foto scelte…", "pdf_vis": "Crea PDF di quello che vedi…",
+                  "pdf_read": "Leggi le scelte da un PDF…"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -347,7 +349,9 @@ class ProvinoApp(Adw.Application):
                   "upd_check": "Check for Updates…", "upd_err": "Can't check for updates right now",
                   "upd_none": "Provino is up to date (%(c)s)", "upd_new": "Provino %(v)s is available",
                   "upd_info": "You have version %(c)s.", "upd_get": "Download", "upd_later": "Later",
-                  "upd_auto": "Check for updates at launch"}}
+                  "upd_auto": "Check for updates at launch",
+                  "pdf_sel": "Create PDF of Picked Photos…", "pdf_vis": "Create PDF of What You See…",
+                  "pdf_read": "Read Choices from a PDF…"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -417,6 +421,7 @@ class ProvinoApp(Adw.Application):
         self.set_accels_for_action("app.quit", ["<Control>q"])
         self.set_accels_for_action("app.download", ["<Control>Return"])
         self.set_accels_for_action("app.prefs", ["<Control>comma"])
+        self.set_accels_for_action("app.pdf", ["<Control>p"])
         self.set_accels_for_action("app.shortcuts", ["<Control>question"])
 
         tv = Adw.ToolbarView()
@@ -483,6 +488,8 @@ class ProvinoApp(Adw.Application):
         add("about", lambda *_: self.about())
         add("prefs", lambda *_: self.prefs())
         add("update", lambda *_: self.check_updates(True))
+        add("pdf", lambda *_: self.js("pdf"))
+        add("pdfread", lambda *_: self.read_pdf())
         add("shortcuts", lambda *_: self.shortcuts())
         add("site", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino").launch(self.win, None, None, None))
         add("issues", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino/issues").launch(self.win, None, None, None))
@@ -533,6 +540,16 @@ class ProvinoApp(Adw.Application):
             self.ask_dest(st)
         elif kind == "conflicts":
             self.ask_conflicts(st)
+        elif kind == "toast":
+            self.toasts.add_toast(Adw.Toast(title=st.get("text") or "", timeout=6))
+        elif kind == "pdfAsk":
+            self.ask_pdf(st)
+        elif kind == "pdfDone":
+            t = Adw.Toast(title=st.get("title") or "", timeout=8)
+            t.set_button_label(st.get("open") or "")
+            path = st.get("path") or ""
+            t.connect("button-clicked", lambda *_: Gtk.FileLauncher.new(Gio.File.new_for_path(path)).launch(self.win, None, None))
+            self.toasts.add_toast(t)
         elif kind == "transfer":
             self.on_transfer(st)
         elif kind == "error":
@@ -632,9 +649,71 @@ class ProvinoApp(Adw.Application):
             sec3 = Gio.Menu()
             sec3.append(self.t("sel_none"), "app.sel-none")
             m.append_section(None, sec3)
+            sec4 = Gio.Menu()
+            sec4.append(self.t("pdf_sel") if n else self.t("pdf_vis"), "app.pdf")
+            sec4.append(self.t("pdf_read"), "app.pdfread")
+            m.append_section(None, sec4)
             self.pick_btn.set_label(self.t("pick"))   # il numero e' gia' sul pulsante Scarica
         finally:
             self._updating = False
+
+    # ------------------------------------------------------------ PDF: titolo e dove salvarlo
+    def ask_pdf(self, req):
+        L = req.get("labels") or {}
+        dlg = Adw.AlertDialog(heading=L.get("head") or "", body=L.get("body") or "")
+        ent = Adw.EntryRow(title=L.get("title") or "")
+        ent.set_text(req.get("title") or "")
+        box = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        box.add_css_class("boxed-list")
+        box.append(ent)
+        dlg.set_extra_child(box)
+        dlg.add_response("cancel", L.get("cancel") or self.t("cancel"))
+        dlg.add_response("ok", L.get("ok") or "PDF")
+        dlg.set_response_appearance("ok", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("ok")
+        dlg.set_close_response("cancel")
+        ent.connect("entry-activated", lambda *_: dlg.response("ok") if hasattr(dlg, "response") else None)
+
+        def done(_d, resp):
+            if resp != "ok":
+                return
+            title = ent.get_text().strip() or req.get("title") or "Provino"
+            safe = "".join("-" if ch in '\\/:*?"<>|' else ch for ch in title).strip(" .") or "Provino"
+            fd = Gtk.FileDialog(title=L.get("ok") or "PDF", initial_name=safe + ".pdf", modal=True)
+            try:
+                fd.set_initial_folder(Gio.File.new_for_path(self.core[0].dest))
+            except Exception:  # noqa: BLE001
+                pass
+
+            def saved(d, res):
+                try:
+                    f = d.save_finish(res)
+                except GLib.Error:
+                    return
+                if f and f.get_path():
+                    self.js("pdfGo", {"title": title, "path": f.get_path()})
+            fd.save(self.win, None, saved)
+        dlg.connect("response", done)
+        self.pdf_dlg = dlg
+        dlg.present(self.win)
+
+    def read_pdf(self):
+        fd = Gtk.FileDialog(title=self.t("pdf_read"), modal=True)
+        flt = Gtk.FileFilter()
+        flt.set_name("PDF")
+        flt.add_suffix("pdf")
+        store = Gio.ListStore.new(Gtk.FileFilter)
+        store.append(flt)
+        fd.set_filters(store)
+
+        def opened(d, res):
+            try:
+                f = d.open_finish(res)
+            except GLib.Error:
+                return
+            if f and f.get_path():
+                self.js("pdfRead", f.get_path())
+        fd.open(self.win, None, opened)
 
     # ------------------------------------------------------------ finestra Scarica (nativa)
     def ask_dest(self, req):

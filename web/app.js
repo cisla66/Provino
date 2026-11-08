@@ -269,6 +269,7 @@ document.addEventListener("keydown", e=>{
   if(!S || S.status!=="ready" || document.querySelector("dialog[open]")) return;
   if(e.target.closest && e.target.closest("input,textarea,select")) return;
   if(viewerKey(e)) return;
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="p"){ e.preventDefault(); pdfAsk(); return; }
   if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="a"){ e.preventDefault(); for(const g of groups()) wanted(g).forEach(f=>picked.add(f.handle)); paint(); }
   if(e.key==="Escape"){ picked.clear(); paint(); }
 });
@@ -606,7 +607,11 @@ window.provinoNative = function(cmd, arg){
     else selectAll(arg); }
   else if(cmd==="conflictsDone"){ startDownload(arg.hs, arg.options||{}); }
   else if(cmd==="lang"){ setLang(arg, true); }
+  else if(cmd==="pdf"){ pdfAsk(); }
+  else if(cmd==="pdfGo"){ pdfGo(arg||{}); }
+  else if(cmd==="pdfRead"){ pdfRead(arg); }
   else if(cmd==="trayClosed"){ trayClosedAt = S.done.length + S.failed.length; tray(); }
+  else if(cmd==="cancelDownload" && pdfBusy){ pdfCancel = true; }
   else if(cmd==="cancelDownload"){ fetch("/api/cancel",{method:"POST"}); }
   else if(cmd==="openFolder"){ fetch("/api/open-folder",{method:"POST"}); }
   else if(cmd==="destConfirmed"){ (async ()=>{
@@ -764,6 +769,101 @@ function viewerPaint(){
   if(vtab==="meta" || fmetaOn) renderMeta();
   $("#vname").textContent = $("#fname").textContent = name;
   $("#vsrc").textContent = $("#fsrc").textContent = src;
+}
+
+// ---------------------------------------------------------------- provino a contatto in PDF
+let pdfCancel = false, pdfBusy = false;
+function pdfShots(){
+  // le foto scelte; se non ne hai scelte, tutte quelle che vedi (filtri compresi); mai i video
+  const gs = groups().filter(g=>!isVideo(g));
+  const chosen = gs.filter(g=>Object.values(g.files).some(f=>picked.has(f.handle)));
+  if(chosen.length) return chosen;
+  const vis = new Set([...document.querySelectorAll(".sheet .frame:not([hidden])")].map(el=>el.dataset.b));
+  return gs.filter(g=>vis.has(g.base));
+}
+function pdfDefaultTitle(gs){
+  const days = [...new Set(gs.map(g=>(g.date||"").slice(0,8)).filter(Boolean))].sort();
+  if(!days.length) return "Provino";
+  return days.length===1 ? t("pdf.day", {d: fmtDay(days[0])}) : t("pdf.days", {a: fmtDay(days[0]), b: fmtDay(days[days.length-1])});
+}
+function pdfAsk(){
+  if(!S || S.status!=="ready" || pdfBusy) return;
+  const gs = pdfShots();
+  if(!gs.length) return;
+  const title = pdfDefaultTitle(gs);
+  if(NATIVE){ nativeMsg({type:"pdfAsk", n: gs.length, title, labels:{head: t("pdf.head", {n: gs.length}), body: t("pdf.body"),
+                 title: t("pdf.titleLbl"), ok: t("pdf.create"), cancel: t("cancel")}}); return; }
+  const v = prompt(t("pdf.head", {n: gs.length}) + "\n" + t("pdf.titleLbl"), title);
+  if(v!==null) pdfGo({title: v || title});
+}
+async function pdfBig(g){
+  const h = (g.files.JPG||g.files.RAF||g.files.HIF||Object.values(g.files)[0]).handle;
+  for(let i=0; i<60 && !pdfCancel; i++){
+    const r = await fetch(`/api/big/${h}?b=${encodeURIComponent(g.base)}&pdf=1`);
+    if(r.status===409){ await new Promise(res=>setTimeout(res, 700)); continue; }
+    if(!r.ok) return null;
+    return await r.blob();
+  }
+  return null;
+}
+async function pdfJpeg(blob, max){
+  const url = URL.createObjectURL(blob);
+  try{
+    const im = await new Promise((res, rej)=>{ const x=new Image(); x.onload=()=>res(x); x.onerror=rej; x.src=url; });
+    const s = Math.min(1, max/Math.max(im.naturalWidth, im.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*s); c.height = Math.round(im.naturalHeight*s);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    const d = c.toDataURL("image/jpeg", 0.82);
+    return d.slice(d.indexOf(",")+1);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function pdfGo(o){
+  if(pdfBusy) return;
+  const gs = pdfShots(); if(!gs.length) return;
+  pdfBusy = true; pdfCancel = false;
+  const prog = (i)=>{ const msg = t("pdf.making", {i, n: gs.length});
+    if(NATIVE) nativeTransfer({mode:"run", name: msg, info:"", pct: Math.round(i*100/gs.length), n:-1, cancel: t("cancel"), open:""});
+    else document.title = msg; };
+  try{
+    await post("/api/pdf/start", {});
+    for(let i=0; i<gs.length && !pdfCancel; i++){
+      prog(i+1);
+      const g = gs[i], m = META[g.base] || {};
+      const blob = await pdfBig(g); if(!blob) continue;
+      const jpeg = await pdfJpeg(blob, 1400);
+      const kinds = Object.keys(g.files).map(k=>k==="HIF"?"HEIF":k).join(" + ");
+      await post("/api/pdf/add", {jpeg, name: g.base, line2: [fmtDay(g.date), fmtTime(g.date)].filter(Boolean).join(" · "),
+                                  line3: [m.film ? filmName(m.film) : "", kinds].filter(Boolean).join(" · ")});
+    }
+    if(pdfCancel){ await post("/api/pdf/start", {}); return; }
+    const r = await post("/api/pdf/finish", {title: o.title, path: o.path || "", subtitle: t("pdf.sub", {n: gs.length}), check_label: t("pdf.like")});
+    if(r && r.ok){
+      if(NATIVE) nativeMsg({type:"pdfDone", path: r.path, title: t("pdf.done"), open: t("pdf.open")});
+      else { await post("/api/open-file", {path: r.path}); }
+    } else if(NATIVE) nativeMsg({type:"error", text: t("pdf.fail")});
+    else alert(t("pdf.fail"));
+  } finally {
+    pdfBusy = false;
+    if(NATIVE) nativeTransfer({mode:"none"}); else document.title = "Provino";
+  }
+}
+
+// le scelte di chi ha ricevuto il PDF: seleziono quelle foto, pronte da scaricare
+async function pdfRead(path){
+  const r = await post("/api/pdf/read", {path});
+  if(!r || !r.ok){ nativeMsg({type:"error", text: t("pdf.readFail")}); return; }
+  const by = new Map(groups().map(g=>[g.base, g]));
+  let found = 0, missing = 0;
+  if(r.names.length) picked.clear();
+  for(const b of r.names){
+    const g = by.get(b);
+    if(!g){ missing++; continue; }
+    found++;
+    for(const f of Object.values(g.files)) picked.add(f.handle);
+  }
+  paint && paint();
+  const text = !r.names.length ? t("pdf.readNone") : missing ? t("pdf.readSome", {n: found, m: missing}) : t("pdf.readOk", {n: found});
+  if(NATIVE) nativeMsg({type:"toast", text}); else alert(text);
 }
 
 // ---------------------------------------------------------------- istogramma (calcolato qui dalla foto mostrata)
