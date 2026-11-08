@@ -311,7 +311,7 @@ def choose_folder(start, prompt="Provino"):
     try:
         if sys.platform == "darwin":
             script = ('set p to POSIX path of (choose folder with prompt "%s" '
-                      'default location (POSIX file "%s"))' % (prompt.replace('"', ''), start.replace('"', '')))
+                      'default location (POSIX file "%s"))' % (prompt.replace('"', '').replace('\\', ''), start.replace('"', '').replace('\\', '')))
             r = subprocess.run(["osascript", "-e", script, "-e", "return p"], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, timeout=600)
             return r.stdout.decode("utf-8", "replace").strip().rstrip("/") if r.returncode == 0 else ""
