@@ -12,7 +12,9 @@ Chiudere la finestra chiude anche Provino e saluta la fotocamera.
 import argparse
 import datetime
 import os
+import shutil
 import signal
+import subprocess
 import sys
 import threading
 
@@ -122,6 +124,75 @@ class Ring(Gtk.Widget):
 
 
 
+# ------------------------------------------------------------ AppImage: icona e voce nel menu delle applicazioni
+DESK_FILE = os.path.join(GLib.get_user_data_dir(), "applications", APP_ID + ".desktop")
+ICON_DIR = os.path.join(GLib.get_user_data_dir(), "icons", "hicolor")
+
+
+def appimage_path():
+    p = os.environ.get("APPIMAGE")
+    return p if p and os.path.isfile(p) else None
+
+
+def menu_entry_path():
+    """L'AppImage a cui punta la voce nel menu (None se non c'e' la voce)."""
+    try:
+        with open(DESK_FILE, encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("X-Provino-AppImage="):
+                    return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return None
+
+
+def install_menu_entry():
+    """Copia icona e voce .desktop nella cartella dell'utente (niente sudo): Provino compare in Attivita' e nel dock."""
+    img, appdir = appimage_path(), os.environ.get("APPDIR") or ""
+    if not img or not appdir:
+        return False
+    with open(os.path.join(appdir, APP_ID + ".desktop"), encoding="utf-8") as fh:
+        lines = [x for x in fh.read().splitlines() if not x.startswith(("Exec=", "TryExec=", "X-Provino-AppImage="))]
+    q = '"%s"' % img.replace('"', '\\"')
+    lines = [x for x in lines if not x.startswith("StartupWMClass=")]
+    lines += ["Exec=%s" % q, "TryExec=%s" % img, "StartupWMClass=%s" % APP_ID, "X-Provino-AppImage=%s" % img]
+    os.makedirs(os.path.dirname(DESK_FILE), exist_ok=True)
+    src = os.path.join(appdir, "usr", "share", "icons", "hicolor")
+    for size in os.listdir(src) if os.path.isdir(src) else []:
+        for ext in ("png", "svg"):
+            f = os.path.join(src, size, "apps", APP_ID + "." + ext)
+            if os.path.isfile(f):
+                d = os.path.join(ICON_DIR, size, "apps")
+                os.makedirs(d, exist_ok=True)
+                shutil.copyfile(f, os.path.join(d, APP_ID + "." + ext))
+    tmp = DESK_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    os.chmod(tmp, 0o755)
+    os.replace(tmp, DESK_FILE)
+    for cmd in (["gtk-update-icon-cache", "-f", "-t", ICON_DIR],
+                ["update-desktop-database", os.path.dirname(DESK_FILE)]):
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return True
+
+
+def remove_menu_entry():
+    try:
+        os.remove(DESK_FILE)
+    except OSError:
+        pass
+    for root, _dirs, files in os.walk(ICON_DIR):
+        for f in files:
+            if f.startswith(APP_ID + "."):
+                try:
+                    os.remove(os.path.join(root, f))
+                except OSError:
+                    pass
+
+
 class ProvinoApp(Adw.Application):
     def __init__(self, args):
         super().__init__(application_id=APP_ID)
@@ -156,7 +227,10 @@ class ProvinoApp(Adw.Application):
                   "k_photos": "Scelta delle foto", "k_all": "Scegli tutto quello che vedi", "k_none": "Deseleziona tutto",
                   "k_space": "Scegli o togli la foto corrente", "k_move": "Passa da una foto all'altra",
                   "k_view": "Foto grande", "k_full": "Foto intera, poi 100%", "k_back": "Torna alla griglia",
-                  "k_app": "Generale", "k_dl": "Scarica i file scelti"},
+                  "k_app": "Generale", "k_dl": "Scarica i file scelti",
+                  "menu_q": "Vuoi Provino tra le applicazioni, con la sua icona?", "menu_add": "Aggiungi",
+                  "menu_done": "Provino è tra le applicazioni", "menu_fail": "Non sono riuscito ad aggiungerlo",
+                  "menu_row": "Tra le applicazioni", "menu_row_sub": "Icona di Provino in Attività e nel dock"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -182,7 +256,10 @@ class ProvinoApp(Adw.Application):
                   "k_photos": "Picking photos", "k_all": "Pick everything you see", "k_none": "Deselect all",
                   "k_space": "Pick or unpick the current photo", "k_move": "Move between photos",
                   "k_view": "Large photo", "k_full": "Full photo, then 100%", "k_back": "Back to the grid",
-                  "k_app": "General", "k_dl": "Download the picked files"}}
+                  "k_app": "General", "k_dl": "Download the picked files",
+                  "menu_q": "Add Provino to your applications, with its icon?", "menu_add": "Add",
+                  "menu_done": "Provino is in your applications", "menu_fail": "Couldn't add it",
+                  "menu_row": "In applications", "menu_row_sub": "Provino's icon in Activities and the dock"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -268,6 +345,7 @@ class ProvinoApp(Adw.Application):
         self.apply_state({})
         view.load_uri(url)
         win.present()
+        GLib.timeout_add_seconds(2, self._offer_menu_entry)
 
     def _main_menu(self):
         main_menu = Gio.Menu()
@@ -508,6 +586,10 @@ class ProvinoApp(Adw.Application):
         prev.add_css_class("monospace")
         prev.set_margin_top(4)
         g2.add(prev)
+        if appimage_path():
+            mrow = Adw.SwitchRow(title=self.t("menu_row"), subtitle=self.t("menu_row_sub"), active=bool(menu_entry_path()))
+            mrow.connect("notify::active", lambda r, _p: install_menu_entry() if r.get_active() else remove_menu_entry())
+            g2.add(mrow)
         page.add(g2)
         tb.set_content(page)
         dlg.set_child(tb)
@@ -725,6 +807,32 @@ class ProvinoApp(Adw.Application):
     def _tr_closed(self, *_):
         if self.tr.get("mode") in ("ok", "warn"):
             self.js("trayClosed")
+
+    def _offer_menu_entry(self):
+        """Avviato da AppImage: propone (una volta) di mettere Provino nel menu; se l'AppImage e' stato
+        spostato o aggiornato, la voce gia' presente viene aggiornata da sola."""
+        img = appimage_path()
+        if not img:
+            return False
+        cur = menu_entry_path()
+        if cur:
+            if cur != img:
+                install_menu_entry()
+            return False
+        S = self.core[0].settings
+        if S.get("menu_entry_asked"):
+            return False
+        t = Adw.Toast(title=self.t("menu_q"), timeout=0)
+        t.set_button_label(self.t("menu_add"))
+
+        def add(*_):
+            ok = install_menu_entry()
+            self.toasts.add_toast(Adw.Toast(title=self.t("menu_done" if ok else "menu_fail"), timeout=4))
+        t.connect("button-clicked", add)
+        S["menu_entry_asked"] = True
+        self.core[0].save_settings()
+        self.toasts.add_toast(t)
+        return False
 
     def _nice(self, path):
         home = os.path.expanduser("~")
