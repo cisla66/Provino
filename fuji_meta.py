@@ -114,6 +114,9 @@ def parse(buf):
     ori = _val(d0.get(0x0112), en)
     if ori in (3, 6, 8):
         meta["orientation"] = {3: 180, 6: 90, 8: 270}[ori]   # gradi in senso orario
+    res, unit = _val(d0.get(0x011A), en), _val(d0.get(0x0128), en)   # XResolution, ResolutionUnit
+    if res and res > 0:
+        meta["dpi"] = round(res * 2.54) if unit == 3 else round(res)       # 3 = per centimetro
     sw = _val(d0.get(0x0131), en) or ""
     if "Ver" in sw:
         meta["firmware"] = sw.rsplit("Ver", 1)[1].strip()

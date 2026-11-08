@@ -1069,7 +1069,12 @@ function pixelRow(m){
   if(!(m && m.width && m.height)) return [];
   const w=Math.max(m.width,m.height), h=Math.min(m.width,m.height);
   const [a,b] = m.portrait ? [h,w] : [w,h];
-  return [["meta.pixels", `${fmtNum(a)} × ${fmtNum(b)} px · ${Math.round(w*h/1e6)} MP`]];
+  const rows = [["meta.pixels", `${fmtNum(a)} × ${fmtNum(b)} px · ${Math.round(w*h/1e6)} MP`]];
+  // stampa: alla risoluzione scritta nel file (di solito 72 dpi, solo un'etichetta) e a 300 dpi (stampa di qualita')
+  const cm = (px, dpi) => (px/dpi*2.54).toLocaleString(LANG, {maximumFractionDigits:1});
+  if(m.dpi) rows.push(["meta.dpi", `${m.dpi} dpi`]);
+  rows.push(["meta.print", `${cm(a,300)} × ${cm(b,300)} cm ${t("meta.at")} 300 dpi` + (m.dpi && m.dpi!==300 ? ` · ${cm(a,m.dpi)} × ${cm(b,m.dpi)} cm ${t("meta.at")} ${m.dpi} dpi` : "")]);
+  return rows;
 }
 function metaHTML(g){
   if(!g) return `<p class="soon">${t("view.empty")}</p>`;
