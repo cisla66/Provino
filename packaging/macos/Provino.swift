@@ -343,7 +343,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
             ringBtn.topAnchor.constraint(equalTo: ringBox.topAnchor), ringBtn.bottomAnchor.constraint(equalTo: ringBox.bottomAnchor),
         ])
 
-        camItem.image = NSImage(systemSymbolName: "camera", accessibilityDescription: T("camera"))
+        camItem.image = cameraSwitchImage()
         camItem.showsIndicator = true
         pickItem.showsIndicator = true
     }
@@ -1480,3 +1480,31 @@ let delegate = AppDelegate()
 app.delegate = delegate
 app.setActivationPolicy(.regular)
 app.run()
+
+/// Icona "cambia fotocamera" di Provino: fotocamera con due frecce di rotazione ai lati (disegnata, immagine modello).
+func cameraSwitchImage() -> NSImage {
+    let lines: [[(CGFloat, CGFloat)]] = [
+[(5.25,16.03), (4.83,15.54), (4.45,15.02), (4.10,14.49), (3.78,13.93), (3.50,13.35), (3.25,12.76), (3.04,12.16), (2.86,11.54), (2.73,10.91), (2.63,10.28), (2.57,9.64), (2.55,9.00), (2.57,8.36), (2.63,7.72), (2.73,7.09), (2.86,6.46), (3.04,5.84), (3.25,5.24), (3.50,4.65), (3.78,4.07), (4.10,3.51), (4.45,2.98), (4.83,2.46), (5.25,1.97)],
+[(5.25,1.97), (2.76,2.53)],
+[(5.25,1.97), (4.96,4.51)],
+[(20.85,1.97), (21.27,2.46), (21.65,2.98), (22.00,3.51), (22.32,4.07), (22.60,4.65), (22.85,5.24), (23.06,5.84), (23.24,6.46), (23.37,7.09), (23.47,7.72), (23.53,8.36), (23.55,9.00), (23.53,9.64), (23.47,10.28), (23.37,10.91), (23.24,11.54), (23.06,12.16), (22.85,12.76), (22.60,13.35), (22.32,13.93), (22.00,14.49), (21.65,15.02), (21.27,15.54), (20.85,16.03)],
+[(20.85,16.03), (23.34,15.47)],
+[(20.85,16.03), (21.14,13.49)],
+[(8.18,5.70), (10.12,5.70), (11.18,4.20), (14.92,4.20), (15.97,5.70), (17.92,5.70), (18.60,6.38), (18.60,11.93), (17.92,12.60), (8.18,12.60), (7.50,11.93), (7.50,6.38), (8.18,5.70)],
+[(15.07,9.00), (15.06,9.26), (15.01,9.52), (14.92,9.77), (14.80,10.01), (14.66,10.23), (14.48,10.43), (14.28,10.61), (14.06,10.75), (13.82,10.87), (13.57,10.96), (13.31,11.01), (13.05,11.03), (12.79,11.01), (12.53,10.96), (12.28,10.87), (12.04,10.75), (11.82,10.61), (11.62,10.43), (11.44,10.23), (11.30,10.01), (11.18,9.77), (11.09,9.52), (11.04,9.26), (11.03,9.00), (11.04,8.74), (11.09,8.48), (11.18,8.23), (11.30,7.99), (11.44,7.77), (11.62,7.57), (11.82,7.39), (12.04,7.25), (12.28,7.13), (12.53,7.04), (12.79,6.99), (13.05,6.97), (13.31,6.99), (13.57,7.04), (13.82,7.13), (14.06,7.25), (14.28,7.39), (14.48,7.57), (14.66,7.77), (14.80,7.99), (14.92,8.23), (15.01,8.48), (15.06,8.74), (15.07,9.00)]
+]
+    let img = NSImage(size: NSSize(width: 26, height: 18), flipped: true) { _ in
+        NSColor.black.setStroke()
+        for l in lines {
+            let p = NSBezierPath()
+            p.lineWidth = 1.35; p.lineCapStyle = .round; p.lineJoinStyle = .round
+            p.move(to: NSPoint(x: l[0].0, y: l[0].1))
+            for q in l.dropFirst() { p.line(to: NSPoint(x: q.0, y: q.1)) }
+            p.stroke()
+        }
+        return true
+    }
+    img.isTemplate = true
+    img.accessibilityDescription = T("camera")
+    return img
+}

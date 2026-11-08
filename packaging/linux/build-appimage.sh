@@ -11,6 +11,7 @@ for f in provino.py provino_finestra.py provino_wifi.py provino_usb_linux.py pro
   cp "$ROOT/$f" "$APPDIR/usr/share/provino/"
 done
 cp -r "$ROOT/web" "$APPDIR/usr/share/provino/web"
+cp -r "$ROOT/icons" "$APPDIR/usr/share/provino/icons"
 cp "$ROOT/packaging/linux/AppRun" "$APPDIR/AppRun"; chmod +x "$APPDIR/AppRun"
 cp "$ROOT/packaging/linux/io.github.cisla66.Provino.desktop" "$APPDIR/"
 cp "$ROOT/packaging/linux/io.github.cisla66.Provino.desktop" "$APPDIR/usr/share/applications/"

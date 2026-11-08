@@ -397,8 +397,12 @@ class ProvinoApp(Adw.Application):
 
         cam_menu = Gio.Menu()
         cam_menu.append(self.t("change"), "app.change")
-        self.cam_btn = Gtk.MenuButton(icon_name="camera-photo-symbolic", menu_model=cam_menu,
-                                      tooltip_text=self.t("camera"))
+        # icona di Provino per "cambia fotocamera": fotocamera con le frecce di rotazione ai lati
+        Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(os.path.join(HERE, "icons"))
+        self.cam_btn = Gtk.MenuButton(menu_model=cam_menu, tooltip_text=self.t("camera"))
+        # disegno largo: un po' piu' grande delle icone da 16 px, cosi' fotocamera e frecce si leggono
+        self.cam_btn.set_child(Gtk.Image(icon_name="provino-camera-switch-symbolic", pixel_size=22))
+        self.cam_btn.add_css_class("image-button")
         bar.pack_start(self.cam_btn)
 
         main_menu = self._main_menu()
