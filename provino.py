@@ -103,6 +103,40 @@ def connected_devices(fresh=False):
     return res
 
 
+REPO = "cisla66/Provino"
+
+
+def _ver_key(v):
+    """'v1.2.3' -> (1,2,3,1,0); '1.0.0-rc18' -> (1,0,0,0,18): una versione di prova viene prima della finale."""
+    v = str(v or "").strip().lstrip("vV")
+    main, _, pre = v.partition("-")
+    nums = [int(x) for x in re.findall(r"\d+", main)[:3]] + [0, 0, 0]
+    m = re.search(r"(\d+)", pre)
+    return tuple(nums[:3]) + ((0, int(m.group(1)) if m else 0) if pre else (1, 0))
+
+
+def check_update(platform):
+    """Ultima versione pubblicata su GitHub (solo versioni finali). Restituisce sempre un dizionario."""
+    import json as _json
+    import urllib.request
+    try:
+        req = urllib.request.Request("https://api.github.com/repos/%s/releases/latest" % REPO,
+                                     headers={"Accept": "application/vnd.github+json",
+                                              "User-Agent": "Provino/%s" % APP_VERSION})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            rel = _json.loads(r.read().decode("utf-8"))
+    except Exception as e:  # noqa: BLE001  (niente rete, repository non ancora pubblico, limite di GitHub...)
+        return {"ok": False, "current": APP_VERSION, "error": str(e)[:200]}
+    tag = rel.get("tag_name") or ""
+    want = ".dmg" if platform == "mac" else ".appimage"
+    asset = next((a.get("browser_download_url") for a in rel.get("assets") or []
+                  if str(a.get("name", "")).lower().endswith(want)), None)
+    return {"ok": True, "current": APP_VERSION, "latest": tag.lstrip("vV"),
+            "newer": _ver_key(tag) > _ver_key(APP_VERSION),
+            "url": rel.get("html_url") or "https://github.com/%s/releases" % REPO,
+            "download": asset, "notes": (rel.get("body") or "")[:1500]}
+
+
 def safe_filename(name):
     """Nome di file ricevuto dalla fotocamera o dalla scheda: solo il nome, mai un percorso (niente ../)."""
     name = str(name or "").replace("\\", "/").split("/")[-1].replace("\x00", "").strip()
@@ -1632,6 +1666,9 @@ def make_handler(app):
             if self.path == "/api/cameras":
                 with open(CAMERAS_PATH, "rb") as fh:
                     return self._send(200, fh.read(), "application/json")
+            if self.path.startswith("/api/update"):
+                plat = "mac" if "mac" in self.path else "linux"
+                return self._send(200, check_update(plat))
             if self.path == "/api/devices":
                 d = connected_devices()
                 # le Fujifilm sul cavo si presentano come "USB PTP Camera": il modello lo ricordo dal codice

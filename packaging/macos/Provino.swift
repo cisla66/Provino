@@ -33,7 +33,11 @@ let TXT: [String: [String: String]] = [
         "comments": "Progetto indipendente, non affiliato a FUJIFILM Corporation.",
         "starting": "Avvio di Provino…", "noPython": "Non trovo il motore di Provino dentro l'app.",
         "crash": "Il motore di Provino si è chiuso. Il registro è nella cartella log.",
-        "openLog": "Apri il registro", "panelOn": "Mostra foto grande e informazioni",
+        "openLog": "Apri il registro", "checkUpd": "Controlla aggiornamenti…", "updNew": "È disponibile Provino {v}",
+        "updInfo": "Hai la versione {c}.", "updGet": "Scarica", "updLater": "Più tardi", "updNone": "Provino è aggiornato",
+        "updNoneInfo": "Hai la versione più recente ({c}).", "updErr": "Non riesco a controllare gli aggiornamenti",
+        "updErrInfo": "Controlla la connessione e riprova più tardi.", "autoUpd": "Controlla gli aggiornamenti all'avvio",
+        "panelOn": "Mostra foto grande e informazioni",
     ],
     "en": [
         "download": "Download", "change": "Change Camera…", "camera": "Camera and connection",
@@ -59,7 +63,11 @@ let TXT: [String: [String: String]] = [
         "comments": "Independent project, not affiliated with FUJIFILM Corporation.",
         "starting": "Starting Provino…", "noPython": "Provino's engine is missing from the app.",
         "crash": "Provino's engine has quit. The log is in the log folder.",
-        "openLog": "Open the Log", "panelOn": "Show Large Photo and Info",
+        "openLog": "Open the Log", "checkUpd": "Check for Updates…", "updNew": "Provino {v} is available",
+        "updInfo": "You have version {c}.", "updGet": "Download", "updLater": "Later", "updNone": "Provino is up to date",
+        "updNoneInfo": "You have the latest version ({c}).", "updErr": "Can't check for updates",
+        "updErrInfo": "Check your connection and try again later.", "autoUpd": "Check for updates at launch",
+        "panelOn": "Show Large Photo and Info",
     ],
 ]
 
@@ -996,6 +1004,7 @@ final class SettingsWindow: NSWindowController {
     let split = NSButton(checkboxWithTitle: T("split"), target: nil, action: nil)
     let lang = NSPopUpButton(frame: .zero, pullsDown: false)
     let theme = NSPopUpButton(frame: .zero, pullsDown: false)
+    let autoUpd = NSButton(checkboxWithTitle: T("autoUpd"), target: nil, action: nil)
 
     init(mainWin: MainWindow) {
         self.mainWin = mainWin
@@ -1035,13 +1044,18 @@ final class SettingsWindow: NSWindowController {
             [label(T("folder"), size: 13), dlBox],
             [label(T("p_lang"), size: 13), lang],
             [label(T("p_theme"), size: 13), theme],
+            [NSGridCell.emptyContentView, autoUpd],
             [NSGridCell.emptyContentView, safe],
         ])
         g.column(at: 0).xPlacement = .trailing
         g.rowAlignment = .firstBaseline
         g.rowSpacing = 14
         g.columnSpacing = 10
-        g.row(at: 3).topPadding = 8
+        g.row(at: 4).topPadding = 8
+        autoUpd.target = self
+        autoUpd.action = #selector(onAutoUpd)
+        let d = UserDefaults.standard
+        autoUpd.state = (d.object(forKey: "autoUpdate") == nil || d.bool(forKey: "autoUpdate")) ? .on : .off
         g.translatesAutoresizingMaskIntoConstraints = false
         let c = NSView()
         c.addSubview(g)
@@ -1084,6 +1098,7 @@ final class SettingsWindow: NSWindowController {
     }
 
     @objc func onLang() { mainWin?.js("lang", lang.indexOfSelectedItem == 0 ? "it" : "en") }
+    @objc func onAutoUpd() { UserDefaults.standard.set(autoUpd.state == .on, forKey: "autoUpdate") }
     @objc func onTheme() { AppDelegate.setTheme(["system", "light", "dark"][max(0, theme.indexOfSelectedItem)]) }
 }
 
@@ -1110,7 +1125,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         engine.onExit = { [weak self] in self?.engineDied() }
         engine.start { port in
-            if let p = port { self.main.load(port: p) } else { self.engineDied() }
+            if let p = port {
+                self.main.load(port: p)
+                self.autoCheckUpdates()
+            } else { self.engineDied() }
         }
         if let shots = ProcessInfo.processInfo.environment["PROVINO_SHOTS"] { Shots.run(app: self, dir: shots) }
     }
@@ -1149,7 +1167,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let sep = { NSMenuItem.separator() }
         sub("Provino", [
-            it(T("about"), #selector(about), target: self), sep(),
+            it(T("about"), #selector(about), target: self),
+            it(T("checkUpd"), #selector(checkUpdatesMenu), target: self), sep(),
             it(T("settings"), #selector(openSettings), ",", target: self), sep(),
             it(T("hide"), #selector(NSApplication.hide(_:)), "h"),
             it(T("hideOthers"), #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
@@ -1190,6 +1209,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ])
         NSApp.helpMenu = hm
         NSApp.mainMenu = bar
+    }
+
+    // MARK: aggiornamenti (chiede a GitHub l'ultima versione pubblicata; scaricare resta una scelta tua)
+    @objc func checkUpdatesMenu() { checkUpdates(manual: true) }
+
+    func autoCheckUpdates() {
+        let d = UserDefaults.standard
+        if d.object(forKey: "autoUpdate") != nil && !d.bool(forKey: "autoUpdate") { return }
+        let last = d.double(forKey: "lastUpdateCheck")
+        if Date().timeIntervalSince1970 - last < 20 * 3600 { return }   // al massimo una volta al giorno
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { self.checkUpdates(manual: false) }
+    }
+
+    func checkUpdates(manual: Bool) {
+        engine.get("/api/update?mac") { r in
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
+            let ok = (r["ok"] as? Bool) ?? false
+            let newer = (r["newer"] as? Bool) ?? false
+            let cur = (r["current"] as? String) ?? ""
+            if !ok { if manual { self.alert(T("updErr"), T("updErrInfo")) }; return }
+            if !newer { if manual { self.alert(T("updNone"), T("updNoneInfo", ["c": cur])) }; return }
+            let latest = (r["latest"] as? String) ?? ""
+            if !manual && UserDefaults.standard.string(forKey: "skipVersion") == latest { return }
+            let a = NSAlert()
+            a.messageText = T("updNew", ["v": latest])
+            var info = T("updInfo", ["c": cur])
+            if let n = r["notes"] as? String, !n.isEmpty { info += "\n\n" + n }
+            a.informativeText = info
+            a.addButton(withTitle: T("updGet"))
+            a.addButton(withTitle: T("updLater"))
+            let go = { (resp: NSApplication.ModalResponse) in
+                if resp == .alertFirstButtonReturn {
+                    let u = (r["download"] as? String) ?? (r["url"] as? String) ?? "https://github.com/cisla66/Provino/releases"
+                    if let url = URL(string: u) { NSWorkspace.shared.open(url) }
+                } else if !manual {
+                    UserDefaults.standard.set(latest, forKey: "skipVersion")   // non lo ripropongo a ogni avvio
+                }
+            }
+            if let w = self.main.window { a.beginSheetModal(for: w, completionHandler: go) } else { go(a.runModal()) }
+        }
+    }
+
+    func alert(_ title: String, _ info: String) {
+        let a = NSAlert()
+        a.messageText = title
+        a.informativeText = info
+        if let w = main.window { a.beginSheetModal(for: w, completionHandler: nil) } else { a.runModal() }
     }
 
     @objc func about() {

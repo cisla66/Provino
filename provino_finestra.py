@@ -17,6 +17,7 @@ import signal
 import subprocess
 import sys
 import threading
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -299,7 +300,11 @@ class ProvinoApp(Adw.Application):
                   "un_yes": "Disinstalla",
                   "upd_h": "Aggiornare Provino?",
                   "upd_b": "In %(dir)s c'è già Provino (%(old)s). Metto questa versione al suo posto e la vecchia nel Cestino. Impostazioni e foto restano come sono.",
-                  "upd_yes": "Aggiorna", "upd_done": "Provino è aggiornato"},
+                  "upd_yes": "Aggiorna", "upd_done": "Provino è aggiornato",
+                  "upd_check": "Controlla aggiornamenti…", "upd_err": "Non riesco a controllare gli aggiornamenti adesso",
+                  "upd_none": "Provino è aggiornato (%(c)s)", "upd_new": "È disponibile Provino %(v)s",
+                  "upd_info": "Hai la versione %(c)s.", "upd_get": "Scarica", "upd_later": "Più tardi",
+                  "upd_auto": "Controlla gli aggiornamenti all'avvio"},
            "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
@@ -338,7 +343,11 @@ class ProvinoApp(Adw.Application):
                   "un_yes": "Uninstall",
                   "upd_h": "Update Provino?",
                   "upd_b": "Provino is already in %(dir)s (%(old)s). I'll put this version in its place and move the old one to the Trash. Settings and photos stay as they are.",
-                  "upd_yes": "Update", "upd_done": "Provino is up to date"}}
+                  "upd_yes": "Update", "upd_done": "Provino is up to date",
+                  "upd_check": "Check for Updates…", "upd_err": "Can't check for updates right now",
+                  "upd_none": "Provino is up to date (%(c)s)", "upd_new": "Provino %(v)s is available",
+                  "upd_info": "You have version %(c)s.", "upd_get": "Download", "upd_later": "Later",
+                  "upd_auto": "Check for updates at launch"}}
 
     def t(self, key):
         return self.TXT.get(self.lang, self.TXT["it"]).get(key, key)
@@ -425,6 +434,7 @@ class ProvinoApp(Adw.Application):
         view.load_uri(url)
         win.present()
         GLib.timeout_add_seconds(2, self._offer_menu_entry)
+        GLib.timeout_add_seconds(6, self._auto_update)
 
     def _main_menu(self):
         main_menu = Gio.Menu()
@@ -439,6 +449,8 @@ class ProvinoApp(Adw.Application):
         main_menu.append_section(None, links)
         last = Gio.Menu()
         last.append(self.t("prefs"), "app.prefs")
+        if appimage_path():
+            last.append(self.t("upd_check"), "app.update")
         last.append(self.t("keys"), "app.shortcuts")
         last.append(self.t("about"), "app.about")
         last.append(self.t("quit"), "app.quit")
@@ -470,6 +482,7 @@ class ProvinoApp(Adw.Application):
         add("quit", lambda *_: self.quit())
         add("about", lambda *_: self.about())
         add("prefs", lambda *_: self.prefs())
+        add("update", lambda *_: self.check_updates(True))
         add("shortcuts", lambda *_: self.shortcuts())
         add("site", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino").launch(self.win, None, None, None))
         add("issues", lambda *_: Gtk.UriLauncher.new("https://github.com/cisla66/Provino/issues").launch(self.win, None, None, None))
@@ -958,6 +971,55 @@ class ProvinoApp(Adw.Application):
         dlg.present(self.win)
         self.inst_dlg = dlg
 
+    # ------------------------------------------------------------ aggiornamenti (solo AppImage: Flathub aggiorna da se')
+    def _auto_update(self):
+        S = self.core[0].settings
+        if not appimage_path() or S.get("auto_update") is False:
+            return False
+        if time.time() - float(S.get("last_update_check") or 0) > 20 * 3600:
+            self.check_updates(False)
+        return False
+
+    def check_updates(self, manual):
+        def work():
+            r = pv.check_update("linux")
+            GLib.idle_add(lambda: (self._update_result(r, manual), False)[1])
+        threading.Thread(target=work, daemon=True).start()
+
+    def _update_result(self, r, manual):
+        S = self.core[0].settings
+        S["last_update_check"] = time.time()
+        self.core[0].save_settings()
+        if not r.get("ok"):
+            if manual:
+                self.toasts.add_toast(Adw.Toast(title=self.t("upd_err"), timeout=5))
+            return
+        latest = r.get("latest") or ""
+        if not r.get("newer"):
+            if manual:
+                self.toasts.add_toast(Adw.Toast(title=self.t("upd_none") % {"c": r.get("current")}, timeout=5))
+            return
+        if not manual and S.get("skip_version") == latest:
+            return
+        body = self.t("upd_info") % {"c": r.get("current")}
+        if r.get("notes"):
+            body += "\n\n" + r["notes"]
+        dlg = Adw.AlertDialog(heading=self.t("upd_new") % {"v": latest}, body=body)
+        dlg.add_response("later", self.t("upd_later"))
+        dlg.add_response("get", self.t("upd_get"))
+        dlg.set_response_appearance("get", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("get")
+        dlg.set_close_response("later")
+
+        def done(_d, resp):
+            if resp == "get":
+                Gtk.UriLauncher.new(r.get("download") or r.get("url")).launch(self.win, None, None)
+            elif not manual:
+                S["skip_version"] = latest
+                self.core[0].save_settings()
+        dlg.connect("response", done)
+        dlg.present(self.win)
+
     def uninstall(self, *_):
         dlg = Adw.AlertDialog(heading=self.t("un_h"), body=self.t("un_b") % {"photos": self._nice(self.core[0].dest)})
         dlg.add_response("no", self.t("cancel"))
@@ -1076,6 +1138,9 @@ class ProvinoApp(Adw.Application):
             mrow = Adw.SwitchRow(title=self.t("menu_row"), subtitle=self.t("menu_row_sub"), active=bool(menu_entry_path()))
             mrow.connect("notify::active", lambda r, _p: install_menu_entry() if r.get_active() else remove_menu_entry())
             g2.add(mrow)
+            urow2 = Adw.SwitchRow(title=self.t("upd_auto"), active=S.get("auto_update") is not False)
+            urow2.connect("notify::active", lambda r, _p: save(auto_update=r.get_active()))
+            g2.add(urow2)
         page.add(g2)
 
         if appimage_path():
