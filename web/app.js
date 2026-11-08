@@ -632,8 +632,6 @@ function render(){
   const msg = serverMsg();
   if(S.status==="setup"){
     notice(t("wiz.title"), msg? `<span class="ok">${msg}</span>`:"", false, "", wizard());
-    const nt = $("#main .notice");
-    if(nt && !nt.querySelector(".brand")) nt.insertAdjacentHTML("afterbegin", `<div class="brand"><img class="lg-light" src="/logo-light.png" alt="Provino"><img class="lg-dark" src="/logo-dark.png" alt="Provino"></div>`);
     return;
   }
   if(S.status==="registering"){ const reg = ((CAMS.cameras[cam]||{}).steps||{}).register; notice(t("register.title"), t(loc(reg)), true, back); return; }
