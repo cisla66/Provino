@@ -1153,6 +1153,8 @@ class ProvinoApp(Adw.Application):
         if self.panel_btn.get_active() != bool(st.get("split")):
             self.panel_btn.set_active(bool(st.get("split")))
         self.cam_btn.set_sensitive(bool(st.get("canChange")))
+        # nella scelta iniziale non c'e' niente da cambiare: il pulsante sparisce
+        self.cam_btn.set_visible(bool(st.get("canChange")))
         # prima di entrare: icona + "Cambia fotocamera", cosi' si impara il simbolo; dentro solo l'icona
         self._cam_child(None if ready else self.t("changeShort"))
         lang = st.get("lang")

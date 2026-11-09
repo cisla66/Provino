@@ -468,8 +468,19 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         panelBtn.state = ((st["split"] as? Bool) ?? false) ? .on : .off
         camItem.isEnabled = (st["canChange"] as? Bool) ?? false
         // prima di entrare: icona + "Cambia fotocamera", cosi' si impara il simbolo; dentro solo l'icona
-        let camLabel: String? = ready ? nil : T("changeShort")
-        if camLabel != camLabelShown { camLabelShown = camLabel; camItem.image = cameraSwitchImage(label: camLabel) }
+        // nella scelta iniziale non c'e' niente da cambiare: il pulsante sparisce
+        let canChange = (st["canChange"] as? Bool) ?? false
+        let camLabel: String? = !canChange ? "-" : (ready ? nil : T("changeShort"))
+        if camLabel != camLabelShown {
+            camLabelShown = camLabel
+            if #available(macOS 15.0, *) {
+                camItem.isHidden = !canChange
+                if canChange { camItem.image = cameraSwitchImage(label: camLabel) }
+            } else {
+                camItem.image = canChange ? cameraSwitchImage(label: camLabel) : NSImage(size: NSSize(width: 1, height: 1))
+                camItem.showsIndicator = canChange
+            }
+        }
         for id: NSToolbarItem.Identifier in [.show, .films, .pick, .go, .panel] {
             setHidden(id, !ready)
             item(id)?.isEnabled = ready
