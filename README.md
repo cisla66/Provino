@@ -29,8 +29,8 @@ Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touche
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
 
-**Stato / Status:** versione di prova `1.0.0-rc`: app native per Mac (`.dmg`) e GNOME/Linux (AppImage).
-Release candidate `1.0.0-rc`: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage).
+**Stato / Status:** versione **1.0.0**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage).
+Version **1.0.0**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage).
 
 [Italiano](#italiano) · [English](#english) · Guida completa / Full guide: `docs/guida.html` (online con la 1.0)
 

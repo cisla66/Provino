@@ -47,11 +47,27 @@
     <control>pointing</control>
     <control>keyboard</control>
   </supports>
-  <!-- schermate: da aggiungere con la 1.0 (foto vere, numero di serie nascosto) -->
+  <screenshots>
+    <screenshot type="default">
+      <caption>Every shot on the card, with JPG and RAF labels</caption>
+      <caption xml:lang="it">Tutti gli scatti della scheda, con le etichette JPG e RAF</caption>
+      <image>https://raw.githubusercontent.com/cisla66/Provino/main/docs/img/appstream/gnome-griglia-chiaro.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Large photo with histogram and the film simulation recipe</caption>
+      <caption xml:lang="it">Foto grande con istogramma e ricetta della simulazione pellicola</caption>
+      <image>https://raw.githubusercontent.com/cisla66/Provino/main/docs/img/appstream/gnome-foto-meta-scuro.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Pick photos with the labels, then download</caption>
+      <caption xml:lang="it">Scegli le foto con le etichette, poi scarica</caption>
+      <image>https://raw.githubusercontent.com/cisla66/Provino/main/docs/img/appstream/gnome-scelte-scuro.png</image>
+    </screenshot>
+  </screenshots>
   <releases>
-    <release version="1.0.0" date="2026-11-09" type="development">
+    <release version="1.0.0" date="2026-11-09" type="stable">
       <description>
-        <p>First release.</p>
+        <p>First release: native apps for macOS and GNOME, card reader, USB cable and Wi-Fi, META panel with histogram, PDF contact sheet with Like boxes.</p>
       </description>
     </release>
   </releases>
