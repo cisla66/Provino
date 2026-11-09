@@ -21,7 +21,7 @@ let TXT: [String: [String: String]] = [
         "pick_none": "Nessun file scelto", "sel_jpg": "Tutti i JPG", "sel_raf": "Tutti i RAF",
         "sel_both": "Tutti i JPG e i RAF", "sel_heif": "Tutti gli HEIF", "sel_video": "Tutti i video",
         "sel_fresh": "Solo quelli non ancora scaricati", "sel_visible": "Tutto quello che vedi",
-        "by_type": "Seleziona per tipo, su tutta la scheda", "films": "Pellicole",
+        "by_type": "Seleziona per tipo, su tutta la scheda", "films": "Pellicole", "langNote": "Alcune voci dei menu di macOS (Modifica, Vista, Finestra) cambiano lingua al prossimo avvio di Provino.",
         "dl_title": "Scarica {n} file", "folder": "Cartella:", "choose": "Cambia…",
         "by_date": "Una cartella per ogni giorno di scatto", "by_date_one": "Tutte le foto scelte sono del {d}.",
         "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle.", "split": "Separa per tipo",
@@ -51,7 +51,7 @@ let TXT: [String: [String: String]] = [
         "pick_none": "No files picked", "sel_jpg": "All JPGs", "sel_raf": "All RAFs",
         "sel_both": "All JPGs and RAFs", "sel_heif": "All HEIFs", "sel_video": "All videos",
         "sel_fresh": "Only not downloaded yet", "sel_visible": "Everything you see",
-        "by_type": "Select by type, across the card", "films": "Film simulations",
+        "by_type": "Select by type, across the card", "films": "Film simulations", "langNote": "Some macOS menu items (Edit, View, Window) switch language the next time you open Provino.",
         "dl_title": "Download {n} files", "folder": "Folder:", "choose": "Change…",
         "by_date": "One folder per shooting day", "by_date_one": "All picked photos are from {d}.",
         "by_date_n": "The picked photos span {n} days: {n} folders.", "split": "Split by type",
@@ -449,7 +449,17 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         if let l = st["lang"] as? String, l != LANG, TXT[l] != nil {
             LANG = l
             relabel()
-            (NSApp.delegate as? AppDelegate)?.buildMenu()
+            let ad = NSApp.delegate as? AppDelegate
+            ad?.buildMenu()
+            // voci aggiunte da macOS (Modifica, Vista, Finestra): seguono la lingua dell'app al prossimo avvio
+            UserDefaults.standard.set([l], forKey: "AppleLanguages")
+            // la finestra Impostazioni si ricostruisce nella nuova lingua
+            if let sw = ad?.settings {
+                let wasOpen = sw.window?.isVisible ?? false
+                sw.close()
+                ad?.settings = nil
+                if wasOpen { ad?.openSettings() }
+            }
         }
         let go = (st["go"] as? [String: Any]) ?? [:]
         goBtn.title = (go["label"] as? String) ?? T("download")
@@ -1153,6 +1163,12 @@ final class SettingsWindow: NSWindowController {
         lang.target = self; lang.action = #selector(onLang)
         theme.addItems(withTitles: [T("system"), T("light"), T("dark")])
         theme.target = self; theme.action = #selector(onTheme)
+        let langNote = label(T("langNote"), size: 11, color: .secondaryLabelColor, wrap: true)
+        langNote.preferredMaxLayoutWidth = 380
+        let langBox = NSStackView(views: [lang, langNote])
+        langBox.orientation = .vertical
+        langBox.alignment = .leading
+        langBox.spacing = 6
         let safe = label(T("p_safe"), size: 11, color: .secondaryLabelColor, wrap: true)
         safe.preferredMaxLayoutWidth = 380
         safe.translatesAutoresizingMaskIntoConstraints = false
@@ -1160,7 +1176,7 @@ final class SettingsWindow: NSWindowController {
 
         let g = NSGridView(views: [
             [label(T("folder"), size: 13), dlBox],
-            [label(T("p_lang"), size: 13), lang],
+            [label(T("p_lang"), size: 13), langBox],
             [label(T("p_theme"), size: 13), theme],
             [NSGridCell.emptyContentView, autoUpd],
             [NSGridCell.emptyContentView, safe],
