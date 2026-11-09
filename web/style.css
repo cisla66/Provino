@@ -328,6 +328,7 @@ html.native .vhint{display:none}
 html.native .vtitle b{font-weight:700}
 /* la barra di avanzamento in basso: come un avviso di libadwaita */
 html.native .tray{background:var(--card);color:var(--ink);border-radius:12px;left:16px;right:16px;bottom:16px;box-shadow:0 0 0 1px var(--line2),0 8px 24px rgba(0,0,6,.18)}
+html.native .tray:not(.show){transform:translateY(calc(100% + 40px));visibility:hidden}
 html.native .tray button{border:0;background:var(--fill);color:var(--ink);font-weight:600}
 html.native .tray[data-mode=ok] #openDir{background:var(--accent);color:#fff}
 html.native .meter{background:var(--fill)}
