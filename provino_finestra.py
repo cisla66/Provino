@@ -22,6 +22,27 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+def _ui_lang_env():
+    """Le voci di GNOME (finestra Informazioni, finestre di sistema) usano la lingua dell'avvio:
+    se in Provino hai scelto una lingua, la passo anche a GTK e libadwaita prima di caricarli."""
+    d = os.environ.get("PROVINO_DATA")
+    if not d:
+        if os.access(HERE, os.W_OK) and not os.environ.get("APPIMAGE"):
+            d = HERE
+        else:
+            d = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "Provino")
+    try:
+        import json as _j
+        with open(os.path.join(d, "settings.json"), encoding="utf-8") as fh:
+            lang = _j.load(fh).get("ui_lang")
+    except (OSError, ValueError):
+        return
+    if lang in ("it", "en"):
+        os.environ["LANGUAGE"] = lang
+
+
+_ui_lang_env()
+
 try:
     import gi
     gi.require_version("Gtk", "4.0")
@@ -281,7 +302,7 @@ class ProvinoApp(Adw.Application):
                   "prefs": "Preferenze", "keys": "Scorciatoie da tastiera", "p_dl": "Download",
                   "p_dl_sub": "Valgono come proposta: prima di ogni download puoi cambiarle.",
                   "p_by_date_sub": "Per esempio 2026-11-07", "p_split_sub": "Sottocartelle JPG, RAF, HEIF e VIDEO",
-                  "p_look": "Aspetto", "p_lang": "Lingua", "p_theme": "Stile",
+                  "p_look": "Aspetto", "p_lang": "Lingua", "langNote": "Alcune finestre di GNOME, come Informazioni, cambiano lingua al prossimo avvio", "p_theme": "Stile",
                   "p_safe": "Sicurezza", "p_safe_t": "Provino legge soltanto",
                   "p_safe_s": "Non cancella, non modifica e non formatta mai nulla sulla scheda.",
                   "k_photos": "Scelta delle foto", "k_all": "Scegli tutto quello che vedi", "k_none": "Deseleziona tutto",
@@ -326,7 +347,7 @@ class ProvinoApp(Adw.Application):
                   "prefs": "Preferences", "keys": "Keyboard Shortcuts", "p_dl": "Download",
                   "p_dl_sub": "These are suggestions: you can change them before each download.",
                   "p_by_date_sub": "For example 2026-11-07", "p_split_sub": "JPG, RAF, HEIF and VIDEO subfolders",
-                  "p_look": "Appearance", "p_lang": "Language", "p_theme": "Style",
+                  "p_look": "Appearance", "p_lang": "Language", "langNote": "Some GNOME windows, like About, switch language the next time you open Provino", "p_theme": "Style",
                   "p_safe": "Safety", "p_safe_t": "Provino only reads",
                   "p_safe_s": "It never deletes, changes or formats anything on the card.",
                   "k_photos": "Picking photos", "k_all": "Pick everything you see", "k_none": "Deselect all",
@@ -1227,7 +1248,7 @@ class ProvinoApp(Adw.Application):
 
         g2 = Adw.PreferencesGroup(title=self.t("p_look"))
         langs = [("it", "Italiano"), ("en", "English")]
-        lrow = Adw.ComboRow(title=self.t("p_lang"), model=Gtk.StringList.new([n for _c, n in langs]))
+        lrow = Adw.ComboRow(title=self.t("p_lang"), subtitle=self.t("langNote"), model=Gtk.StringList.new([n for _c, n in langs]))
         cur = S.get("ui_lang") or self.lang
         lrow.set_selected(next((i for i, (c, _n) in enumerate(langs) if c == cur), 0))
         lrow.connect("notify::selected", lambda r, _p: self.js("lang", langs[r.get_selected()][0]))
