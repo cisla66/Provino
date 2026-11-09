@@ -81,6 +81,18 @@ def _gp():
                                       C.POINTER(C.c_uint64), P]
     g.gp_file_get_data_and_size.argtypes = [P, C.POINTER(C.c_void_p), C.POINTER(C.c_ulong)]
     g.gp_camera_file_get_info.argtypes = [P, C.c_char_p, C.c_char_p, C.POINTER(_FileInfo), P]
+    # scelta della porta USB quando ci sono piu' fotocamere collegate
+    g.gp_list_new.argtypes = [C.POINTER(P)]
+    g.gp_list_free.argtypes = [P]
+    g.gp_list_count.argtypes = [P]
+    g.gp_list_get_value.argtypes = [P, C.c_int, C.POINTER(C.c_char_p)]
+    g.gp_camera_autodetect.argtypes = [P, P]
+    g.gp_port_info_list_new.argtypes = [C.POINTER(P)]
+    g.gp_port_info_list_load.argtypes = [P]
+    g.gp_port_info_list_free.argtypes = [P]
+    g.gp_port_info_list_lookup_path.argtypes = [P, C.c_char_p]
+    g.gp_port_info_list_get_info.argtypes = [P, C.c_int, C.POINTER(P)]
+    g.gp_camera_set_port_info.argtypes = [P, P]
     _lib = g
     return g
 
@@ -183,10 +195,56 @@ class UsbSession:
             if not alive:
                 self._emit({"event": "removed"})
 
+    def _usb_ports(self):
+        """Le porte USB con una fotocamera (es. b"usb:003,007"), come le vede libgphoto2."""
+        g = self.g
+        lst = P()
+        if g.gp_list_new(C.byref(lst)) < 0:
+            return []
+        try:
+            n = g.gp_camera_autodetect(lst, self.ctx)
+            out = []
+            for i in range(max(0, n)):
+                v = C.c_char_p()
+                if g.gp_list_get_value(lst, i, C.byref(v)) >= 0 and v.value and v.value.startswith(b"usb:"):
+                    out.append(v.value)
+            return out
+        finally:
+            g.gp_list_free(lst)
+
+    def _set_port(self, cam, port):
+        g = self.g
+        il = P()
+        if g.gp_port_info_list_new(C.byref(il)) < 0:
+            return False
+        try:
+            if g.gp_port_info_list_load(il) < 0:
+                return False
+            i = g.gp_port_info_list_lookup_path(il, port)
+            info = P()
+            if i < 0 or g.gp_port_info_list_get_info(il, i, C.byref(info)) < 0:
+                return False
+            return g.gp_camera_set_port_info(cam, info) >= 0
+        finally:
+            g.gp_port_info_list_free(il)
+
     def _open(self):
+        """Apro la fotocamera scelta. Con piu' fotocamere collegate le provo porta per porta:
+        senza porta libgphoto2 prenderebbe sempre la prima (dipende da dove e' attaccato il cavo)."""
+        rc = GP_ERROR_MODEL_NOT_FOUND
+        for port in (self._usb_ports() or [None]):
+            rc = self._open_port(port)
+            if rc == GP_OK:
+                return rc
+        return rc
+
+    def _open_port(self, port):
         g = self.g
         cam = P()
         g.gp_camera_new(C.byref(cam))
+        if port and not self._set_port(cam, port):
+            g.gp_camera_unref(cam)
+            return GP_ERROR_MODEL_NOT_FOUND
         rc = g.gp_camera_init(cam, self.ctx)
         if rc == GP_ERROR_IO_USB_CLAIM:
             release_from_gnome(self.log)
