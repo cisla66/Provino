@@ -629,10 +629,14 @@ class ProvinoApp(Adw.Application):
                 self.fbtn[f].set_active(True)
             films = st.get("films") or []
             vals = [v for v, _l in films] or [""]
-            if vals != self.film_values:
+            labels = [l for _v, l in films] or [self.t("films_all")]
+            # anche le etichette: cambiando lingua "Tutte le pellicole" diventa "All film simulations"
+            if vals != self.film_values or labels != getattr(self, "film_labels", None):
                 self.film_values = vals
-                labels = [l for _v, l in films] or [self.t("films_all")]
+                self.film_labels = labels
+                cur_sel = self.film_dd.get_selected()
                 self.film_model.splice(0, self.film_model.get_n_items(), labels)
+                self.film_dd.set_selected(cur_sel)
             self.film_dd.set_visible(len(films) > 1)
             cur = st.get("film") or ""
             if cur in self.film_values and self.film_dd.get_selected() != self.film_values.index(cur):

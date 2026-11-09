@@ -221,6 +221,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
     // pezzi della barra
     let showSeg = NSSegmentedControl(labels: ["", "JPG", "RAF", "HEIF", ""], trackingMode: .selectOne, target: nil, action: nil)
     let filmPop = NSPopUpButton(frame: .zero, pullsDown: false)
+    var filmLabels: [String] = []
     var filmValues: [String] = []
     let pickItem = NSMenuToolbarItem(itemIdentifier: .pick)
     let camItem = NSMenuToolbarItem(itemIdentifier: .camera)
@@ -473,10 +474,15 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         if let i = FILTERS.firstIndex(of: f), showSeg.selectedSegment != i { showSeg.selectedSegment = i }
         let films = (st["films"] as? [[String]]) ?? []
         let vals = films.map { $0.first ?? "" }
-        if vals != filmValues {
+        let labels = films.map { $0.count > 1 ? $0[1] : $0[0] }
+        // anche le etichette: cambiando lingua "Tutte le pellicole" diventa "All film simulations"
+        if vals != filmValues || labels != filmLabels {
             filmValues = vals
+            filmLabels = labels
+            let sel = filmPop.indexOfSelectedItem
             filmPop.removeAllItems()
-            filmPop.addItems(withTitles: films.map { $0.count > 1 ? $0[1] : $0[0] })
+            filmPop.addItems(withTitles: labels)
+            if sel >= 0 && sel < labels.count { filmPop.selectItem(at: sel) }
         }
         setHidden(.films, films.count <= 1)
         let cur = (st["film"] as? String) ?? ""
