@@ -784,6 +784,20 @@ final class TransferPop: NSViewController, NSPopoverDelegate {
 
 // MARK: - foglio "Scarica N file"
 
+/// Riquadro dell'anteprima delle cartelle: i colori si ricalcolano col tema (chiaro/scuro),
+/// altrimenti in scuro restava bianco con il testo bianco (visto il 9 nov 2026).
+final class PreviewBox: NSView {
+    override init(frame: NSRect) { super.init(frame: frame); wantsLayer = true }
+    required init?(coder: NSCoder) { super.init(coder: coder); wantsLayer = true }
+    override var wantsUpdateLayer: Bool { true }
+    override func updateLayer() {
+        layer?.cornerRadius = 6
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor.separatorColor.cgColor
+        layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+    }
+}
+
 final class DestSheet: NSObject {
     let window: NSWindow
     let req: [String: Any]
@@ -833,12 +847,7 @@ final class DestSheet: NSObject {
         let wl = label(T("where"), size: 12, color: .secondaryLabelColor)
         preview.isSelectable = true
         preview.preferredMaxLayoutWidth = 470
-        let box = NSView()
-        box.wantsLayer = true
-        box.layer?.cornerRadius = 6
-        box.layer?.borderWidth = 1
-        box.layer?.borderColor = NSColor.separatorColor.cgColor
-        box.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+        let box = PreviewBox()
         preview.translatesAutoresizingMaskIntoConstraints = false
         box.addSubview(preview)
         NSLayoutConstraint.activate([
