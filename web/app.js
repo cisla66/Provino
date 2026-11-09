@@ -631,7 +631,8 @@ function render(){
   // collegamento perso: chiudo la foto a tutto schermo, cosi' si vede subito il messaggio
   if(S.status!=="ready" && !$("#full").hidden){ $("#full").hidden = true; zoomFit($("#fbox")); try{ if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){} }
   layout();
-  const back = `<button class="linkish" data-change>${t("changeLong")}</button>`;
+  // nelle app native "Cambia fotocamera" sta solo nella barra della finestra (icona + scritta finche' non si e' dentro)
+  const back = NATIVE ? "" : `<button class="linkish" data-change>${t("changeLong")}</button>`;
   if(S.status==="ready" && !S.files.length){ tray(); notice(t("empty.title"), t("empty.text"), false, back); return; }
   if(S.status==="ready"){ if(!built) build(); else paint(); tray(); return; }
   tray();

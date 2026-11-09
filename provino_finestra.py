@@ -262,7 +262,7 @@ class ProvinoApp(Adw.Application):
         self.connect("shutdown", self.on_shutdown)
 
     # testi della cornice (la pagina ha i suoi in i18n.js)
-    TXT = {"it": {"download": "Scarica", "change": "Cambia fotocamera…", "camera": "Fotocamera e collegamento",
+    TXT = {"it": {"download": "Scarica", "change": "Cambia fotocamera…", "changeShort": "Cambia fotocamera", "camera": "Fotocamera e collegamento",
                   "panel": "Foto grande e informazioni", "menu": "Menu principale",
                   "system": "Segui il sistema", "light": "Chiaro", "dark": "Scuro",
                   "about": "Informazioni su Provino", "quit": "Esci", "site": "Sito e guida",
@@ -307,7 +307,7 @@ class ProvinoApp(Adw.Application):
                   "upd_auto": "Controlla gli aggiornamenti all'avvio",
                   "pdf_sel": "Crea PDF delle foto scelte…", "pdf_vis": "Crea PDF di quello che vedi…",
                   "pdf_read": "Leggi le scelte da un PDF…"},
-           "en": {"download": "Download", "change": "Change camera…", "camera": "Camera and connection",
+           "en": {"download": "Download", "change": "Change camera…", "changeShort": "Change camera", "camera": "Camera and connection",
                   "panel": "Large photo and info", "menu": "Main menu",
                   "system": "Follow system", "light": "Light", "dark": "Dark",
                   "about": "About Provino", "quit": "Quit", "site": "Website and guide",
@@ -401,8 +401,8 @@ class ProvinoApp(Adw.Application):
         Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(os.path.join(HERE, "icons"))
         self.cam_btn = Gtk.MenuButton(menu_model=cam_menu, tooltip_text=self.t("camera"))
         # disegno largo: un po' piu' grande delle icone da 16 px, cosi' fotocamera e frecce si leggono
-        self.cam_btn.set_child(Gtk.Image(icon_name="provino-camera-switch-symbolic", pixel_size=22))
-        self.cam_btn.add_css_class("image-button")
+        self._cam_label = "?"
+        self._cam_child(None)
         bar.pack_start(self.cam_btn)
 
         main_menu = self._main_menu()
@@ -1149,10 +1149,25 @@ class ProvinoApp(Adw.Application):
         if self.panel_btn.get_active() != bool(st.get("split")):
             self.panel_btn.set_active(bool(st.get("split")))
         self.cam_btn.set_sensitive(bool(st.get("canChange")))
+        # prima di entrare: icona + "Cambia fotocamera", cosi' si impara il simbolo; dentro solo l'icona
+        self._cam_child(None if ready else self.t("changeShort"))
         lang = st.get("lang")
         if lang in self.TXT and lang != self.lang:
             self.lang = lang
             self._relabel()
+
+    def _cam_child(self, label):
+        if label == self._cam_label:
+            return
+        self._cam_label = label
+        box = Gtk.Box(spacing=6)
+        box.append(Gtk.Image(icon_name="provino-camera-switch-symbolic", pixel_size=22))
+        if label:
+            box.append(Gtk.Label(label=label))
+            self.cam_btn.remove_css_class("image-button")
+        else:
+            self.cam_btn.add_css_class("image-button")
+        self.cam_btn.set_child(box)
 
     # ------------------------------------------------------------ Preferenze
     def prefs(self):

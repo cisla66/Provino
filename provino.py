@@ -164,7 +164,7 @@ os.makedirs(DATA, exist_ok=True)
 import provino_wifi as fw
 import provino_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc21"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.0.0-rc22"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):

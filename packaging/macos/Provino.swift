@@ -10,7 +10,7 @@ import WebKit
 
 let TXT: [String: [String: String]] = [
     "it": [
-        "download": "Scarica", "change": "Cambia fotocamera…", "camera": "Fotocamera e collegamento",
+        "download": "Scarica", "change": "Cambia fotocamera…", "changeShort": "Cambia fotocamera", "camera": "Fotocamera e collegamento",
         "panel": "Foto grande e informazioni", "about": "Informazioni su Provino", "quit": "Esci da Provino",
         "hide": "Nascondi Provino", "hideOthers": "Nascondi altri", "showAll": "Mostra tutti",
         "settings": "Impostazioni…", "file": "Archivio", "edit": "Modifica", "view": "Vista", "window": "Finestra",
@@ -40,7 +40,7 @@ let TXT: [String: [String: String]] = [
         "panelOn": "Mostra foto grande e informazioni",
     ],
     "en": [
-        "download": "Download", "change": "Change Camera…", "camera": "Camera and connection",
+        "download": "Download", "change": "Change Camera…", "changeShort": "Change Camera", "camera": "Camera and connection",
         "panel": "Large photo and info", "about": "About Provino", "quit": "Quit Provino",
         "hide": "Hide Provino", "hideOthers": "Hide Others", "showAll": "Show All",
         "settings": "Settings…", "file": "File", "edit": "Edit", "view": "View", "window": "Window",
@@ -224,6 +224,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
     var filmValues: [String] = []
     let pickItem = NSMenuToolbarItem(itemIdentifier: .pick)
     let camItem = NSMenuToolbarItem(itemIdentifier: .camera)
+    var camLabelShown: String? = "?"
     let goBtn = NSButton(title: "", target: nil, action: nil)
     let panelBtn = NSButton(image: NSImage(systemSymbolName: "sidebar.right", accessibilityDescription: nil)!, target: nil, action: nil)
     let ring = RingView()
@@ -455,6 +456,9 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         goBtn.isEnabled = (go["enabled"] as? Bool) ?? false
         panelBtn.state = ((st["split"] as? Bool) ?? false) ? .on : .off
         camItem.isEnabled = (st["canChange"] as? Bool) ?? false
+        // prima di entrare: icona + "Cambia fotocamera", cosi' si impara il simbolo; dentro solo l'icona
+        let camLabel: String? = ready ? nil : T("changeShort")
+        if camLabel != camLabelShown { camLabelShown = camLabel; camItem.image = cameraSwitchImage(label: camLabel) }
         for id: NSToolbarItem.Identifier in [.show, .films, .pick, .go, .panel] {
             setHidden(id, !ready)
             item(id)?.isEnabled = ready
@@ -1482,7 +1486,7 @@ app.setActivationPolicy(.regular)
 app.run()
 
 /// Icona "cambia fotocamera" di Provino: fotocamera con due frecce di rotazione ai lati (disegnata, immagine modello).
-func cameraSwitchImage() -> NSImage {
+func cameraSwitchImage(label: String? = nil) -> NSImage {
     let lines: [[(CGFloat, CGFloat)]] = [
 [(5.25,16.03), (4.83,15.54), (4.45,15.02), (4.10,14.49), (3.78,13.93), (3.50,13.35), (3.25,12.76), (3.04,12.16), (2.86,11.54), (2.73,10.91), (2.63,10.28), (2.57,9.64), (2.55,9.00), (2.57,8.36), (2.63,7.72), (2.73,7.09), (2.86,6.46), (3.04,5.84), (3.25,5.24), (3.50,4.65), (3.78,4.07), (4.10,3.51), (4.45,2.98), (4.83,2.46), (5.25,1.97)],
 [(5.25,1.97), (2.76,2.53)],
@@ -1493,7 +1497,10 @@ func cameraSwitchImage() -> NSImage {
 [(8.18,5.70), (10.12,5.70), (11.18,4.20), (14.92,4.20), (15.97,5.70), (17.92,5.70), (18.60,6.38), (18.60,11.93), (17.92,12.60), (8.18,12.60), (7.50,11.93), (7.50,6.38), (8.18,5.70)],
 [(15.07,9.00), (15.06,9.26), (15.01,9.52), (14.92,9.77), (14.80,10.01), (14.66,10.23), (14.48,10.43), (14.28,10.61), (14.06,10.75), (13.82,10.87), (13.57,10.96), (13.31,11.01), (13.05,11.03), (12.79,11.01), (12.53,10.96), (12.28,10.87), (12.04,10.75), (11.82,10.61), (11.62,10.43), (11.44,10.23), (11.30,10.01), (11.18,9.77), (11.09,9.52), (11.04,9.26), (11.03,9.00), (11.04,8.74), (11.09,8.48), (11.18,8.23), (11.30,7.99), (11.44,7.77), (11.62,7.57), (11.82,7.39), (12.04,7.25), (12.28,7.13), (12.53,7.04), (12.79,6.99), (13.05,6.97), (13.31,6.99), (13.57,7.04), (13.82,7.13), (14.06,7.25), (14.28,7.39), (14.48,7.57), (14.66,7.77), (14.80,7.99), (14.92,8.23), (15.01,8.48), (15.06,8.74), (15.07,9.00)]
 ]
-    let img = NSImage(size: NSSize(width: 26, height: 18), flipped: true) { _ in
+    let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    let text = label.map { NSAttributedString(string: $0, attributes: [.font: font, .foregroundColor: NSColor.black]) }
+    let tw = text.map { ceil($0.size().width) + 6 } ?? 0
+    let img = NSImage(size: NSSize(width: 26 + tw, height: 18), flipped: true) { _ in
         NSColor.black.setStroke()
         for l in lines {
             let p = NSBezierPath()
@@ -1502,6 +1509,7 @@ func cameraSwitchImage() -> NSImage {
             for q in l.dropFirst() { p.line(to: NSPoint(x: q.0, y: q.1)) }
             p.stroke()
         }
+        if let t = text { t.draw(at: NSPoint(x: 32, y: (18 - t.size().height) / 2)) }
         return true
     }
     img.isTemplate = true
