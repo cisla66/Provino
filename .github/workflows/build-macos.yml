@@ -81,7 +81,8 @@ jobs:
           retention-days: 14
 
       - name: Schermate nel ramo "ci-mac"
-        if: always()
+        # solo durante lo sviluppo: commit con [ci-files] nel messaggio
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[ci-files]')
         run: |
           mkdir -p /tmp/ci && cp shots/*.png /tmp/ci/ 2>/dev/null || true
           cp app-stdout.txt test-data/log/*.txt /tmp/ci/ 2>/dev/null || true
