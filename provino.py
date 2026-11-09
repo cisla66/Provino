@@ -118,6 +118,7 @@ def _ver_key(v):
 def check_update(platform):
     """Ultima versione pubblicata su GitHub (solo versioni finali). Restituisce sempre un dizionario."""
     import json as _json
+    import urllib.error
     import urllib.request
     try:
         req = urllib.request.Request("https://api.github.com/repos/%s/releases/latest" % REPO,
@@ -125,6 +126,11 @@ def check_update(platform):
                                               "User-Agent": "Provino/%s" % APP_VERSION})
         with urllib.request.urlopen(req, timeout=8) as r:
             rel = _json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:   # nessuna versione pubblicata ancora: niente da aggiornare
+            return {"ok": True, "current": APP_VERSION, "latest": APP_VERSION, "newer": False,
+                    "url": "https://github.com/%s/releases" % REPO, "download": None, "notes": ""}
+        return {"ok": False, "current": APP_VERSION, "error": str(e)[:200]}
     except Exception as e:  # noqa: BLE001  (niente rete, repository non ancora pubblico, limite di GitHub...)
         return {"ok": False, "current": APP_VERSION, "error": str(e)[:200]}
     tag = rel.get("tag_name") or ""
@@ -164,7 +170,7 @@ os.makedirs(DATA, exist_ok=True)
 import provino_wifi as fw
 import provino_meta  # noqa: E402
 
-APP_VERSION = "1.0.0-rc27"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.0.0-rc28"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
