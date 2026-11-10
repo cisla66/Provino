@@ -109,8 +109,7 @@ dialog .sub{color:#555;margin:0 0 14px;font-size:14px}
 .frame{position:relative;background:none;border:0;padding:0;text-align:left}
 .sheet h2.day{display:none}
 .dtag{height:22px;line-height:16px;font-stretch:112%;font-weight:600;font-size:14px;color:var(--ink-soft);white-space:nowrap;overflow:visible;padding-top:2px}
-.frame .dtag{border-top:3px solid var(--dc,var(--line));padding-top:6px;height:30px;margin-top:-8px}
-.frame.dfirst .dtag{color:var(--dc,var(--ink-soft))}
+.frame .dtag{border-top:4px solid var(--dc,var(--line));padding-top:5px;height:30px;margin-top:-8px}
 .pic{position:relative}
 .photo{position:relative;width:100%;padding:0;aspect-ratio:3/2;background:var(--board-deep);border:6px solid var(--paper);
   display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -379,10 +378,8 @@ html.native.mac .opt{border-radius:10px}
 html.native.mac .metapane.side{border-radius:10px}
 
 html.native .dtag{font-stretch:normal;font-weight:700;font-size:14px;color:var(--ink)}
-html.native .frame.dfirst .dtag{color:var(--dc,var(--ink))}
 html.native .frame:not(.dfirst) .dtag{color:transparent}
 html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
-html.native.mac .frame.dfirst .dtag{color:var(--dc,var(--ink-soft))}
 
 /* istogramma sopra la ricetta */
 .histo{margin:0 0 16px;border-radius:6px;background:var(--fill);padding:6px;line-height:0}
@@ -437,27 +434,22 @@ html.native.mac .kind{padding:2px 7px}
 /* =====================================================================================
    1.1 - colore per ogni giornata, "Per data...", cartella evento, coda "Mostra tutti"
    ===================================================================================== */
-:root{ /* tinte chiare sul fondo scuro; in ordine caldo/freddo cosi' due giorni vicini non si somigliano */
-  --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
+:root{ /* tinte vive e ben distinte, uguali nel tema chiaro e scuro (10 nov: le prime erano troppo scure);
+         in ordine caldo/freddo cosi' due giorni vicini non si somigliano. --tN = testo sopra il colore */
+  --d0:#ffb000; --t0:#1a1a1a;   /* giallo oro */
+  --d1:#00b4d8; --t1:#0b1a1f;   /* azzurro */
+  --d2:#d63af9; --t2:#ffffff;   /* magenta */
+  --d3:#2fc55a; --t3:#08200f;   /* verde */
+  --d4:#ff6d00; --t4:#1a0b00;   /* arancione */
+  --d5:#4c63ff; --t5:#ffffff;   /* blu */
+  --d6:#ff4f9a; --t6:#1f0812;   /* rosa */
 }
-html[data-theme=light], html.native{
-  --d0:#b7791f; --d1:#0f9488; --d2:#7c5cd6; --d3:#c2570c; --d4:#2563eb; --d5:#db2777; --d6:#15803d;
-}
-@media (prefers-color-scheme: light){
-  html:not([data-theme=dark]){
-    --d0:#b7791f; --d1:#0f9488; --d2:#7c5cd6; --d3:#c2570c; --d4:#2563eb; --d5:#db2777; --d6:#15803d;
-  }
-}
-html.native[data-theme=dark]{
-  --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
-}
-@media (prefers-color-scheme: dark){
-  html.native:not([data-theme=light]){
-    --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
-  }
-}
-.frame.dc0{--dc:var(--d0)} .frame.dc1{--dc:var(--d1)} .frame.dc2{--dc:var(--d2)} .frame.dc3{--dc:var(--d3)}
-.frame.dc4{--dc:var(--d4)} .frame.dc5{--dc:var(--d5)} .frame.dc6{--dc:var(--d6)}
+.frame.dc0{--dc:var(--d0);--dct:var(--t0)} .frame.dc1{--dc:var(--d1);--dct:var(--t1)} .frame.dc2{--dc:var(--d2);--dct:var(--t2)}
+.frame.dc3{--dc:var(--d3);--dct:var(--t3)} .frame.dc4{--dc:var(--d4);--dct:var(--t4)} .frame.dc5{--dc:var(--d5);--dct:var(--t5)}
+.frame.dc6{--dc:var(--d6);--dct:var(--t6)}
+/* la data sta in un'etichetta piena del colore della giornata: si legge anche con poca luce */
+.dpill{display:inline-block;background:var(--dc,var(--fill));color:var(--dct,var(--ink));border-radius:5px;padding:0 7px;
+  line-height:20px;font-size:12.5px;font-weight:700;font-stretch:normal;letter-spacing:.01em}
 
 .evrow{display:flex;gap:10px;align-items:center;margin:2px 0 8px 26px;flex-wrap:wrap}
 .evrow input{font:inherit;font-family:ui-monospace,Menlo,monospace;font-size:14px;padding:6px 8px;border:1px solid #aaa;border-radius:6px;min-width:280px;flex:1}

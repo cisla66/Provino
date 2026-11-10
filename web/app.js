@@ -166,7 +166,7 @@ function hideEmptyDays(){
     while(el && !el.matches("h2.day")){
       if(el.classList.contains("frame")){
         const tag = el.querySelector(".dtag");
-        if(!first && !el.hidden){ first = el; tag.textContent = h.textContent; el.classList.add("dfirst"); }
+        if(!first && !el.hidden){ first = el; if(tag.textContent!==h.textContent) tag.innerHTML = `<span class="dpill">${esc(h.textContent)}</span>`; el.classList.add("dfirst"); }
         else { tag.textContent = ""; el.classList.remove("dfirst"); }
       }
       el = el.nextElementSibling;
