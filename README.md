@@ -29,8 +29,8 @@ Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touche
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
 
-**Stato / Status:** versione **1.1.1**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage). Novità: colore per ogni giornata, scelta per data, cartella per l'evento, coda «Mostra tutti».
-Version **1.1.1**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage). New: a color for each day, pick by date, one folder per event, "Show all" queue.
+**Stato / Status:** versione **1.1.2**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage). Novità: colore per ogni giornata, scelta per data, cartella per l'evento, coda «Mostra tutti».
+Version **1.1.2**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage). New: a color for each day, pick by date, one folder per event, "Show all" queue.
 
 [Italiano](#italiano) · [English](#english) · Sito e guida / Website and guide: [cisla66.github.io/Provino](https://cisla66.github.io/Provino/)
 

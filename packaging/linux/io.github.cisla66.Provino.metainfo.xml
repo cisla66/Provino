@@ -65,6 +65,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.1.2" date="2026-11-10" type="stable">
+      <description>
+        <p>Updates are downloaded and installed inside Provino, with a progress bar and a checksum check; the update notice shows the release notes in your language only.</p>
+      </description>
+    </release>
     <release version="1.1.1" date="2026-11-10" type="stable">
       <description>
         <p>Downloading into an existing event folder no longer creates a second folder inside it, with a warning when a new folder would be nested in an event.</p>
