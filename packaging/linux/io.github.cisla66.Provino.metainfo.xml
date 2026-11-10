@@ -65,6 +65,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.1.0" date="2026-11-10" type="stable">
+      <description>
+        <p>A color for each shooting day, Select › By date, one download folder per event (2026_10_30_Name) and a "Show all" download queue that keeps the current file in view.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-09" type="stable">
       <description>
         <p>First release: native apps for macOS and GNOME, card reader, USB cable and Wi-Fi, META panel with histogram, PDF contact sheet with Like boxes.</p>

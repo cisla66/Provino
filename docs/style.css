@@ -177,3 +177,26 @@ kbd{display:inline-block;min-width:22px;padding:2px 7px;margin:0 2px;border-radi
   .cams{grid-template-columns:1fr}
   .keys td:first-child{white-space:normal}
 }
+
+/* 1.1: novita' in evidenza */
+.newbadge{margin:18px 0 0}
+.newbadge a{display:inline-flex;gap:10px;align-items:center;text-decoration:none;font-size:14px;color:var(--ink2);
+  background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:6px 14px 6px 6px}
+.newbadge a:hover{color:var(--ink);background:rgba(255,255,255,.1)}
+.newbadge b{background:var(--red);color:#fff;border-radius:999px;padding:2px 9px;font-size:12px}
+.spot{background:linear-gradient(180deg,var(--bg2),var(--bg))}
+.flow{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:30px}
+.flow figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.flow img{width:100%;cursor:zoom-in;border-bottom:1px solid var(--line)}
+.flow figcaption{padding:16px 20px 20px;color:var(--ink2);font-size:15px}
+.flow figcaption b{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:17px;margin-bottom:6px}
+.flow figcaption i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:13px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:rgba(255,255,255,.08);border-radius:5px;padding:1px 5px}
+.news{display:grid;gap:18px;margin-top:22px}
+.news article{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px}
+.news .when{margin:0 0 6px;color:var(--ink2)}
+.news .when b{color:var(--ink)}
+.news ul{margin:0;padding-left:20px;color:var(--ink2)}
+.news li{margin:4px 0}
+.news li b{color:var(--ink)}
+@media (max-width:860px){ .flow{grid-template-columns:1fr} }

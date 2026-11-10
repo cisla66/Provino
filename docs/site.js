@@ -9,7 +9,7 @@
   set(saved || ((navigator.language||'it').toLowerCase().indexOf('it')===0 ? 'it' : 'en'));
   document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener('click',function(){set(b.dataset.set);});});
   var lb=document.getElementById('lb'); if(!lb) return; var li=lb.querySelector('img');
-  document.querySelectorAll('.gallery img, .plat img').forEach(function(img){
+  document.querySelectorAll('.gallery img, .plat img, .flow img').forEach(function(img){
     img.addEventListener('click',function(){ if(!lb.showModal) return; li.src=img.src; li.alt=img.alt; lb.showModal(); });
   });
   lb.addEventListener('click',function(){lb.close();});

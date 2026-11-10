@@ -29,22 +29,23 @@ Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touche
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
 
-**Stato / Status:** versione **1.0.0**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage).
-Version **1.0.0**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage).
+**Stato / Status:** versione **1.1.0**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage). Novità: colore per ogni giornata, scelta per data, cartella per l'evento, coda «Mostra tutti».
+Version **1.1.0**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage). New: a color for each day, pick by date, one folder per event, "Show all" queue.
 
-[Italiano](#italiano) · [English](#english) · Guida completa / Full guide: `docs/guida.html` (online con la 1.0)
+[Italiano](#italiano) · [English](#english) · Sito e guida / Website and guide: [cisla66.github.io/Provino](https://cisla66.github.io/Provino/)
 
 ---
 
 ## Italiano
 
 ### Cosa fa
-- Miniature di tutti gli scatti, con RAW+JPG raggruppati in un solo provino.
-- Scegli con le etichette **JPG** / **RAF**, Maiusc+clic, riquadro o «Tutti i …».
+- Miniature di tutti gli scatti, con RAW+JPG raggruppati in un solo provino; ogni giornata ha il suo colore.
+- Scegli con le etichette **JPG** / **RAF**, Maiusc+clic, riquadro, «Tutti i …» o **Per data…** (spunti i giorni e Provino sceglie le loro foto).
 - Filtri per tipo di file e per simulazione pellicola.
 - Foto grande accanto alla griglia o a tutto schermo, zoom al 100%.
 - Pannello **META**: la ricetta completa (pellicola, grana, Color Chrome, bilanciamento del bianco, gamma dinamica…) e i dati di scatto; «Copia ricetta» la copia come testo.
-- Download in cartelle per data e/o per tipo (RAF, JPG, VIDEO).
+- Download in una cartella per ogni giorno o in **una cartella per l'evento** (`2026_10_30_NomeEvento`), con sottocartelle per tipo (RAF, JPG, VIDEO) se vuoi.
+- **Mostra tutti**: la coda dello scaricamento con miniature e stato, con il file in corso sempre al centro.
 - Se un file c'è già, chiede cosa fare. Se il collegamento cade, nessun file resta a metà e quelli mancanti tornano selezionati.
 
 ### Collegamenti
@@ -76,12 +77,13 @@ Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non so
 ## English
 
 ### What it does
-- Thumbnails of every shot, RAW+JPG grouped into a single frame.
-- Pick with the **JPG** / **RAF** labels, Shift+click, drag box or "All …".
+- Thumbnails of every shot, RAW+JPG grouped into a single frame; each day has its own color.
+- Pick with the **JPG** / **RAF** labels, Shift+click, drag box, "All …" or **By date…** (tick the days and Provino picks their photos).
 - Filters by file type and by film simulation.
 - Large photo next to the grid or full screen, 100% zoom.
 - **META** panel: the full recipe (film, grain, Color Chrome, white balance, dynamic range…) and shooting data; "Copy recipe" copies it as text.
-- Downloads into folders by date and/or type (RAF, JPG, VIDEO).
+- Downloads into one folder per day or **one folder per event** (`2026_10_30_EventName`), with subfolders by type (RAF, JPG, VIDEO) if you like.
+- **Show all**: the download queue with thumbnails and status, with the current file always in the middle.
 - Asks what to do when a file already exists. If the connection drops, no half-written files are left and the missing ones are selected again.
 
 ### Connections
