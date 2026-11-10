@@ -187,7 +187,7 @@ kbd{display:inline-block;min-width:22px;padding:2px 7px;margin:0 2px;border-radi
 .spot{background:linear-gradient(180deg,var(--bg2),var(--bg))}
 .flow{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:30px}
 .flow figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.flow img{width:100%;cursor:zoom-in;border-bottom:1px solid var(--line)}
+.flow img{width:100%;aspect-ratio:1.53;object-fit:cover;object-position:top;cursor:zoom-in;border-bottom:1px solid var(--line)}
 .flow figcaption{padding:16px 20px 20px;color:var(--ink2);font-size:15px}
 .flow figcaption b{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:17px;margin-bottom:6px}
 .flow figcaption i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:13px}
