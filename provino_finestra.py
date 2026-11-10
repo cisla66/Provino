@@ -154,6 +154,18 @@ ICON_DIR = os.path.join(GLib.get_user_data_dir(), "icons", "hicolor")
 _MOVED = [None]   # dove e' finito l'AppImage se l'ho spostato mentre Provino era aperto
 
 
+def clean_event_text(v):
+    """Mentre si scrive il nome dell'evento: spazi -> _, via i caratteri vietati nei nomi delle cartelle."""
+    import re
+    v = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "", v)
+    return re.sub(r"\s+", "_", v)
+
+
+def safe_event_name(v):
+    """Nome finale della cartella dell'evento (come safe_event in provino.py)."""
+    return clean_event_text(v).strip("._").lstrip(".")[:120].rstrip("_")
+
+
 def appimage_path():
     p = _MOVED[0] or os.environ.get("APPIMAGE")
     return p if p and os.path.isfile(p) else None
@@ -294,6 +306,9 @@ class ProvinoApp(Adw.Application):
                   "sel_fresh": "Solo quelli non ancora scaricati", "sel_visible": "Tutto quello che vedi",
                   "sel_none": "Deseleziona tutto", "by_type": "Seleziona per tipo, su tutta la scheda",
                   "dl_title": "Scarica {n} file", "folder": "Cartella", "choose": "Cambia…",
+                  "event": "Una cartella per l'evento", "event_name": "Nome della cartella",
+                  "event_hint": "Gli spazi diventano _", "event_empty": "Scrivi il nome dell'evento",
+                  "sel_bydate": "Per data…", "show_all": "Mostra tutti",
                   "by_date": "Una cartella per ogni giorno di scatto", "by_date_one": "Tutte le foto scelte sono del {d}",
                   "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle", "split": "Separa per tipo",
                   "split_sub": "Sottocartelle {k}", "where": "Dove finiscono", "cancel": "Annulla",
@@ -339,6 +354,9 @@ class ProvinoApp(Adw.Application):
                   "sel_fresh": "Only not downloaded yet", "sel_visible": "Everything you see",
                   "sel_none": "Deselect all", "by_type": "Select by type, across the card",
                   "dl_title": "Download {n} files", "folder": "Folder", "choose": "Change…",
+                  "event": "One folder for the event", "event_name": "Folder name",
+                  "event_hint": "Spaces become _", "event_empty": "Type the event name",
+                  "sel_bydate": "By date…", "show_all": "Show all",
                   "by_date": "One folder per shooting day", "by_date_one": "All picked photos are from {d}",
                   "by_date_n": "The picked photos span {n} days: {n} folders", "split": "Split by type",
                   "split_sub": "Subfolders {k}", "where": "Where they go", "cancel": "Cancel",
@@ -614,7 +632,7 @@ class ProvinoApp(Adw.Application):
         self.pick_menu = Gio.Menu()
         self.pick_btn = Gtk.MenuButton(label=self.t("pick"), menu_model=self.pick_menu, always_show_arrow=True)
         box.append(self.pick_btn)
-        for name in ("JPG", "RAF", "both", "HIF", "VIDEO", "fresh", "visible", "none"):
+        for name in ("JPG", "RAF", "both", "HIF", "VIDEO", "fresh", "visible", "bydate", "none"):
             a = Gio.SimpleAction.new("sel-" + name, None)
             a.connect("activate", lambda _a, _p, n=name: self.js("select", n))
             self.add_action(a)
@@ -674,6 +692,7 @@ class ProvinoApp(Adw.Application):
             sec2 = Gio.Menu()
             sec2.append("%s  (%d)" % (self.t("sel_fresh"), c.get("fresh", 0)), "app.sel-fresh")
             sec2.append(self.t("sel_visible"), "app.sel-visible")
+            sec2.append(self.t("sel_bydate"), "app.sel-bydate")
             m.append_section(None, sec2)
             sec3 = Gio.Menu()
             sec3.append(self.t("sel_none"), "app.sel-none")
@@ -775,6 +794,17 @@ class ProvinoApp(Adw.Application):
         elif len(days) > 1:
             sw_date.set_subtitle(self.t("by_date_n").replace("{n}", str(len(days))))
         grp.add(sw_date)
+        # 1.1: cartella dell'evento (2026_10_30_Nome) al posto delle cartelle per giorno
+        sw_ev = Adw.SwitchRow(title=self.t("event"), subtitle=self.t("event_hint"))
+        sw_ev.set_active(bool(req.get("event_mode")))
+        if sw_ev.get_active():
+            sw_date.set_active(False)
+        grp.add(sw_ev)
+        ev_row = Adw.EntryRow(title=self.t("event_name"))
+        ev_row.set_text(req.get("event") or "")
+        ev_row.add_css_class("monospace")
+        ev_row.set_visible(sw_ev.get_active())
+        grp.add(ev_row)
         ks = [k for k in ("RAF", "JPG", "HEIF", "VIDEO") if k in kinds]
         sw_split = Adw.SwitchRow(title=self.t("split"),
                                  subtitle=self.t("split_sub").replace("{k}", (" " + self.t("and") + " ").join([", ".join(ks[:-1]), ks[-1]] if len(ks) > 1 else ks)))
@@ -790,12 +820,18 @@ class ProvinoApp(Adw.Application):
         tb.set_content(page)
         dlg.set_child(tb)
 
+        def ev_name():
+            return safe_event_name(ev_row.get_text())
+
         def preview(*_):
+            ev_row.set_visible(sw_ev.get_active())
             base = self._nice(dest["path"])
             seen, lines = set(), []
             for name, day, k in (req.get("files") or []):
                 parts = []
-                if sw_date.get_active() and len(day) == 8:
+                if sw_ev.get_active():
+                    parts.append(ev_name() or "…")
+                elif sw_date.get_active() and len(day) == 8:
                     parts.append("%s-%s-%s" % (day[:4], day[4:6], day[6:8]))
                 if sw_split.get_active():
                     parts.append(k)
@@ -809,7 +845,37 @@ class ProvinoApp(Adw.Application):
                     break
             prev.set_markup("\n".join(lines))
             row.set_subtitle(self._nice(dest["path"]))
-        sw_date.connect("notify::active", preview)
+        def on_date(*_):
+            if sw_date.get_active() and sw_ev.get_active():
+                sw_ev.set_active(False)
+            preview()
+
+        def on_ev(*_):
+            if sw_ev.get_active():
+                if sw_date.get_active():
+                    sw_date.set_active(False)
+                ev_row.grab_focus()
+                ev_row.set_position(-1)
+            preview()
+
+        busy = [False]
+
+        def on_text(*_):
+            if busy[0]:
+                return
+            v = ev_row.get_text()
+            c = clean_event_text(v)
+            if c != v:
+                pos = ev_row.get_position() - (len(v) - len(c))
+                busy[0] = True
+                ev_row.set_text(c)
+                ev_row.set_position(max(0, min(pos, len(c))))
+                busy[0] = False
+            ev_row.remove_css_class("error")
+            preview()
+        sw_date.connect("notify::active", on_date)
+        sw_ev.connect("notify::active", on_ev)
+        ev_row.connect("changed", on_text)
         sw_split.connect("notify::active", preview)
         preview()
 
@@ -832,9 +898,15 @@ class ProvinoApp(Adw.Application):
         pick.connect("clicked", pick_folder)
 
         def confirm(*_):
+            if sw_ev.get_active() and not ev_name():
+                ev_row.add_css_class("error")
+                ev_row.grab_focus()
+                self.toasts.add_toast(Adw.Toast(title=self.t("event_empty"), timeout=3))
+                return
             dlg.close()
             self.js("destConfirmed", {"dest": dest["path"], "by_date": sw_date.get_active(),
-                                      "split_type": sw_split.get_active(), "hs": req.get("hs") or []})
+                                      "split_type": sw_split.get_active(), "hs": req.get("hs") or [],
+                                      "event": ev_name() if sw_ev.get_active() else ""})
         go.connect("clicked", confirm)
         self.dest_confirm = confirm
         dlg.set_default_widget(go)
@@ -940,10 +1012,16 @@ class ProvinoApp(Adw.Application):
         self.tr_info.add_css_class("dim-label")
         self.tr_info.add_css_class("caption")
         self.tr_bar = Gtk.ProgressBar(margin_top=4)
-        self.tr_action = Gtk.Button(halign=Gtk.Align.END, margin_top=6)
+        self.tr_action = Gtk.Button(halign=Gtk.Align.END, hexpand=True)
         self.tr_action.add_css_class("pill")
         self.tr_action.connect("clicked", self._tr_clicked)
-        for w in (self.tr_name, self.tr_info, self.tr_bar, self.tr_action):
+        self.tr_all = Gtk.Button(halign=Gtk.Align.START)   # 1.1: "Mostra tutti" (la coda completa)
+        self.tr_all.add_css_class("pill")
+        self.tr_all.connect("clicked", self._tr_all)
+        brow = Gtk.Box(spacing=8, margin_top=6)
+        brow.append(self.tr_all)
+        brow.append(self.tr_action)
+        for w in (self.tr_name, self.tr_info, self.tr_bar, brow):
             box.append(w)
         pop.set_child(box)
         pop.connect("closed", self._tr_closed)
@@ -984,6 +1062,8 @@ class ProvinoApp(Adw.Application):
         self.tr_bar.set_fraction(self.tr["pct"] / 100.0)
         self.tr_action.set_label(st.get("cancel") if mode == "run" else st.get("open") or "")
         self.tr_action.set_visible(mode == "run" or bool(st.get("open")))
+        self.tr_all.set_label(st.get("all") or "")
+        self.tr_all.set_visible(bool(st.get("all")))
         self.tr_btn.set_tooltip_text(st.get("name") or self.t("transfers"))
         self.tr_ring.queue_draw()
         if mode in ("ok", "warn") and (prev != mode or prev_n != st.get("n")):
@@ -999,6 +1079,10 @@ class ProvinoApp(Adw.Application):
         else:
             self.js("openFolder")
             self.tr_btn.popdown()
+
+    def _tr_all(self, *_):
+        self.tr_btn.popdown()
+        self.js("queue")
 
     def _tr_closed(self, *_):
         if self.tr.get("mode") in ("ok", "warn"):

@@ -33,6 +33,7 @@
       <button class="quiet" data-all="both" data-i18n="bar.allBoth"></button>
       <button class="quiet" data-all="VIDEO" data-i18n="bar.allVideo" hidden></button>
       <button class="quiet" id="selNew" data-i18n="bar.new"></button>
+      <button class="quiet" id="selDate" data-i18n="bydate.menu"></button>
       <button class="quiet" id="selNone" data-i18n="bar.none"></button>
     </div>
     <span class="hint" data-i18n="bar.hint"></span>
@@ -47,6 +48,8 @@
     <div class="destrow"><div class="destpath" id="destPath"></div><button type="button" class="quiet2" id="destPick" data-i18n="dest.pick"></button></div>
     <fieldset class="fs"><legend data-i18n="dest.folders"></legend>
       <label><input type="radio" name="org" value="date"> <span data-i18n="dest.byDate"></span> <span class="muted" data-i18n="dest.byDate.eg"></span></label>
+      <label><input type="radio" name="org" value="event"> <span data-i18n="dest.event"></span></label>
+      <div class="evrow" id="destEvRow"><input type="text" id="destEvent" spellcheck="false" autocomplete="off" data-i18n-aria="dest.eventName"> <span class="muted" data-i18n="dest.eventHint"></span></div>
       <label><input type="radio" name="org" value="single"> <span data-i18n="dest.single"></span></label>
     </fieldset>
     <label class="chk"><input type="checkbox" id="destSplit"> <span data-i18n-html="dest.split"></span></label>
@@ -106,12 +109,30 @@
   </div>
 </div>
 
+<dialog id="byDate" aria-labelledby="bdTitle">
+  <form method="dialog" id="bdForm">
+    <h2 id="bdTitle" data-i18n="bydate.title"></h2>
+    <p class="sub" data-i18n="bydate.sub"></p>
+    <div class="bdlist" id="bdList"></div>
+    <p class="muted" id="bdNote"></p>
+    <div class="dlgbar"><button type="button" class="quiet2" id="bdCancel" data-i18n="cancel"></button><span class="spacer"></span><button type="submit" class="go" id="bdGo"></button></div>
+  </form>
+</dialog>
+
+<dialog id="queue" aria-labelledby="qTitle">
+  <h2 id="qTitle" data-i18n="queue.title"></h2>
+  <p class="sub" id="qHead"></p>
+  <div class="qlist" id="qList"></div>
+  <div class="dlgbar"><button type="button" class="quiet2" id="qStop" data-i18n="cancel"></button><span class="spacer"></span><button type="button" class="go" id="qClose" data-i18n="tray.close"></button></div>
+</dialog>
+
 <div class="tray" id="tray" role="status" aria-live="polite">
   <span class="trIcon" id="trIcon" aria-hidden="true"></span>
   <div class="what"><b id="trName"></b><span id="trInfo"></span></div>
   <div class="meter"><i id="trBar"></i></div>
   <button id="cancel" data-i18n="cancel"></button>
   <button id="openDir" data-i18n="tray.openDir"></button>
+  <button id="trAll" class="quiet2" data-i18n="queue.all"></button>
   <button id="trClose" class="trClose" data-i18n-aria="tray.close">×</button>
 </div>
 

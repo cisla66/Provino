@@ -135,14 +135,16 @@ function build(){
   $("#camInfo").textContent = (S.camera_id? S.camera_id+". " : "") + t(multiSlot? "info.shots2" : "info.shots",{n:gs.length-nVid}) + (nRaf? t("info.withRaf",{n:nRaf}) : "") + (nVid? t("info.videos",{n:nVid}) : "")
     + (method==="cable" ? t("info.cable") : method==="card" ? "" : method==="direct" ? t("info.direct") : (!S.previews ? t("info.number") : ""));
   let html = "", lastDay = "";
+  // 1.1: ogni giornata ha il suo colore (linea sopra le foto e data), a giro tra 7 tinte (--d0..--d6)
+  const dayIdx = new Map(); for(const g of gs){ const k=(g.date||"").slice(0,8); if(!dayIdx.has(k)) dayIdx.set(k, dayIdx.size); }
   for(const g of gs){
-    const day = fmtDay(g.date);
+    const day = fmtDay(g.date), dc = "dc"+(dayIdx.get((g.date||"").slice(0,8))%NDC);
     if(day!==lastDay){ html += `<h2 class="day">${day}</h2>`; lastDay = day; }
     const kinds = ["JPG","RAF"].filter(k=>g.files[k]).concat(Object.keys(g.files).filter(k=>k!=="JPG"&&k!=="RAF"));
     const vid = isVideo(g);
     // solo HEIF e il sistema non sa mostrarlo (Linux senza libheif): segnaposto invece della rotella infinita
     const heifOnly = !vid && !g.files.JPG && !g.files.RAF && g.files.HIF && !S.heif_preview;
-    html += `<div class="frame${vid||heifOnly?" video":""}" data-b="${esc(g.base)}">
+    html += `<div class="frame ${dc}${vid||heifOnly?" video":""}" data-b="${esc(g.base)}">
       <div class="dtag"></div><div class="pic"><button class="photo" data-b="${esc(g.base)}" aria-label="${esc(t("select.photo",{name:g.base}))}">${vid? `<span class="vid" aria-hidden="true">▶</span><span class="vidl">${t("video")}</span>` : heifOnly? `<span class="vid" aria-hidden="true">HEIF</span><span class="vidl">${t("heif.nopreview")}</span>` : `<span class="wait"></span>`}</button>
       <svg class="mark" viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="94" height="64" rx="4" transform="rotate(-.6 50 35)"/></svg></div>
       <div class="cap"><span class="n">${esc(g.base.replace(/^_/,""))}</span><span class="t">${slotOf(g)? slotOf(g).split("+").map(n=>sdIcon(n)).join("")+" " : ""}${fmtTime(g.date)}</span><span class="film"></span></div>
@@ -303,11 +305,44 @@ document.addEventListener("mouseup", ()=>{
 });
 $("#selNew").onclick = ()=>{ picked.clear(); for(const g of groups()) for(const f of wanted(g)) if(!f.on_mac) picked.add(f.handle); paint(); };
 $("#selNone").onclick = ()=>{ picked.clear(); paint(); };
+$("#selDate").onclick = ()=>openByDate();
+
+// 1.1: "Seleziona > Per data...": spunti le giornate e Provino sceglie le loro foto (rispettando i filtri)
+const NDC = 7;
+function dayColor(i){ return getComputedStyle(document.documentElement).getPropertyValue("--d"+(i%NDC)).trim(); }
+function openByDate(){
+  const gs = groups(), days = [];
+  for(const g of gs){ const k=(g.date||"").slice(0,8); let d=days[days.length-1];
+    if(!d || d.k!==k){ d={k, gs:[]}; days.push(d); } d.gs.push(g); }
+  const dlg = $("#byDate"), list = $("#bdList");
+  list.innerHTML = days.map((d,i)=>{
+    const p = d.gs.filter(g=>wanted(g).length).length, f = d.gs.reduce((a,g)=>a+wanted(g).length,0);
+    const all = f && d.gs.every(g=>wanted(g).every(x=>picked.has(x.handle)));
+    return `<label class="bdrow${f?"":" off"}"><input type="checkbox" value="${esc(d.k)}"${f?"":" disabled"}${all?" checked":""}>
+      <span class="bddot" style="background:${dayColor(i)}"></span><b>${esc(fmtDay(d.k+"T000000")||t("nodate"))}</b>
+      <span class="cnt">${t("bydate.row",{p,f})}</span></label>`; }).join("");
+  const note = [filter!=="both" ? filter : "", filmFilter ? filmName(filmFilter) : ""].filter(Boolean).join(", ");
+  $("#bdNote").textContent = note ? t("bydate.filter",{k:note}) : "";
+  const chosen = ()=>{ const ks = new Set([...list.querySelectorAll("input:checked")].map(i=>i.value));
+    return gs.filter(g=>ks.has((g.date||"").slice(0,8)) && wanted(g).length); };
+  const upd = ()=>{ const n = chosen().length; $("#bdGo").textContent = n? t("bydate.go",{n}) : t("bydate.go0"); $("#bdGo").disabled = !n; };
+  list.querySelectorAll("input").forEach(i=>i.onchange=upd); upd();
+  $("#bdCancel").onclick = ()=>dlg.close();
+  $("#bdForm").onsubmit = ev=>{ ev.preventDefault(); picked.clear();
+    for(const g of chosen()) wanted(g).forEach(f=>picked.add(f.handle)); dlg.close(); paint(); };
+  dlg.showModal();
+}
 
 // ---------------------------------------------------------------- download
+let dlEvent = "";   // 1.1: cartella dell'evento scelta nella finestra Scarica (vale per questo download)
+let qHs = [];   // file di questo download, nell'ordine scelto, per "Mostra tutti"
+function evPrefix(hs){ const ds = S.files.filter(f=>hs.includes(f.handle)).map(f=>(f.date||"").slice(0,8)).filter(d=>/^\d{8}$/.test(d)).sort();
+  const d = ds[0] || ""; return d ? `${d.slice(0,4)}_${d.slice(4,6)}_${d.slice(6,8)}_` : ""; }
+function evClean(v){ return String(v||"").replace(/[\\/:*?"<>|\x00-\x1f]/g,"").replace(/\s+/g,"_"); }
 async function startDownload(hs, options){
   batchBase = S.done.length; failBase = S.failed.length; trayClosedAt = -1; dlPending = true; tray();
-  const r = await post("/api/download",{handles:hs, options});
+  if(!S.current && !(S.queue_h||[]).length) qHs = hs.slice(); else qHs = qHs.concat(hs.filter(h=>!qHs.includes(h)));
+  const r = await post("/api/download",{handles:hs, options, event:dlEvent});
   if(!(r && r.queued)){ dlPending = false; trayClosedAt = S.done.length + S.failed.length; tray(); }
   picked.clear(); paint(); poll();
 }
@@ -322,7 +357,9 @@ function askDest(hs){
     const days = [...new Set(sel.map(f=>(f.date||"").slice(0,8)).filter(Boolean))].sort();
     nativeMsg({type:"askDest", hs, n:hs.length, size:fmtSize(bytes), kinds, days,
       files: sel.slice(0,400).map(f=>[f.name, (f.date||"").slice(0,8), VIDEO.includes(f.kind)? "VIDEO" : f.kind==="HIF"? "HEIF" : f.kind]),
-      dest:S.dest, by_date:!!st.by_date, split_type:!!st.split_type});
+      dest:S.dest, by_date:!!st.by_date, split_type:!!st.split_type,
+      event_mode:!!st.event_mode, event:evPrefix(hs),
+      L:{event:t("dest.event"), eventName:t("dest.eventName"), eventHint:t("dest.eventHint"), eventEmpty:t("dest.eventEmpty")}});
     return;
   }
   const st = S.settings||{}, d = $("#dest");
@@ -331,7 +368,10 @@ function askDest(hs){
   const sample = S.files.find(f=>hs.includes(f.handle) && f.kind==="RAF") || S.files.find(f=>hs.includes(f.handle)) || {};
   $("#destPath").textContent = S.dest;
   $("#destSplit").checked = !!st.split_type;
-  d.querySelector(`input[name=org][value=${st.by_date?"date":"single"}]`).checked = true;
+  d.querySelector(`input[name=org][value=${st.event_mode?"event":st.by_date?"date":"single"}]`).checked = true;
+  $("#destEvent").value = evPrefix(hs);
+  $("#destEvent").oninput = ()=>{ const el=$("#destEvent"), p=el.selectionStart, v=el.value, c=evClean(v);
+    if(c!==v){ el.value=c; el.selectionStart=el.selectionEnd=Math.max(0,p-(v.length-c.length)); } preview(); };
   const nDays = new Set(S.files.filter(f=>hs.includes(f.handle)).map(f=>(f.date||"").slice(0,8))).size;
   const vid = S.files.find(f=>hs.includes(f.handle) && VIDEO.includes(f.kind));
   function preview(){
@@ -339,15 +379,18 @@ function askDest(hs){
     if(lab) lab.innerHTML = splitLabel(hs);
     const parts = [dest.replace(/^\/(Users|home)\/[^/]+/,"~")];
     const dt = (sample.date||"").slice(0,8);
-    const byDate = d.querySelector("input[name=org]:checked").value==="date";
-    if(byDate && dt.length===8) parts.push(`${dt.slice(0,4)}-${dt.slice(4,6)}-${dt.slice(6,8)}`);
+    const org = d.querySelector("input[name=org]:checked").value, byDate = org==="date", ev = org==="event";
+    $("#destEvRow").hidden = !ev;
+    if(ev) parts.push(evClean($("#destEvent").value).replace(/_+$/,"") || "…");
+    else if(byDate && dt.length===8) parts.push(`${dt.slice(0,4)}-${dt.slice(4,6)}-${dt.slice(6,8)}`);
     if($("#destSplit").checked) parts.push(sample.kind==="HIF" ? "HEIF" : VIDEO.includes(sample.kind) ? "VIDEO" : (sample.kind||"RAF"));
     parts.push(sample.name||"DSCF0001.RAF");
     let txt = parts.join("/");
     if(vid && sample.handle!==vid.handle){
       const vp = [dest.replace(/^\/(Users|home)\/[^/]+/,"~")];
       const vd = (vid.date||"").slice(0,8);
-      if(byDate && vd.length===8) vp.push(`${vd.slice(0,4)}-${vd.slice(4,6)}-${vd.slice(6,8)}`);
+      if(ev) vp.push(evClean($("#destEvent").value).replace(/_+$/,"") || "…");
+      else if(byDate && vd.length===8) vp.push(`${vd.slice(0,4)}-${vd.slice(4,6)}-${vd.slice(6,8)}`);
       if($("#destSplit").checked) vp.push("VIDEO");
       vp.push(vid.name); txt += "\n" + vp.join("/");
     }
@@ -365,9 +408,13 @@ function askDest(hs){
   $("#destCancel").onclick = ()=>d.close();
   $("#destForm").onsubmit = async ev=>{
     ev.preventDefault();
+    const org = d.querySelector("input[name=org]:checked").value;
+    const evName = evClean($("#destEvent").value).replace(/_+$/,"");
+    if(org==="event" && !evName){ $("#destErr").textContent = t("dest.eventEmpty"); return; }
     const r = await post("/api/dest-settings", {dest: dest, split_type: $("#destSplit").checked,
-                       by_date: d.querySelector("input[name=org]:checked").value==="date"});
+                       by_date: org==="date", event_mode: org==="event"});
     if(r.error){ $("#destErr").textContent = r.error; return; }
+    dlEvent = org==="event" ? evName : "";
     S.settings = r.settings; S.dest = r.dest;
     d.close();
     afterDest(hs);
@@ -377,7 +424,7 @@ function askDest(hs){
 }
 
 async function afterDest(hs){
-  const {conflicts} = await post("/api/check",{handles:hs});
+  const {conflicts} = await post("/api/check",{handles:hs, event:dlEvent});
   if(!conflicts.length) return startDownload(hs, {});
   const same = conflicts.filter(c=>c.kind==="same"), diff = conflicts.filter(c=>c.kind!=="same");
   const others = hs.length-conflicts.length;
@@ -443,7 +490,8 @@ function tray(){
     $("#cancel").hidden = mode!=="run"; $("#trClose").hidden = mode==="run";
     $("#trIcon").textContent = mode==="ok" ? "✓" : mode==="warn" ? "!" : "";
     if(NATIVE){ nativeTransfer({mode, name, info, pct:pct||0, n:S.done.length+S.failed.length,
-                                cancel:t("cancel"), open:t("tray.openDir")}); return; }
+                                cancel:t("cancel"), open:t("tray.openDir"), all: Object.keys(S.batch||{}).length>1 ? t("queue.all") : ""}); return; }
+    $("#trAll").hidden = Object.keys(S.batch||{}).length<2;
     tr.classList.add("show");
   };
   if(c || S.done.length > batchBase || S.failed.length > failBase) dlPending = false;
@@ -471,6 +519,39 @@ function nativeTransfer(o){
   const k = JSON.stringify({type:"transfer", ...o});
   if(k===nativeTrKey) return;
   nativeTrKey = k; nativeMsg(JSON.parse(k));
+}
+// 1.1: "Mostra tutti": tutti i file di questo download, con miniatura e stato
+$("#trAll").onclick = ()=>openQueue();
+$("#qClose").onclick = ()=>$("#queue").close();
+$("#qStop").onclick = ()=>fetch("/api/cancel",{method:"POST"});
+function openQueue(){ queuePaint(true); if(!$("#queue").open) $("#queue").showModal(); }
+let qKey = "";
+function queuePaint(force){
+  const dlg = $("#queue"); if(!force && !dlg.open) return;
+  const fm = new Map(S.files.map(f=>[f.handle,f])), gm = new Map(groups().map(g=>[g.base,g]));
+  const B = S.batch||{}, c = S.current;
+  const hs = qHs.length ? qHs : Object.keys(B).map(Number);
+  const rows = hs.map(h=>{ const f = fm.get(h); if(!f) return null;
+    const b = B[h]; let st, cls = "";
+    if(c && c.handle===h) st = "run";
+    else if(b==="done"){ st = "✓ "+t("queue.done"); cls = "ok"; }
+    else if(b==="skip"){ st = t("queue.skipped"); cls = "ok"; }
+    else if(b==="fail"){ st = t("queue.fail"); cls = "err"; }
+    else st = t("queue.wait");
+    return {h, f, st, cls}; }).filter(Boolean);
+  const nDone = rows.filter(r=>r.cls==="ok").length;
+  $("#qHead").textContent = t("queue.head",{a:nDone, b:rows.length});
+  $("#qStop").hidden = !(c || (S.queue_h||[]).length);
+  const pct = c && c.total ? Math.round(100*c.got/c.total) : 0;
+  const key = JSON.stringify([LANG, rows.map(r=>[r.h, r.st, r.cls]), pct, S.thumbs_ready.length]);
+  if(key===qKey && !force) return; qKey = key;
+  const ready = new Set(S.thumbs_ready);
+  $("#qList").innerHTML = rows.length ? rows.map(r=>{
+    const g = gm.get(r.f.base), th = g ? thumbHandle(g) : r.h;
+    const img = ready.has(th) ? `<img alt="" src="/api/thumb/${th}?b=${encodeURIComponent(r.f.base)}&z=${((g&&(g.files.JPG||g.files.RAF))||{}).size||0}">` : "";
+    const right = r.st==="run" ? `<span class="qbar"><i style="width:${pct}%"></i></span>` : `<span class="qst ${r.cls}">${esc(r.st)}</span>`;
+    return `<div class="qrow"><span class="qimg">${img}</span><span class="qname"><b>${esc(r.f.name)}</b><small>${fmtSize(r.f.size)}</small></span>${right}</div>`; }).join("")
+    : `<p class="muted">${t("queue.empty")}</p>`;
 }
 $("#trClose").onclick = ()=>{ trayClosedAt = S.done.length + S.failed.length; $("#tray").classList.remove("show"); };
 
@@ -605,6 +686,7 @@ window.provinoNative = function(cmd, arg){
   else if(cmd==="filter"){ setFilter(arg); paint(); }
   else if(cmd==="film"){ filmFilter = arg||""; filmOptions(); paint(); }
   else if(cmd==="select"){ if(arg==="fresh") $("#selNew").click(); else if(arg==="none") $("#selNone").click();
+    else if(arg==="bydate"){ openByDate(); }
     else if(arg==="visible"){ for(const g of groups()) wanted(g).forEach(f=>picked.add(f.handle)); paint(); }
     else selectAll(arg); }
   else if(cmd==="conflictsDone"){ startDownload(arg.hs, arg.options||{}); }
@@ -612,13 +694,15 @@ window.provinoNative = function(cmd, arg){
   else if(cmd==="pdf"){ pdfAsk(); }
   else if(cmd==="pdfGo"){ pdfGo(arg||{}); }
   else if(cmd==="pdfRead"){ pdfRead(arg); }
+  else if(cmd==="queue"){ openQueue(); }
   else if(cmd==="trayClosed"){ trayClosedAt = S.done.length + S.failed.length; tray(); }
   else if(cmd==="cancelDownload" && pdfBusy){ pdfCancel = true; }
   else if(cmd==="cancelDownload"){ fetch("/api/cancel",{method:"POST"}); }
   else if(cmd==="openFolder"){ fetch("/api/open-folder",{method:"POST"}); }
   else if(cmd==="destConfirmed"){ (async ()=>{
-      const r = await post("/api/dest-settings", {dest: arg.dest, split_type: !!arg.split_type, by_date: !!arg.by_date});
+      const r = await post("/api/dest-settings", {dest: arg.dest, split_type: !!arg.split_type, by_date: !!arg.by_date && !arg.event, event_mode: !!arg.event});
       if(r.error){ nativeMsg({type:"error", text:r.error}); return; }
+      dlEvent = arg.event ? evClean(arg.event).replace(/_+$/,"") : "";
       S.settings = r.settings; S.dest = r.dest; afterDest(arg.hs); })(); }
   else if(cmd==="split"){ $("#viewToggle").click(); }
   else if(cmd==="change"){ wiz=null; built=false; post("/api/stop", {}).then(poll); }
@@ -675,6 +759,7 @@ async function poll(){
     if(pk && pk!==pendingKey){ for(const h of S.pending) picked.add(h); }
     pendingKey = pk;
     render();
+    queuePaint(false);
   } catch(e){ noticeKey=""; notice(t("closed.title"), t("closed.text"), false); findNewer(); return; }
   timer = setTimeout(poll, S && (S.current||dlPending||S.status!=="ready") ? 700 : 1500);
 }

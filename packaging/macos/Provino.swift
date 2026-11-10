@@ -23,6 +23,8 @@ let TXT: [String: [String: String]] = [
         "sel_fresh": "Solo quelli non ancora scaricati", "sel_visible": "Tutto quello che vedi",
         "by_type": "Seleziona per tipo, su tutta la scheda", "films": "Pellicole", "langNote": "Alcune voci dei menu di macOS (Modifica, Vista, Finestra) cambiano lingua al prossimo avvio di Provino.",
         "dl_title": "Scarica {n} file", "folder": "Cartella:", "choose": "Cambia…",
+        "event": "Una cartella per l'evento", "event_hint": "Gli spazi diventano _ .", "event_empty": "Scrivi il nome dell'evento.",
+        "sel_bydate": "Per data…", "show_all": "Mostra tutti",
         "by_date": "Una cartella per ogni giorno di scatto", "by_date_one": "Tutte le foto scelte sono del {d}.",
         "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle.", "split": "Separa per tipo",
         "split_sub": "Sottocartelle {k}.", "where": "Dove finiscono (in grassetto le cartelle nuove):", "cancel": "Annulla",
@@ -53,6 +55,8 @@ let TXT: [String: [String: String]] = [
         "sel_fresh": "Only not downloaded yet", "sel_visible": "Everything you see",
         "by_type": "Select by type, across the card", "films": "Film simulations", "langNote": "Some macOS menu items (Edit, View, Window) switch language the next time you open Provino.",
         "dl_title": "Download {n} files", "folder": "Folder:", "choose": "Change…",
+        "event": "One folder for the event", "event_hint": "Spaces become _ .", "event_empty": "Type the event name.",
+        "sel_bydate": "By date…", "show_all": "Show all",
         "by_date": "One folder per shooting day", "by_date_one": "All picked photos are from {d}.",
         "by_date_n": "The picked photos span {n} days: {n} folders.", "split": "Split by type",
         "split_sub": "Subfolders {k}.", "where": "Where they go (new folders in bold):", "cancel": "Cancel",
@@ -521,6 +525,7 @@ final class MainWindow: NSWindowController, NSToolbarDelegate, WKScriptMessageHa
         m.addItem(.separator())
         m.addItem(sel("\(T("sel_fresh"))  (\(c["fresh"] ?? 0))", "fresh"))
         m.addItem(sel(T("sel_visible"), "visible"))
+        m.addItem(sel(T("sel_bydate"), "bydate"))
         m.addItem(.separator())
         m.addItem(sel(T("deselect"), "none"))
         m.addItem(.separator())
@@ -754,6 +759,7 @@ final class TransferPop: NSViewController, NSPopoverDelegate {
     let info = label("", size: 11, color: .secondaryLabelColor, wrap: true)
     let bar = NSProgressIndicator()
     let action = NSButton(title: "", target: nil, action: nil)
+    let all = NSButton(title: "", target: nil, action: nil)
 
     init(owner: MainWindow) { self.owner = owner; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError() }
@@ -768,7 +774,10 @@ final class TransferPop: NSViewController, NSPopoverDelegate {
         action.action = #selector(onAction)
         info.preferredMaxLayoutWidth = 280
         name.lineBreakMode = .byTruncatingMiddle
-        let row = NSStackView(views: [NSView(), action])
+        all.bezelStyle = .rounded
+        all.target = self
+        all.action = #selector(onAll)
+        let row = NSStackView(views: [all, NSView(), action])
         row.distribution = .fill
         let st = NSStackView(views: [name, info, bar, row])
         st.orientation = .vertical
@@ -796,7 +805,11 @@ final class TransferPop: NSViewController, NSPopoverDelegate {
         action.title = mode == "run" ? ((st["cancel"] as? String) ?? T("cancel")) : ((st["open"] as? String) ?? "")
         action.isHidden = action.title.isEmpty
         action.keyEquivalent = mode == "run" ? "" : "\r"
+        all.title = (st["all"] as? String) ?? ""
+        all.isHidden = all.title.isEmpty
     }
+
+    @objc func onAll() { owner?.js("queue"); owner?.trPopover?.close() }
 
     @objc func onAction() {
         guard let o = owner else { return }
@@ -825,7 +838,7 @@ final class PreviewBox: NSView {
     }
 }
 
-final class DestSheet: NSObject {
+final class DestSheet: NSObject, NSTextFieldDelegate {
     let window: NSWindow
     let req: [String: Any]
     weak var owner: MainWindow?
@@ -834,6 +847,10 @@ final class DestSheet: NSObject {
     let byDate = NSButton(checkboxWithTitle: T("by_date"), target: nil, action: nil)
     let split = NSButton(checkboxWithTitle: T("split"), target: nil, action: nil)
     let preview = NSTextField(wrappingLabelWithString: "")
+    // 1.1: cartella dell'evento (2026_10_30_Nome), al posto delle cartelle per giorno
+    let evCheck = NSButton(checkboxWithTitle: T("event"), target: nil, action: nil)
+    let evField = NSTextField(string: "")
+    let evNote = label(T("event_hint"), size: 11, color: .secondaryLabelColor)
 
     init(req: [String: Any], owner: MainWindow) {
         self.req = req
@@ -858,8 +875,16 @@ final class DestSheet: NSObject {
 
         byDate.state = ((req["by_date"] as? Bool) ?? false) ? .on : .off
         split.state = ((req["split_type"] as? Bool) ?? false) ? .on : .off
-        byDate.target = self; byDate.action = #selector(refresh)
+        byDate.target = self; byDate.action = #selector(onByDate)
         split.target = self; split.action = #selector(refresh)
+        evCheck.state = ((req["event_mode"] as? Bool) ?? false) ? .on : .off
+        if evCheck.state == .on { byDate.state = .off }
+        evCheck.target = self; evCheck.action = #selector(onEvent)
+        evField.stringValue = (req["event"] as? String) ?? ""
+        evField.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        evField.delegate = self
+        evField.translatesAutoresizingMaskIntoConstraints = false
+        evField.widthAnchor.constraint(equalToConstant: 380).isActive = true
         let days = (req["days"] as? [String]) ?? []
         var dateNote = ""
         if days.count == 1, let d = days.first, d.count >= 8 {
@@ -895,7 +920,9 @@ final class DestSheet: NSObject {
             let s = NSStackView(views: [v]); s.edgeInsets = NSEdgeInsets(top: -4, left: 20, bottom: 0, right: 0); return s }
         var rows: [NSView] = [title, sub, frow, byDate]
         if !dateNote.isEmpty { rows.append(indent(dn)) }
-        rows += [split, indent(sn), wl, box, buttons]
+        evRow = indent(evField)
+        evHint = indent(evNote)
+        rows += [evCheck, evRow!, evHint!, split, indent(sn), wl, box, buttons]
         let st = NSStackView(views: rows)
         st.orientation = .vertical
         st.alignment = .leading
@@ -917,7 +944,54 @@ final class DestSheet: NSObject {
         refresh()
     }
 
+    var evRow: NSView?
+    var evHint: NSView?
+
+    @objc func onByDate() { if byDate.state == .on { evCheck.state = .off }; refresh() }
+    @objc func onEvent() {
+        if evCheck.state == .on {
+            byDate.state = .off
+            window.makeFirstResponder(evField)
+            evField.currentEditor()?.selectedRange = NSRange(location: evField.stringValue.count, length: 0)
+        }
+        refresh()
+    }
+
+    /// come safe_event in provino.py: spazi -> _, niente caratteri vietati nei nomi delle cartelle
+    func clean(_ s: String) -> String {
+        var out = ""
+        var lastSpace = false
+        for ch in s {
+            if "/\\:*?\"<>|".contains(ch) || (ch.asciiValue.map { $0 < 32 } ?? false) { continue }
+            if ch.isWhitespace { if !lastSpace { out.append("_") }; lastSpace = true; continue }
+            lastSpace = false
+            out.append(ch)
+        }
+        return out
+    }
+
+    func controlTextDidChange(_ obj: Notification) {
+        let v = evField.stringValue, c = clean(v)
+        if c != v {
+            let pos = (evField.currentEditor()?.selectedRange.location ?? c.count) - (v.count - c.count)
+            evField.stringValue = c
+            evField.currentEditor()?.selectedRange = NSRange(location: max(0, min(pos, (c as NSString).length)), length: 0)
+        }
+        evNote.stringValue = T("event_hint")
+        evNote.textColor = .secondaryLabelColor
+        refresh()
+    }
+
+    func eventName() -> String {
+        var n = clean(evField.stringValue)
+        while n.hasSuffix("_") || n.hasSuffix(".") { n.removeLast() }
+        while n.hasPrefix(".") { n.removeFirst() }
+        return n
+    }
+
     @objc func refresh() {
+        evRow?.isHidden = evCheck.state != .on
+        evHint?.isHidden = evCheck.state != .on
         pathLbl.stringValue = nice(path)
         let base = nice(path)
         var seen = Set<String>()
@@ -929,7 +1003,9 @@ final class DestSheet: NSObject {
         for f in files where f.count >= 3 {
             let (name, day, k) = (f[0], f[1], f[2])
             var parts: [String] = []
-            if byDate.state == .on, day.count == 8 {
+            if evCheck.state == .on {
+                parts.append(eventName().isEmpty ? "…" : eventName())
+            } else if byDate.state == .on, day.count == 8 {
                 let a = Array(day)
                 parts.append("\(String(a[0..<4]))-\(String(a[4..<6]))-\(String(a[6..<8]))")
             }
@@ -966,7 +1042,15 @@ final class DestSheet: NSObject {
 
     @objc func onGo() {
         let hs = req["hs"] ?? []
-        owner?.js("destConfirmed", ["dest": path, "by_date": byDate.state == .on, "split_type": split.state == .on, "hs": hs])
+        if evCheck.state == .on && eventName().isEmpty {
+            NSSound.beep()
+            evNote.stringValue = T("event_empty")
+            evNote.textColor = .systemRed
+            window.makeFirstResponder(evField)
+            return
+        }
+        owner?.js("destConfirmed", ["dest": path, "by_date": byDate.state == .on, "split_type": split.state == .on, "hs": hs,
+                                    "event": evCheck.state == .on ? eventName() : ""])
         window.sheetParent?.endSheet(window)
     }
 }

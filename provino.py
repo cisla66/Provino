@@ -149,6 +149,17 @@ def safe_filename(name):
     return "" if name in ("", ".", "..") or name.startswith(".") else name
 
 
+EVENT_DIR = re.compile(r"^\d{4}_\d{2}_\d{2}_")
+
+
+def safe_event(name):
+    """Nome della cartella dell'evento (2026_10_30_Weekend_Dolomiti): spazi -> _, niente percorsi
+    ne' caratteri che macOS, Linux o Windows non accettano nei nomi delle cartelle."""
+    name = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "", str(name or ""))
+    name = re.sub(r"\s+", "_", name.strip()).strip(".")
+    return name[:120].rstrip("_")
+
+
 def default_dest():
     """Cartella di download predefinita: 'scaricate' accanto ai sorgenti, Immagini/Provino per l'app installata."""
     if DATA == HERE:
@@ -170,7 +181,7 @@ os.makedirs(DATA, exist_ok=True)
 import provino_wifi as fw
 import provino_meta  # noqa: E402
 
-APP_VERSION = "1.0.0"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.1.0-rc1"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
@@ -390,6 +401,7 @@ class App:
         self.current = None
         self.done = []
         self.failed = []
+        self.batch = {}        # 1.1: stato di ogni file del download in corso ("Mostra tutti")
         self.cancel = False
         self.last_activity = time.time()
         self.stop = False
@@ -429,6 +441,8 @@ class App:
                 "dest": self.dest,
                 "files": self.files,
                 "queue": [q["name"] for q in self.queue],
+                "queue_h": [q["handle"] for q in self.queue],
+                "batch": dict(self.batch),
                 "current": self.current,
                 "done": self.done[-200:],
                 "failed": self.failed[-50:],
@@ -811,14 +825,16 @@ class App:
 
     def dir_for(self, f, dest=None, split_type=None, by_date=None):
         """Cartella di destinazione di un file, secondo le scelte dell'utente:
-        <dest>[/AAAA-MM-GG][/RAF|JPG]."""
+        <dest>[/AAAA-MM-GG | /<evento>][/RAF|JPG]."""
         d = dest or self.dest
         if by_date is None:
             by_date = self.settings.get("by_date", False)
         if split_type is None:
             split_type = self.settings.get("split_type", False)
         dt = (f.get("date") or "")[:8]
-        if by_date and len(dt) == 8 and dt.isdigit():
+        if f.get("_event"):
+            d = os.path.join(d, f["_event"])
+        elif by_date and len(dt) == 8 and dt.isdigit():
             d = os.path.join(d, "%s-%s-%s" % (dt[:4], dt[4:6], dt[6:8]))
         if split_type:
             k = f.get("kind") or "ALTRI"
@@ -834,8 +850,34 @@ class App:
     def _on_mac(self, name, size, f=None):
         p = os.path.join(self.dir_for(f) if f else self.dest, name)
         if not os.path.exists(p):
-            return False
+            # 1.1: le foto scaricate in una cartella evento (AAAA_MM_GG_Nome) sono "gia' presenti" anche dopo
+            k = (f or {}).get("kind") or ""
+            sub = "VIDEO" if k in VIDEO_KINDS else ("HEIF" if k == "HIF" else k)
+            for ev in self._event_dirs():
+                for q in (os.path.join(ev, name), os.path.join(ev, sub, name) if sub else None):
+                    if q and os.path.exists(q):
+                        p = q
+                        break
+                else:
+                    continue
+                break
+            else:
+                return False
         return size is None or os.path.getsize(p) == size
+
+    def _event_dirs(self):
+        """Cartelle evento nella cartella di download (elenco tenuto qualche secondo: lo chiedono tutti i file)."""
+        now = time.time()
+        c = getattr(self, "_ev_cache", None)
+        if c and c[0] == self.dest and now - c[1] < 5:
+            return c[2]
+        try:
+            evs = [os.path.join(self.dest, n) for n in sorted(os.listdir(self.dest))
+                   if EVENT_DIR.match(n) and os.path.isdir(os.path.join(self.dest, n))]
+        except OSError:
+            evs = []
+        self._ev_cache = (self.dest, now, evs)
+        return evs
 
     # ------------------------------------------------------------ anteprime
     def _wait_list_stable(self, quiet=1.2, longest=20):
@@ -1370,14 +1412,17 @@ class App:
             n += 1
         return cand
 
-    def check(self, handles):
+    def check(self, handles, event=None):
         """Per i file scelti, controlla se nella cartella esiste gia' un file con lo stesso nome."""
         out = []
         taken = set()
+        event = safe_event(event) if event else ""
         for h in handles:
             f = next((x for x in self.files if x["handle"] == h), None)
             if not f:
                 continue
+            if event:
+                f = dict(f, _event=event)
             d = self.dir_for(f)
             p = os.path.join(d, f["name"])
             if not os.path.exists(p):
@@ -1400,11 +1445,15 @@ class App:
                         "local_date": (ldate or "")[:15], "cam_date": (f["date"] or "")[:15]})   # ISO: la UI li traduce
         return out
 
-    def enqueue(self, handles, options=None):
-        """options: {handle: {"action": "skip"|"overwrite"|"rename", "name": "..."}}"""
+    def enqueue(self, handles, options=None, event=None):
+        """options: {handle: {"action": "skip"|"overwrite"|"rename", "name": "..."}};
+        event: nome della cartella dell'evento (1.1), al posto delle cartelle per giorno."""
         options = options or {}
+        event = safe_event(event) if event else ""
         added = 0
         with self.state_lock:
+            if not self.queue and not self.current:
+                self.batch = {}
             self.pending_names = []
             queued = {q["handle"] for q in self.queue}
             for h in handles:
@@ -1418,14 +1467,17 @@ class App:
                     continue
                 item = dict(f)
                 item["_action"] = act
+                if event:
+                    item["_event"] = event
                 if act == "rename":
                     nm = os.path.basename(str(opt.get("name") or "")).strip()
                     if not nm or nm.startswith("."):
-                        nm = self._free_name(f["name"], set(), self.dir_for(f))
+                        nm = self._free_name(f["name"], set(), self.dir_for(item))
                     if not os.path.splitext(nm)[1]:
                         nm += os.path.splitext(f["name"])[1]
                     item["_target"] = nm
                 self.queue.append(item)
+                self.batch[h] = "wait"
                 added += 1
             self.cancel = False
         return added
@@ -1442,7 +1494,9 @@ class App:
             try:
                 path, skipped = self._download_usb(f) if self.usb else self._download(f)
                 with self.state_lock:
-                    self.done.append({"name": os.path.basename(path), "path": path, "skipped": skipped})
+                    self.done.append({"name": os.path.basename(path), "path": path, "skipped": skipped,
+                                      "handle": f["handle"]})
+                    self.batch[f["handle"]] = "skip" if skipped else "done"
                     orig = next((x for x in self.files if x["handle"] == f["handle"]), f)
                     orig["on_mac"] = True
                     f = orig
@@ -1482,6 +1536,7 @@ class App:
                         self.queue.insert(0, f)  # riprovo dopo il ricollegamento
                     else:
                         self.failed.append({"name": f["name"], "error": str(e)})
+                        self.batch[f["handle"]] = "fail"
                 self._lost(e)
             finally:
                 with self.state_lock:
@@ -1760,7 +1815,7 @@ def make_handler(app):
                         return self._send(400, {"error": app.tr("Non riesco a usare questa cartella: %s", "I can't use this folder: %s") % e})
                     app.dest = d
                     app.settings["dest"] = d
-                for k in ("split_type", "by_date", "ask_dest"):
+                for k in ("split_type", "by_date", "ask_dest", "event_mode"):
                     if k in body:
                         app.settings[k] = bool(body[k])
                 app.save_settings()
@@ -1800,9 +1855,10 @@ def make_handler(app):
                     pass
                 return self._send(200, {"ok": True})
             if self.path == "/api/check":
-                return self._send(200, {"conflicts": app.check([int(x) for x in body.get("handles", [])])})
+                return self._send(200, {"conflicts": app.check([int(x) for x in body.get("handles", [])], str(body.get("event") or ""))})
             if self.path == "/api/download":
-                n = app.enqueue([int(x) for x in body.get("handles", [])], body.get("options") or {})
+                n = app.enqueue([int(x) for x in body.get("handles", [])], body.get("options") or {},
+                                str(body.get("event") or ""))
                 return self._send(200, {"queued": n})
             if self.path == "/api/cancel":
                 app.cancel = True

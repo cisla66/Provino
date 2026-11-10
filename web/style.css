@@ -109,7 +109,8 @@ dialog .sub{color:#555;margin:0 0 14px;font-size:14px}
 .frame{position:relative;background:none;border:0;padding:0;text-align:left}
 .sheet h2.day{display:none}
 .dtag{height:22px;line-height:16px;font-stretch:112%;font-weight:600;font-size:14px;color:var(--ink-soft);white-space:nowrap;overflow:visible;padding-top:2px}
-.frame.dfirst .dtag{border-top:2px solid var(--line);padding-top:6px;height:30px;margin-top:-8px}
+.frame .dtag{border-top:3px solid var(--dc,var(--line));padding-top:6px;height:30px;margin-top:-8px}
+.frame.dfirst .dtag{color:var(--dc,var(--ink-soft))}
 .pic{position:relative}
 .photo{position:relative;width:100%;padding:0;aspect-ratio:3/2;background:var(--board-deep);border:6px solid var(--paper);
   display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -378,8 +379,10 @@ html.native.mac .opt{border-radius:10px}
 html.native.mac .metapane.side{border-radius:10px}
 
 html.native .dtag{font-stretch:normal;font-weight:700;font-size:14px;color:var(--ink)}
+html.native .frame.dfirst .dtag{color:var(--dc,var(--ink))}
 html.native .frame:not(.dfirst) .dtag{color:transparent}
 html.native.mac .dtag{font-size:12px;font-weight:600;color:var(--ink-soft)}
+html.native.mac .frame.dfirst .dtag{color:var(--dc,var(--ink-soft))}
 
 /* istogramma sopra la ricetta */
 .histo{margin:0 0 16px;border-radius:6px;background:var(--fill);padding:6px;line-height:0}
@@ -430,3 +433,64 @@ html[data-theme=light] .brand .lg-dark{display:none}
 html.native .kinds{gap:5px}
 html.native .kind.onmac::after{content:none}   /* scaricato: basta il verde, cosi' le etichette restano su una riga */
 html.native.mac .kind{padding:2px 7px}
+
+/* =====================================================================================
+   1.1 - colore per ogni giornata, "Per data...", cartella evento, coda "Mostra tutti"
+   ===================================================================================== */
+:root{ /* tinte chiare sul fondo scuro; in ordine caldo/freddo cosi' due giorni vicini non si somigliano */
+  --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
+}
+html[data-theme=light], html.native{
+  --d0:#b7791f; --d1:#0f9488; --d2:#7c5cd6; --d3:#c2570c; --d4:#2563eb; --d5:#db2777; --d6:#15803d;
+}
+@media (prefers-color-scheme: light){
+  html:not([data-theme=dark]){
+    --d0:#b7791f; --d1:#0f9488; --d2:#7c5cd6; --d3:#c2570c; --d4:#2563eb; --d5:#db2777; --d6:#15803d;
+  }
+}
+html.native[data-theme=dark]{
+  --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
+}
+@media (prefers-color-scheme: dark){
+  html.native:not([data-theme=light]){
+    --d0:#fbbf24; --d1:#2dd4bf; --d2:#a78bfa; --d3:#fb923c; --d4:#60a5fa; --d5:#f472b6; --d6:#4ade80;
+  }
+}
+.frame.dc0{--dc:var(--d0)} .frame.dc1{--dc:var(--d1)} .frame.dc2{--dc:var(--d2)} .frame.dc3{--dc:var(--d3)}
+.frame.dc4{--dc:var(--d4)} .frame.dc5{--dc:var(--d5)} .frame.dc6{--dc:var(--d6)}
+
+.evrow{display:flex;gap:10px;align-items:center;margin:2px 0 8px 26px;flex-wrap:wrap}
+.evrow input{font:inherit;font-family:ui-monospace,Menlo,monospace;font-size:14px;padding:6px 8px;border:1px solid #aaa;border-radius:6px;min-width:280px;flex:1}
+
+.bdlist{border-top:1px solid #d6d4cb;max-height:min(52vh,440px);overflow:auto}
+.bdrow{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid #d6d4cb;cursor:pointer;font-size:15px}
+.bdrow.off{opacity:.45;cursor:default}
+.bddot{width:11px;height:11px;border-radius:50%;flex:none}
+.bdrow .cnt{margin-left:auto;color:#666;font-size:13px}
+
+#queue{padding:22px 24px}
+.qlist{max-height:min(60vh,520px);overflow:auto;border-top:1px solid #d6d4cb}
+.qrow{display:flex;gap:12px;align-items:center;padding:7px 2px;border-bottom:1px solid #d6d4cb}
+.qimg{width:60px;height:40px;border-radius:4px;overflow:hidden;background:#d6d4cb;flex:none}
+.qimg img{width:100%;height:100%;object-fit:cover;display:block}
+.qname{display:flex;flex-direction:column;min-width:0}
+.qname b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qname small{color:#666;font-size:12px}
+.qst{margin-left:auto;font-size:13px;color:#666;white-space:nowrap}
+.qst.ok{color:#2f7d32}.qst.err{color:#b42a14}
+.qbar{margin-left:auto;width:110px;height:5px;border-radius:3px;background:#d6d4cb;overflow:hidden;flex:none}
+.qbar i{display:block;height:100%;background:#3584e4}
+
+/* nelle finestre native i due riquadri della pagina seguono il tema del sistema */
+html.native dialog{background:var(--card);color:var(--ink);font-family:var(--font);max-width:min(560px,calc(100vw - 32px));border-radius:12px;
+  box-shadow:0 0 0 1px var(--line2),0 20px 50px rgba(0,0,0,.35)}
+html.native dialog h2{font-stretch:normal;font-size:17px;font-weight:700}
+html.native dialog .sub, html.native .bdrow .cnt, html.native .qname small, html.native .qst, html.native dialog .muted{color:var(--ink-soft)}
+html.native .bdlist, html.native .bdrow, html.native .qlist, html.native .qrow, html.native .dlgbar{border-color:var(--line2)}
+html.native .qimg, html.native .qbar{background:var(--fill)}
+html.native .qbar i{background:var(--accent)}
+html.native .qst.ok{color:var(--ok-ink)}
+html.native dialog .quiet2{border:0;background:var(--fill);color:var(--ink);font-weight:600;border-radius:8px}
+html.native dialog .go{background:var(--accent);color:#fff;border:0;border-radius:8px;font-weight:600;padding:7px 14px}
+html.native dialog .go:disabled{opacity:.45}
+html.native .bdrow input{accent-color:var(--accent)}
