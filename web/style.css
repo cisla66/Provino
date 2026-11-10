@@ -488,3 +488,4 @@ html.native dialog .go:disabled{opacity:.45}
 html.native .bdrow input{accent-color:var(--accent)}
 .qrow.qrun{background:rgba(53,132,228,.10);border-radius:6px}
 html.native .qrow.qrun{background:var(--fill)}
+.warn2{color:#b25d00;font-size:14px;margin:6px 0 0;font-weight:600}

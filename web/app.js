@@ -370,6 +370,11 @@ function askDest(hs){
   $("#destSplit").checked = !!st.split_type;
   d.querySelector(`input[name=org][value=${st.event_mode?"event":st.by_date?"date":"single"}]`).checked = true;
   $("#destEvent").value = evPrefix(hs);
+  // 1.1.1: se la cartella scelta e' gia' una cartella evento (AAAA_MM_GG_...), le foto vanno li' dentro
+  const evBase = p => (String(p||"").replace(/\/+$/,"").split("/").pop()||"");
+  const isEvDir = p => /^\d{4}_\d{2}_\d{2}_/.test(evBase(p));
+  const evDirPicked = ()=>{ if(isEvDir(dest)) d.querySelector("input[name=org][value=single]").checked = true; };
+  evDirPicked();
   $("#destEvent").oninput = ()=>{ const el=$("#destEvent"), p=el.selectionStart, v=el.value, c=evClean(v);
     if(c!==v){ el.value=c; el.selectionStart=el.selectionEnd=Math.max(0,p-(v.length-c.length)); } preview(); };
   const nDays = new Set(S.files.filter(f=>hs.includes(f.handle)).map(f=>(f.date||"").slice(0,8))).size;
@@ -396,6 +401,9 @@ function askDest(hs){
     }
     $("#destPrev").textContent = txt; $("#destPrev").style.whiteSpace = "pre-line";
     $("#destDays").textContent = byDate && nDays>1 ? t("dest.days",{n:nDays}) : "";
+    const inEv = isEvDir(dest);
+    $("#destInEv").hidden = !inEv; $("#destInEv").textContent = t("dest.inEvent");
+    $("#destNest").hidden = !(inEv && org!=="single"); $("#destNest").textContent = t("dest.nested",{n:evBase(dest)});
   }
   preview();
   d.querySelectorAll("input").forEach(i=>i.onchange=preview);
@@ -403,7 +411,7 @@ function askDest(hs){
     $("#destPick").disabled = true; $("#destPick").textContent = t("dest.picking");
     const r = await post("/api/choose-folder", {});
     $("#destPick").disabled = false; $("#destPick").textContent = t("dest.pick");
-    if(r.path){ dest = r.path; $("#destPath").textContent = r.path; preview(); }
+    if(r.path){ dest = r.path; $("#destPath").textContent = r.path; evDirPicked(); preview(); }
   };
   $("#destCancel").onclick = ()=>d.close();
   $("#destForm").onsubmit = async ev=>{

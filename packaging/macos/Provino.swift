@@ -25,6 +25,7 @@ let TXT: [String: [String: String]] = [
         "dl_title": "Scarica {n} file", "folder": "Cartella:", "choose": "Cambia…",
         "event": "Una cartella per l'evento", "event_hint": "Gli spazi diventano _ .", "event_empty": "Scrivi il nome dell'evento.",
         "sel_bydate": "Per data…", "show_all": "Mostra tutti",
+        "in_event": "Cartella di un evento: le foto vanno qui dentro.", "nested_warn": "Attenzione: così crei una cartella nuova dentro l'evento «{n}».",
         "by_date": "Una cartella per ogni giorno di scatto", "by_date_one": "Tutte le foto scelte sono del {d}.",
         "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle.", "split": "Separa per tipo",
         "split_sub": "Sottocartelle {k}.", "where": "Dove finiscono (in grassetto le cartelle nuove):", "cancel": "Annulla",
@@ -57,6 +58,7 @@ let TXT: [String: [String: String]] = [
         "dl_title": "Download {n} files", "folder": "Folder:", "choose": "Change…",
         "event": "One folder for the event", "event_hint": "Spaces become _ .", "event_empty": "Type the event name.",
         "sel_bydate": "By date…", "show_all": "Show all",
+        "in_event": "This is an event folder: photos go right inside it.", "nested_warn": "Careful: this creates a new folder inside the event “{n}”.",
         "by_date": "One folder per shooting day", "by_date_one": "All picked photos are from {d}.",
         "by_date_n": "The picked photos span {n} days: {n} folders.", "split": "Split by type",
         "split_sub": "Subfolders {k}.", "where": "Where they go (new folders in bold):", "cancel": "Cancel",
@@ -851,6 +853,16 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
     let evCheck = NSButton(checkboxWithTitle: T("event"), target: nil, action: nil)
     let evField = NSTextField(string: "")
     let evNote = label(T("event_hint"), size: 11, color: .secondaryLabelColor)
+    // 1.1.1: cartella scelta che e' gia' una cartella evento (AAAA_MM_GG_...): niente cartelle nuove dentro
+    let inEvent = label("", size: 11, color: .secondaryLabelColor)
+    let nestWarn = label("", size: 12, color: .systemOrange, wrap: true)
+    func isEventFolder(_ p: String) -> Bool {
+        let n = (p as NSString).lastPathComponent
+        return n.range(of: "^[0-9]{4}_[0-9]{2}_[0-9]{2}_", options: .regularExpression) != nil
+    }
+    func eventFolderPicked() {
+        if isEventFolder(path) { byDate.state = .off; evCheck.state = .off }
+    }
 
     init(req: [String: Any], owner: MainWindow) {
         self.req = req
@@ -879,6 +891,7 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
         split.target = self; split.action = #selector(refresh)
         evCheck.state = ((req["event_mode"] as? Bool) ?? false) ? .on : .off
         if evCheck.state == .on { byDate.state = .off }
+        eventFolderPicked()
         evCheck.target = self; evCheck.action = #selector(onEvent)
         evField.stringValue = (req["event"] as? String) ?? ""
         evField.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
@@ -897,6 +910,7 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
         let sn = label(T("split_sub", ["k": kj]), size: 11, color: .secondaryLabelColor)
 
         let wl = label(T("where"), size: 12, color: .secondaryLabelColor)
+        nestWarn.preferredMaxLayoutWidth = 470
         preview.isSelectable = true
         preview.preferredMaxLayoutWidth = 470
         let box = PreviewBox()
@@ -918,11 +932,11 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
 
         let indent = { (v: NSView) -> NSView in
             let s = NSStackView(views: [v]); s.edgeInsets = NSEdgeInsets(top: -4, left: 20, bottom: 0, right: 0); return s }
-        var rows: [NSView] = [title, sub, frow, byDate]
+        var rows: [NSView] = [title, sub, frow, inEvent, byDate]
         if !dateNote.isEmpty { rows.append(indent(dn)) }
         evRow = indent(evField)
         evHint = indent(evNote)
-        rows += [evCheck, evRow!, evHint!, split, indent(sn), wl, box, buttons]
+        rows += [evCheck, evRow!, evHint!, split, indent(sn), nestWarn, wl, box, buttons]
         let st = NSStackView(views: rows)
         st.orientation = .vertical
         st.alignment = .leading
@@ -993,6 +1007,11 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
         evRow?.isHidden = evCheck.state != .on
         evHint?.isHidden = evCheck.state != .on
         pathLbl.stringValue = nice(path)
+        let ev = isEventFolder(path)
+        inEvent.stringValue = T("in_event")
+        inEvent.isHidden = !ev
+        nestWarn.stringValue = T("nested_warn", ["n": (path as NSString).lastPathComponent])
+        nestWarn.isHidden = !(ev && (byDate.state == .on || evCheck.state == .on))
         let base = nice(path)
         var seen = Set<String>()
         let out = NSMutableAttributedString()
@@ -1034,7 +1053,7 @@ final class DestSheet: NSObject, NSTextFieldDelegate {
         p.prompt = T("choose_title")
         p.directoryURL = URL(fileURLWithPath: path)
         p.beginSheetModal(for: window) { r in
-            if r == .OK, let u = p.url { self.path = u.path; self.refresh() }
+            if r == .OK, let u = p.url { self.path = u.path; self.eventFolderPicked(); self.refresh() }
         }
     }
 

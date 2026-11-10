@@ -154,6 +154,9 @@ ICON_DIR = os.path.join(GLib.get_user_data_dir(), "icons", "hicolor")
 _MOVED = [None]   # dove e' finito l'AppImage se l'ho spostato mentre Provino era aperto
 
 
+EVENT_DIR_RE = __import__("re").compile(r"^\d{4}_\d{2}_\d{2}_")
+
+
 def clean_event_text(v):
     """Mentre si scrive il nome dell'evento: spazi -> _, via i caratteri vietati nei nomi delle cartelle."""
     import re
@@ -309,6 +312,8 @@ class ProvinoApp(Adw.Application):
                   "event": "Una cartella per l'evento", "event_name": "Nome della cartella",
                   "event_hint": "Gli spazi diventano _", "event_empty": "Scrivi il nome dell'evento",
                   "sel_bydate": "Per data…", "show_all": "Mostra tutti",
+                  "in_event": "Cartella di un evento: le foto vanno qui dentro",
+                  "nested_warn": "Attenzione: così crei una cartella nuova dentro l'evento «{n}».",
                   "by_date": "Una cartella per ogni giorno di scatto", "by_date_one": "Tutte le foto scelte sono del {d}",
                   "by_date_n": "Le foto scelte sono di {n} giorni: {n} cartelle", "split": "Separa per tipo",
                   "split_sub": "Sottocartelle {k}", "where": "Dove finiscono", "cancel": "Annulla",
@@ -357,6 +362,8 @@ class ProvinoApp(Adw.Application):
                   "event": "One folder for the event", "event_name": "Folder name",
                   "event_hint": "Spaces become _", "event_empty": "Type the event name",
                   "sel_bydate": "By date…", "show_all": "Show all",
+                  "in_event": "This is an event folder: photos go right inside it",
+                  "nested_warn": "Careful: this creates a new folder inside the event “{n}”.",
                   "by_date": "One folder per shooting day", "by_date_one": "All picked photos are from {d}",
                   "by_date_n": "The picked photos span {n} days: {n} folders", "split": "Split by type",
                   "split_sub": "Subfolders {k}", "where": "Where they go", "cancel": "Cancel",
@@ -823,6 +830,20 @@ class ProvinoApp(Adw.Application):
         def ev_name():
             return safe_event_name(ev_row.get_text())
 
+        # 1.1.1: cartella scelta che e' gia' una cartella evento: niente cartelle nuove dentro
+        def is_ev_dir():
+            return bool(EVENT_DIR_RE.match(os.path.basename(dest["path"].rstrip("/"))))
+
+        def ev_dir_picked():
+            if is_ev_dir():
+                sw_date.set_active(False)
+                sw_ev.set_active(False)
+
+        warn = Gtk.Label(xalign=0, wrap=True)
+        warn.add_css_class("warning")
+        warn.set_margin_bottom(8)
+        g2.add(warn)
+
         def preview(*_):
             ev_row.set_visible(sw_ev.get_active())
             base = self._nice(dest["path"])
@@ -844,7 +865,10 @@ class ProvinoApp(Adw.Application):
                 if len(lines) >= 6:
                     break
             prev.set_markup("\n".join(lines))
-            row.set_subtitle(self._nice(dest["path"]))
+            ev = is_ev_dir()
+            row.set_subtitle(self._nice(dest["path"]) + ("\n" + self.t("in_event") if ev else ""))
+            warn.set_label(self.t("nested_warn").replace("{n}", os.path.basename(dest["path"].rstrip("/"))))
+            warn.set_visible(ev and (sw_date.get_active() or sw_ev.get_active()))
         def on_date(*_):
             if sw_date.get_active() and sw_ev.get_active():
                 sw_ev.set_active(False)
@@ -877,6 +901,7 @@ class ProvinoApp(Adw.Application):
         sw_ev.connect("notify::active", on_ev)
         ev_row.connect("changed", on_text)
         sw_split.connect("notify::active", preview)
+        ev_dir_picked()
         preview()
 
         def chosen(fd, res):
@@ -886,6 +911,7 @@ class ProvinoApp(Adw.Application):
                 return
             if f and f.get_path():
                 dest["path"] = f.get_path()
+                ev_dir_picked()
                 preview()
 
         def pick_folder(*_):

@@ -46,6 +46,7 @@
   <form method="dialog" id="destForm">
     <h2 id="destTitle" data-i18n="dest.title"></h2>
     <div class="destrow"><div class="destpath" id="destPath"></div><button type="button" class="quiet2" id="destPick" data-i18n="dest.pick"></button></div>
+    <p class="muted" id="destInEv" hidden></p>
     <fieldset class="fs"><legend data-i18n="dest.folders"></legend>
       <label><input type="radio" name="org" value="date"> <span data-i18n="dest.byDate"></span> <span class="muted" data-i18n="dest.byDate.eg"></span></label>
       <label><input type="radio" name="org" value="event"> <span data-i18n="dest.event"></span></label>
@@ -55,6 +56,7 @@
     <label class="chk"><input type="checkbox" id="destSplit"> <span data-i18n-html="dest.split"></span></label>
     <p class="prev"><span data-i18n="dest.example"></span> <span id="destPrev"></span></p>
     <p class="muted" id="destDays"></p>
+    <p class="warn2" id="destNest" hidden></p>
     <p class="err2" id="destErr"></p>
     <div class="dlgbar"><button type="button" class="quiet2" id="destCancel" data-i18n="cancel"></button><span class="spacer"></span><button type="submit" class="go" data-i18n="continue"></button></div>
   </form>
