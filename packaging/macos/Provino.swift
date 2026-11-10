@@ -983,9 +983,12 @@ final class SelfUpdate: NSObject {
         a.informativeText = T("updReadyInfo")
         a.addButton(withTitle: T("updRestart"))
         a.addButton(withTitle: T("updLater"))
-        let go = { (resp: NSApplication.ModalResponse) in
-            if resp == .alertFirstButtonReturn { self.swapAndRestart(dmg: dmg, appPath: appPath, staged: staged) }
-            else { try? FileManager.default.removeItem(atPath: staged) }
+        let go: (NSApplication.ModalResponse) -> Void = { resp in
+            if resp == .alertFirstButtonReturn {
+                self.swapAndRestart(dmg: dmg, appPath: appPath, staged: staged)
+            } else {
+                _ = try? FileManager.default.removeItem(atPath: staged)
+            }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             if let w = self.app?.main.window { a.beginSheetModal(for: w, completionHandler: go) } else { go(a.runModal()) }
