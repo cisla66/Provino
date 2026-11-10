@@ -486,3 +486,5 @@ html.native dialog .quiet2{border:0;background:var(--fill);color:var(--ink);font
 html.native dialog .go{background:var(--accent);color:#fff;border:0;border-radius:8px;font-weight:600;padding:7px 14px}
 html.native dialog .go:disabled{opacity:.45}
 html.native .bdrow input{accent-color:var(--accent)}
+.qrow.qrun{background:rgba(53,132,228,.10);border-radius:6px}
+html.native .qrow.qrun{background:var(--fill)}

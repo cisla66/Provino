@@ -550,8 +550,20 @@ function queuePaint(force){
     const g = gm.get(r.f.base), th = g ? thumbHandle(g) : r.h;
     const img = ready.has(th) ? `<img alt="" src="/api/thumb/${th}?b=${encodeURIComponent(r.f.base)}&z=${((g&&(g.files.JPG||g.files.RAF))||{}).size||0}">` : "";
     const right = r.st==="run" ? `<span class="qbar"><i style="width:${pct}%"></i></span>` : `<span class="qst ${r.cls}">${esc(r.st)}</span>`;
-    return `<div class="qrow"><span class="qimg">${img}</span><span class="qname"><b>${esc(r.f.name)}</b><small>${fmtSize(r.f.size)}</small></span>${right}</div>`; }).join("")
+    return `<div class="qrow${r.st==="run"?" qrun":r.cls?"":" qtodo"}"><span class="qimg">${img}</span><span class="qname"><b>${esc(r.f.name)}</b><small>${fmtSize(r.f.size)}</small></span>${right}</div>`; }).join("")
     : `<p class="muted">${t("queue.empty")}</p>`;
+  queueFollow(force);
+}
+// l'elenco segue lo scaricamento: il file in corso resta al centro (se e' tutto fermo, il primo non ancora scaricato).
+// Se scorri tu con il mouse o la tastiera, per qualche secondo l'elenco resta dove l'hai messo.
+let qUserAt = 0;
+["wheel","touchmove","keydown","mousedown"].forEach(ev=>$("#qList").addEventListener(ev, ()=>{ qUserAt = Date.now(); }, {passive:true}));
+function queueFollow(now){
+  if(Date.now()-qUserAt < 5000) return;
+  const L = $("#qList"), r = L.querySelector(".qrun") || L.querySelector(".qtodo, .qst.err");
+  const row = r && r.closest(".qrow"); if(!row) return;
+  const top = row.offsetTop - L.offsetTop - (L.clientHeight - row.offsetHeight)/2;
+  L.scrollTo({top: Math.max(0, top), behavior: now ? "auto" : "smooth"});
 }
 $("#trClose").onclick = ()=>{ trayClosedAt = S.done.length + S.failed.length; $("#tray").classList.remove("show"); };
 
