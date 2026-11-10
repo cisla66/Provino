@@ -115,8 +115,29 @@ def _ver_key(v):
     return tuple(nums[:3]) + ((0, int(m.group(1)) if m else 0) if pre else (1, 0))
 
 
-def check_update(platform):
-    """Ultima versione pubblicata su GitHub (solo versioni finali). Restituisce sempre un dizionario."""
+def notes_for(body, lang):
+    """Note di rilascio per l'avviso di aggiornamento: solo la parte nella lingua dell'utente
+    (sezione "## ... (Italiano)" / "(English)"), senza i segni del Markdown e senza l'elenco dei download."""
+    body = str(body or "").replace("\r", "")
+    want = "(italiano)" if lang == "it" else "(english)"
+    parts = re.split(r"(?m)^---+\s*$", body)
+    sec = next((x for x in parts if want in x.lower().split("\n\n")[0].lower() or
+                re.search(r"(?mi)^#+ .*%s" % re.escape(want), x)), None)
+    if sec is None:
+        sec = parts[0] if parts else body
+    out = []
+    for line in sec.strip().split("\n"):
+        if re.match(r"^#+ ", line):
+            continue
+        if re.match(r"^\*\*(download|downloads)\*\*", line.strip(), re.I):
+            break
+        out.append(re.sub(r"^- ", "• ", line.replace("**", "").replace("`", "")))
+    return "\n".join(out).strip()[:900]
+
+
+def check_update(platform, force=False, lang=None):
+    """Ultima versione pubblicata su GitHub (solo versioni finali). Restituisce sempre un dizionario.
+    force=True (solo per le prove): propone l'ultima versione anche se non e' piu' nuova."""
     import json as _json
     import urllib.error
     import urllib.request
@@ -135,12 +156,95 @@ def check_update(platform):
         return {"ok": False, "current": APP_VERSION, "error": str(e)[:200]}
     tag = rel.get("tag_name") or ""
     want = ".dmg" if platform == "mac" else ".appimage"
-    asset = next((a.get("browser_download_url") for a in rel.get("assets") or []
-                  if str(a.get("name", "")).lower().endswith(want)), None)
+    a = next((a for a in rel.get("assets") or [] if str(a.get("name", "")).lower().endswith(want)), None) or {}
+    asset = a.get("browser_download_url")
+    dig = str(a.get("digest") or "")
     return {"ok": True, "current": APP_VERSION, "latest": tag.lstrip("vV"),
-            "newer": _ver_key(tag) > _ver_key(APP_VERSION),
+            "newer": force or _ver_key(tag) > _ver_key(APP_VERSION),
             "url": rel.get("html_url") or "https://github.com/%s/releases" % REPO,
-            "download": asset, "notes": (rel.get("body") or "")[:1500]}
+            "download": asset,
+            "notes": notes_for(rel.get("body"), lang) if lang else (rel.get("body") or "")[:1500],
+            "name": safe_filename(a.get("name")), "size": int(a.get("size") or 0),
+            "sha256": dig[7:].lower() if dig.startswith("sha256:") else ""}
+
+
+class Updater:
+    """1.1.2: scarica la nuova versione dentro Provino (barra di avanzamento) e ne controlla l'impronta.
+    Scarica solo dai rilasci di questo progetto su GitHub; installare resta alle finestre native."""
+    PREFIX = "https://github.com/%s/releases/download/" % REPO
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.st = {"status": "idle", "got": 0, "total": 0, "path": "", "error": "", "version": ""}
+        self.stop = False
+
+    def state(self):
+        with self.lock:
+            return dict(self.st)
+
+    def _set(self, **kw):
+        with self.lock:
+            self.st.update(kw)
+
+    def cancel(self):
+        self.stop = True
+
+    def start(self, platform, folder, force=False):
+        with self.lock:
+            if self.st["status"] in ("checking", "downloading", "verifying"):
+                return dict(self.st)
+            self.st = {"status": "checking", "got": 0, "total": 0, "path": "", "error": "", "version": ""}
+        self.stop = False
+        threading.Thread(target=self._run, args=(platform, folder, force), daemon=True).start()
+        return self.state()
+
+    def _run(self, platform, folder, force):
+        import hashlib
+        import urllib.request
+        tmp = ""
+        try:
+            r = check_update(platform, force)
+            url, name = r.get("download") or "", r.get("name") or ""
+            if not r.get("ok") or not url or not name:
+                raise OSError(r.get("error") or "download non disponibile")
+            if not url.startswith(self.PREFIX):
+                raise OSError("indirizzo non previsto: %s" % url[:120])
+            os.makedirs(folder, exist_ok=True)
+            dest = os.path.join(folder, name)
+            tmp = dest + ".part"
+            self._set(status="downloading", total=r.get("size") or 0, version=r.get("latest") or "")
+            req = urllib.request.Request(url, headers={"User-Agent": "Provino/%s" % APP_VERSION})
+            h = hashlib.sha256()
+            got = 0
+            with urllib.request.urlopen(req, timeout=30) as resp, open(tmp, "wb") as out:
+                total = int(resp.headers.get("Content-Length") or 0) or (r.get("size") or 0)
+                self._set(total=total)
+                while True:
+                    if self.stop:
+                        raise _Cancelled()
+                    chunk = resp.read(262144)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    h.update(chunk)
+                    got += len(chunk)
+                    self._set(got=got)
+            self._set(status="verifying")
+            if r.get("size") and got != r["size"]:
+                raise OSError("file incompleto (%d di %d byte)" % (got, r["size"]))
+            if r.get("sha256") and h.hexdigest() != r["sha256"]:
+                raise OSError("impronta SHA-256 diversa da quella pubblicata")
+            os.replace(tmp, dest)
+            self._set(status="ready", path=dest, verified=bool(r.get("sha256")))
+        except _Cancelled:
+            _remove_quiet(tmp)
+            self._set(status="idle", got=0)
+        except Exception as e:  # noqa: BLE001
+            _remove_quiet(tmp)
+            self._set(status="error", error=str(e)[:200])
+
+
+UPDATER = Updater()
 
 
 def safe_filename(name):
@@ -181,7 +285,7 @@ os.makedirs(DATA, exist_ok=True)
 import provino_wifi as fw
 import provino_meta  # noqa: E402
 
-APP_VERSION = "1.1.1"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
+APP_VERSION = "1.1.2-rc1"   # app native: GNOME (GTK4/libadwaita) e Mac (AppKit)
 
 
 def iso_to_text(d):
@@ -1742,9 +1846,12 @@ def make_handler(app):
             if self.path == "/api/cameras":
                 with open(CAMERAS_PATH, "rb") as fh:
                     return self._send(200, fh.read(), "application/json")
+            if self.path == "/api/update/state":
+                return self._send(200, UPDATER.state())
             if self.path.startswith("/api/update"):
                 plat = "mac" if "mac" in self.path else "linux"
-                return self._send(200, check_update(plat))
+                lang = "it" if "lang=it" in self.path else "en" if "lang=en" in self.path else None
+                return self._send(200, check_update(plat, "force" in self.path, lang))
             if self.path == "/api/devices":
                 d = connected_devices()
                 # le Fujifilm sul cavo si presentano come "USB PTP Camera": il modello lo ricordo dal codice
@@ -1860,6 +1967,12 @@ def make_handler(app):
                 n = app.enqueue([int(x) for x in body.get("handles", [])], body.get("options") or {},
                                 str(body.get("event") or ""))
                 return self._send(200, {"queued": n})
+            if self.path == "/api/update/start":
+                plat = "mac" if body.get("platform") == "mac" else "linux"
+                return self._send(200, UPDATER.start(plat, os.path.join(DATA, "update"), bool(body.get("force"))))
+            if self.path == "/api/update/cancel":
+                UPDATER.cancel()
+                return self._send(200, UPDATER.state())
             if self.path == "/api/cancel":
                 app.cancel = True
                 return self._send(200, {"ok": True})

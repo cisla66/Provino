@@ -5,7 +5,7 @@
 ### Come Provino protegge le tue foto
 - **Sola lettura sulla fotocamera e sulla scheda.** Provino non cancella, non modifica e non formatta mai nulla. Usa solo comandi di lettura (PTP/IP via Wi-Fi, PTP via cavo, file system della scheda).
 - **Nessun file sovrascritto senza chiedere.** Se una foto esiste già nella cartella di destinazione, Provino chiede cosa fare.
-- **Niente rete esterna.** L'interfaccia parla solo con un piccolo server locale su `127.0.0.1`, che rifiuta le richieste con un `Host` o un'`Origin` diversi da `127.0.0.1`/`localhost` (contro gli attacchi dal browser e il DNS rebinding). L'unica connessione verso internet è il controllo degli aggiornamenti su GitHub, che si può disattivare.
+- **Niente rete esterna.** L'interfaccia parla solo con un piccolo server locale su `127.0.0.1`, che rifiuta le richieste con un `Host` o un'`Origin` diversi da `127.0.0.1`/`localhost` (contro gli attacchi dal browser e il DNS rebinding). Le uniche connessioni verso internet sono il controllo degli aggiornamenti su GitHub, che si può disattivare, e lo scaricamento della nuova versione quando lo chiedi tu: solo dai rilasci di questo progetto, con dimensione e impronta SHA-256 confrontate con quelle pubblicate da GitHub.
 - **Wi-Fi.** Durante l'attesa della fotocamera Provino ascolta sulla rete locale le porte del protocollo Fujifilm (TCP 51541 e 51542, UDP 51541, 51542 e 51562), poi le chiude.
 - **Nomi dei file ripuliti.** I nomi che arrivano dalla fotocamera o dalla scheda perdono percorsi, `..` e punti iniziali prima di essere salvati.
 - **Testi mai interpretati come codice.** Nomi, metadati e messaggi di errore vengono mostrati come testo, non come HTML.
@@ -29,7 +29,7 @@ Usa **Report a vulnerability** nella scheda *Security* del repository, oppure ap
 ### How Provino keeps your photos safe
 - **Read-only on the camera and the card.** Provino never deletes, modifies or formats anything. It only uses read commands (PTP/IP over Wi-Fi, PTP over cable, the card's file system).
 - **No file is overwritten without asking.**
-- **No outside network.** The interface only talks to a small local server on `127.0.0.1`, which rejects requests whose `Host` or `Origin` is not `127.0.0.1`/`localhost` (against browser attacks and DNS rebinding). The only internet connection is the update check on GitHub, which can be turned off.
+- **No outside network.** The interface only talks to a small local server on `127.0.0.1`, which rejects requests whose `Host` or `Origin` is not `127.0.0.1`/`localhost` (against browser attacks and DNS rebinding). The only internet connections are the update check on GitHub, which can be turned off, and the download of a new version when you ask for it: only from this project's releases, with size and SHA-256 checked against those published by GitHub.
 - **Wi-Fi.** While waiting for the camera, Provino listens on the local network on the Fujifilm protocol ports (TCP 51541 and 51542, UDP 51541, 51542 and 51562), then closes them.
 - **Sanitized file names** and **text never rendered as code** (names, metadata and error messages are shown as text, never as HTML).
 - **Bundled Python on Mac** from python-build-standalone, verified against the project's published SHA-256 hashes at build time.

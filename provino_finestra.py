@@ -344,7 +344,11 @@ class ProvinoApp(Adw.Application):
                   "upd_yes": "Aggiorna", "upd_done": "Provino è aggiornato",
                   "upd_check": "Controlla aggiornamenti…", "upd_err": "Non riesco a controllare gli aggiornamenti adesso",
                   "upd_none": "Provino è aggiornato (%(c)s)", "upd_new": "È disponibile Provino %(v)s",
-                  "upd_info": "Hai la versione %(c)s.", "upd_get": "Scarica", "upd_later": "Più tardi",
+                  "upd_info": "Hai la versione %(c)s.", "upd_get": "Scarica e installa", "upd_later": "Più tardi",
+                  "upd_dl": "Scarico Provino %(v)s", "upd_dl_of": "%(a)s di %(b)s MB", "upd_dl_check": "Controllo il file…",
+                  "upd_dl_fail": "Non riesco a scaricare l'aggiornamento: apro la pagina dei download",
+                  "upd_ready": "Provino %(v)s è installato", "upd_ready_b": "La versione vecchia è nel Cestino. Riavvia Provino per usare quella nuova.",
+                  "upd_restart": "Riavvia Provino",
                   "upd_auto": "Controlla gli aggiornamenti all'avvio",
                   "pdf_sel": "Crea PDF delle foto scelte…", "pdf_vis": "Crea PDF di quello che vedi…",
                   "pdf_read": "Leggi le scelte da un PDF…"},
@@ -394,7 +398,11 @@ class ProvinoApp(Adw.Application):
                   "upd_yes": "Update", "upd_done": "Provino is up to date",
                   "upd_check": "Check for Updates…", "upd_err": "Can't check for updates right now",
                   "upd_none": "Provino is up to date (%(c)s)", "upd_new": "Provino %(v)s is available",
-                  "upd_info": "You have version %(c)s.", "upd_get": "Download", "upd_later": "Later",
+                  "upd_info": "You have version %(c)s.", "upd_get": "Download and Install", "upd_later": "Later",
+                  "upd_dl": "Downloading Provino %(v)s", "upd_dl_of": "%(a)s of %(b)s MB", "upd_dl_check": "Checking the file…",
+                  "upd_dl_fail": "Can't download the update: opening the downloads page",
+                  "upd_ready": "Provino %(v)s is installed", "upd_ready_b": "The old version is in the Trash. Restart Provino to use the new one.",
+                  "upd_restart": "Restart Provino",
                   "upd_auto": "Check for updates at launch",
                   "pdf_sel": "Create PDF of Picked Photos…", "pdf_vis": "Create PDF of What You See…",
                   "pdf_read": "Read Choices from a PDF…"}}
@@ -1199,8 +1207,10 @@ class ProvinoApp(Adw.Application):
         return False
 
     def check_updates(self, manual):
+        force = bool(manual and os.environ.get("PROVINO_UPDATE_TEST"))   # prova: ripropone l'ultima versione
+
         def work():
-            r = pv.check_update("linux")
+            r = pv.check_update("linux", force, self.lang)
             GLib.idle_add(lambda: (self._update_result(r, manual), False)[1])
         threading.Thread(target=work, daemon=True).start()
 
@@ -1231,12 +1241,104 @@ class ProvinoApp(Adw.Application):
 
         def done(_d, resp):
             if resp == "get":
-                Gtk.UriLauncher.new(r.get("download") or r.get("url")).launch(self.win, None, None)
+                img = appimage_path()
+                if img and r.get("download") and os.access(os.path.dirname(img), os.W_OK):
+                    self._self_update(r, img)
+                else:
+                    Gtk.UriLauncher.new(r.get("download") or r.get("url")).launch(self.win, None, None)
             elif not manual:
                 S["skip_version"] = latest
                 self.core[0].save_settings()
         dlg.connect("response", done)
         dlg.present(self.win)
+        self.upd_dlg = dlg
+
+    # 1.1.2: l'aggiornamento si scarica dentro Provino (barra di avanzamento), prende il posto della versione
+    # vecchia e propone di riavviare. Se qualcosa non va, si torna alla pagina dei download nel browser.
+    def _self_update(self, r, img):
+        v = r.get("latest") or ""
+        dlg = Adw.AlertDialog(heading=self.t("upd_dl") % {"v": v})
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=320)
+        bar = Gtk.ProgressBar()
+        lbl = Gtk.Label(xalign=0)
+        lbl.add_css_class("dim-label")
+        lbl.add_css_class("numeric")
+        box.append(bar)
+        box.append(lbl)
+        dlg.set_extra_child(box)
+        dlg.add_response("cancel", self.t("cancel"))
+        dlg.set_close_response("cancel")
+        state = {"open": True}
+
+        def closed(_d, _resp):
+            if state["open"]:
+                state["open"] = False
+                pv.UPDATER.cancel()
+        dlg.connect("response", closed)
+        mb = lambda n: ("%.1f" % (n / 1048576.0)).replace(".", "," if self.lang == "it" else ".")
+        pv.UPDATER.start("linux", os.path.dirname(img), bool(os.environ.get("PROVINO_UPDATE_TEST")))
+
+        def tick():
+            if not state["open"]:
+                return False
+            st = pv.UPDATER.state()
+            if st["status"] == "downloading":
+                if st["total"]:
+                    bar.set_fraction(min(1.0, st["got"] / float(st["total"])))
+                    lbl.set_label(self.t("upd_dl_of") % {"a": mb(st["got"]), "b": mb(st["total"])})
+                else:
+                    bar.pulse()
+                return True
+            if st["status"] in ("checking", "verifying"):
+                bar.pulse() if st["status"] == "checking" else bar.set_fraction(1.0)
+                lbl.set_label(self.t("upd_dl_check") if st["status"] == "verifying" else "")
+                return True
+            state["open"] = False
+            dlg.close()
+            if st["status"] == "ready":
+                self._install_update(st["path"], img, v)
+            else:
+                self.log.info("Aggiornamento non scaricato: %s" % st.get("error"))
+                self.toasts.add_toast(Adw.Toast(title=self.t("upd_dl_fail"), timeout=6))
+                Gtk.UriLauncher.new(r.get("url") or r.get("download")).launch(self.win, None, None)
+            return False
+        GLib.timeout_add(150, tick)
+        dlg.present(self.win)
+        self.upd_dlg = dlg
+
+    def _install_update(self, new, old, v):
+        try:
+            os.chmod(new, 0o755)
+            had_entry = bool(menu_entry_path())
+            if os.path.exists(old) and not os.path.samefile(old, new):
+                Gio.File.new_for_path(old).trash(None)     # la versione vecchia nel Cestino
+            _MOVED[0] = new
+            if had_entry:
+                install_menu_entry(new)
+        except (OSError, GLib.Error) as e:
+            self.log.info("Aggiornamento non installato: %s" % e)
+            self.toasts.add_toast(Adw.Toast(title=self.t("menu_fail"), timeout=6))
+            return
+        self.log.info("Aggiornamento installato: %s" % new)
+        dlg = Adw.AlertDialog(heading=self.t("upd_ready") % {"v": v}, body=self.t("upd_ready_b"))
+        dlg.add_response("later", self.t("upd_later"))
+        dlg.add_response("restart", self.t("upd_restart"))
+        dlg.set_response_appearance("restart", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("restart")
+        dlg.set_close_response("later")
+
+        def done(_d, resp):
+            if resp != "restart":
+                return
+            env = {k: x for k, x in os.environ.items()
+                   if k not in ("APPIMAGE", "APPDIR", "ARGV0", "OWD", "PROVINO_UPDATE_TEST")}
+            # la nuova versione parte quando questa si e' chiusa (una sola finestra di Provino alla volta)
+            subprocess.Popen(["/bin/sh", "-c", 'sleep 1.5; exec "$0"', new], env=env, start_new_session=True,
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.quit()
+        dlg.connect("response", done)
+        dlg.present(self.win)
+        self.upd_dlg = dlg
 
     def uninstall(self, *_):
         dlg = Adw.AlertDialog(heading=self.t("un_h"), body=self.t("un_b") % {"photos": self._nice(self.core[0].dest)})

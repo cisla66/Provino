@@ -37,7 +37,11 @@ let TXT: [String: [String: String]] = [
         "starting": "Avvio di Provino…", "noPython": "Non trovo il motore di Provino dentro l'app.",
         "crash": "Il motore di Provino si è chiuso. Il registro è nella cartella log.",
         "openLog": "Apri il registro", "checkUpd": "Controlla aggiornamenti…", "pdfSel": "Crea PDF delle foto scelte…", "pdfVis": "Crea PDF di quello che vedi…", "pdfMenu": "Crea PDF…", "pdfRead": "Leggi le scelte da un PDF…", "updNew": "È disponibile Provino {v}",
-        "updInfo": "Hai la versione {c}.", "updGet": "Scarica", "updLater": "Più tardi", "updNone": "Provino è aggiornato",
+        "updInfo": "Hai la versione {c}.", "updGet": "Scarica e installa", "updLater": "Più tardi",
+        "updDl": "Scarico Provino {v}", "updDlOf": "{a} di {b} MB", "updDlCheck": "Controllo il file…", "updDlPrep": "Preparo la nuova versione…",
+        "updDlFail": "Non riesco a installare l'aggiornamento da qui", "updDlFailInfo": "Apro la pagina dei download: puoi installarlo a mano.",
+        "updReady": "Provino {v} è pronto", "updReadyInfo": "Provino si chiude e si riapre con la nuova versione. Impostazioni e foto restano come sono.",
+        "updRestart": "Installa e riavvia", "updNone": "Provino è aggiornato",
         "updNoneInfo": "Hai la versione più recente ({c}).", "updErr": "Non riesco a controllare gli aggiornamenti",
         "updErrInfo": "Controlla la connessione e riprova più tardi.", "autoUpd": "Controlla gli aggiornamenti all'avvio",
         "panelOn": "Mostra foto grande e informazioni",
@@ -70,7 +74,11 @@ let TXT: [String: [String: String]] = [
         "starting": "Starting Provino…", "noPython": "Provino's engine is missing from the app.",
         "crash": "Provino's engine has quit. The log is in the log folder.",
         "openLog": "Open the Log", "checkUpd": "Check for Updates…", "pdfSel": "Create PDF of Picked Photos…", "pdfVis": "Create PDF of What You See…", "pdfMenu": "Create PDF…", "pdfRead": "Read Choices from a PDF…", "updNew": "Provino {v} is available",
-        "updInfo": "You have version {c}.", "updGet": "Download", "updLater": "Later", "updNone": "Provino is up to date",
+        "updInfo": "You have version {c}.", "updGet": "Download and Install", "updLater": "Later",
+        "updDl": "Downloading Provino {v}", "updDlOf": "{a} of {b} MB", "updDlCheck": "Checking the file…", "updDlPrep": "Preparing the new version…",
+        "updDlFail": "Can't install the update from here", "updDlFailInfo": "Opening the downloads page: you can install it by hand.",
+        "updReady": "Provino {v} is ready", "updReadyInfo": "Provino will quit and reopen with the new version. Settings and photos stay as they are.",
+        "updRestart": "Install and Restart", "updNone": "Provino is up to date",
         "updNoneInfo": "You have the latest version ({c}).", "updErr": "Can't check for updates",
         "updErrInfo": "Check your connection and try again later.", "autoUpd": "Check for updates at launch",
         "panelOn": "Show Large Photo and Info",
@@ -824,6 +832,206 @@ final class TransferPop: NSViewController, NSPopoverDelegate {
     }
 }
 
+// MARK: - aggiornamento dentro l'app (1.1.2)
+
+/// Scarica il .dmg con il motore (barra di avanzamento e impronta controllata), copia la nuova Provino.app
+/// accanto a quella in uso e, alla conferma, un piccolo script le scambia quando Provino si e' chiuso e lo riapre.
+/// Se un passo non riesce, si apre la pagina dei download come prima.
+final class SelfUpdate: NSObject {
+    static var bundlePath: String { Bundle.main.bundlePath }
+    static var possible: Bool {
+        let p = bundlePath
+        if !p.hasSuffix(".app") || p.contains("/AppTranslocation/") || p.hasPrefix("/Volumes/") { return false }
+        return FileManager.default.isWritableFile(atPath: (p as NSString).deletingLastPathComponent)
+    }
+
+    weak var app: AppDelegate?
+    let version: String
+    let page: String
+    let force: Bool
+    let window: NSWindow
+    let title = label("", size: 13, weight: .semibold)
+    let info = label("", size: 11, color: .secondaryLabelColor)
+    let bar = NSProgressIndicator()
+    let cancelBtn = NSButton(title: T("cancel"), target: nil, action: nil)
+    var timer: Timer?
+    var done = false
+
+    init(app: AppDelegate, version: String, page: String, force: Bool) {
+        self.app = app
+        self.version = version
+        self.page = page
+        self.force = force
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 120), styleMask: [.titled], backing: .buffered, defer: false)
+        super.init()
+        title.stringValue = T("updDl", ["v": version])
+        info.stringValue = " "
+        bar.style = .bar
+        bar.isIndeterminate = true
+        bar.minValue = 0
+        bar.maxValue = 1
+        bar.startAnimation(nil)
+        cancelBtn.target = self
+        cancelBtn.action = #selector(onCancel)
+        cancelBtn.keyEquivalent = "\u{1b}"
+        let row = NSStackView(views: [NSView(), cancelBtn])
+        let st = NSStackView(views: [title, bar, info, row])
+        st.orientation = .vertical
+        st.alignment = .leading
+        st.spacing = 8
+        st.edgeInsets = NSEdgeInsets(top: 18, left: 20, bottom: 16, right: 20)
+        for v in [bar, row] as [NSView] {
+            v.translatesAutoresizingMaskIntoConstraints = false
+            v.widthAnchor.constraint(equalTo: st.widthAnchor, constant: -40).isActive = true
+        }
+        st.translatesAutoresizingMaskIntoConstraints = false
+        st.widthAnchor.constraint(equalToConstant: 380).isActive = true
+        window.contentView = st
+    }
+
+    func start() {
+        guard let app = app, let w = app.main.window else { return }
+        w.beginSheet(window, completionHandler: nil)
+        // il controllo dello stato parte solo quando il motore ha azzerato lo stato del download precedente
+        app.engine.post("/api/update/start", ["platform": "mac", "force": force]) { [weak self] _ in
+            guard let s = self, !s.done else { return }
+            s.timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in self?.tick() }
+        }
+    }
+
+    func mb(_ n: Double) -> String {
+        let s = String(format: "%.1f", n / 1_048_576)
+        return LANG == "it" ? s.replacingOccurrences(of: ".", with: ",") : s
+    }
+
+    func tick() {
+        guard !done, let app = app else { return }
+        app.engine.get("/api/update/state") { [weak self] st in
+            guard let s = self, !s.done else { return }
+            let status = (st["status"] as? String) ?? ""
+            let got = (st["got"] as? Double) ?? Double((st["got"] as? Int) ?? 0)
+            let total = (st["total"] as? Double) ?? Double((st["total"] as? Int) ?? 0)
+            switch status {
+            case "downloading":
+                if total > 0 {
+                    s.bar.isIndeterminate = false
+                    s.bar.doubleValue = min(1, got / total)
+                    s.info.stringValue = T("updDlOf", ["a": s.mb(got), "b": s.mb(total)])
+                }
+            case "verifying":
+                s.info.stringValue = T("updDlCheck")
+            case "ready":
+                s.done = true
+                s.timer?.invalidate()
+                s.prepare((st["path"] as? String) ?? "")
+            case "error", "idle":
+                s.fail((st["error"] as? String) ?? status)
+            default: break
+            }
+        }
+    }
+
+    @discardableResult
+    func run(_ tool: String, _ args: [String]) -> Bool {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: tool)
+        p.arguments = args
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return false }
+        p.waitUntilExit()
+        return p.terminationStatus == 0
+    }
+
+    /// Apre il .dmg senza mostrarlo e copia Provino.app in "<app>.new", accanto a quella in uso.
+    func prepare(_ dmg: String) {
+        bar.isIndeterminate = true
+        bar.startAnimation(nil)
+        info.stringValue = T("updDlPrep")
+        cancelBtn.isEnabled = false
+        let appPath = SelfUpdate.bundlePath
+        let staged = appPath + ".new"
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fm = FileManager.default
+            let mnt = NSTemporaryDirectory() + "provino-upd-\(ProcessInfo.processInfo.processIdentifier)"
+            try? fm.removeItem(atPath: staged)
+            try? fm.createDirectory(atPath: mnt, withIntermediateDirectories: true)
+            var ok = !dmg.isEmpty && self.run("/usr/bin/hdiutil", ["attach", dmg, "-nobrowse", "-readonly", "-mountpoint", mnt])
+            if ok {
+                let src = mnt + "/Provino.app"
+                ok = fm.fileExists(atPath: src + "/Contents/MacOS/Provino") && self.run("/usr/bin/ditto", [src, staged])
+                self.run("/usr/bin/hdiutil", ["detach", mnt, "-force"])
+            }
+            try? fm.removeItem(atPath: mnt)
+            ok = ok && fm.fileExists(atPath: staged + "/Contents/MacOS/Provino")
+            DispatchQueue.main.async {
+                if ok { self.confirm(dmg: dmg, appPath: appPath, staged: staged) }
+                else { try? fm.removeItem(atPath: staged); self.fail("prepare") }
+            }
+        }
+    }
+
+    func close() {
+        timer?.invalidate()
+        window.sheetParent?.endSheet(window)
+    }
+
+    func confirm(dmg: String, appPath: String, staged: String) {
+        close()
+        let a = NSAlert()
+        a.messageText = T("updReady", ["v": version])
+        a.informativeText = T("updReadyInfo")
+        a.addButton(withTitle: T("updRestart"))
+        a.addButton(withTitle: T("updLater"))
+        let go = { (resp: NSApplication.ModalResponse) in
+            if resp == .alertFirstButtonReturn { self.swapAndRestart(dmg: dmg, appPath: appPath, staged: staged) }
+            else { try? FileManager.default.removeItem(atPath: staged) }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            if let w = self.app?.main.window { a.beginSheetModal(for: w, completionHandler: go) } else { go(a.runModal()) }
+        }
+    }
+
+    /// Lo scambio avviene quando Provino si e' chiuso: se non riesce, la versione in uso torna al suo posto.
+    func swapAndRestart(dmg: String, appPath: String, staged: String) {
+        let script = """
+        APP="$1"; NEW="$2"; PID="$3"; DMG="$4"
+        i=0; while kill -0 "$PID" 2>/dev/null && [ $i -lt 150 ]; do sleep 0.2; i=$((i+1)); done
+        OLD="$APP.old"; rm -rf "$OLD"
+        if mv "$APP" "$OLD"; then
+          if mv "$NEW" "$APP"; then rm -rf "$OLD"; else mv "$OLD" "$APP"; fi
+        fi
+        rm -rf "$NEW"; rm -f "$DMG"
+        open "$APP"
+        """
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/sh")
+        p.arguments = ["-c", script, "provino-update", appPath, staged, "\(ProcessInfo.processInfo.processIdentifier)", dmg]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { fail("script"); return }
+        NSApp.terminate(nil)
+    }
+
+    func fail(_ why: String) {
+        done = true
+        close()
+        NSLog("Provino: aggiornamento non riuscito (%@)", why)
+        if why == "idle" { return }   // annullato
+        let page = self.page
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            self.app?.alert(T("updDlFail"), T("updDlFailInfo"))
+            if let url = URL(string: page) { NSWorkspace.shared.open(url) }
+        }
+    }
+
+    @objc func onCancel() {
+        done = true
+        app?.engine.post("/api/update/cancel", [:]) { _ in }
+        close()
+    }
+}
+
 // MARK: - foglio "Scarica N file"
 
 /// Riquadro dell'anteprima delle cartelle: i colori si ricalcolano col tema (chiaro/scuro),
@@ -1473,7 +1681,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func checkUpdates(manual: Bool) {
-        engine.get("/api/update?mac") { r in
+        // prova: Opzione + «Controlla aggiornamenti…» ripropone l'ultima versione anche se e' gia' installata
+        let force = manual && NSEvent.modifierFlags.contains(.option)
+        engine.get("/api/update?mac&lang=\(LANG)" + (force ? "&force" : "")) { r in
             UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
             let ok = (r["ok"] as? Bool) ?? false
             let newer = (r["newer"] as? Bool) ?? false
@@ -1491,8 +1701,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             a.addButton(withTitle: T("updLater"))
             let go = { (resp: NSApplication.ModalResponse) in
                 if resp == .alertFirstButtonReturn {
-                    let u = (r["download"] as? String) ?? (r["url"] as? String) ?? "https://github.com/cisla66/Provino/releases"
-                    if let url = URL(string: u) { NSWorkspace.shared.open(url) }
+                    let page = (r["url"] as? String) ?? "https://github.com/cisla66/Provino/releases"
+                    if (r["download"] as? String) != nil, SelfUpdate.possible {
+                        // l'avviso si chiude prima che si apra il foglio dell'avanzamento
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            self.updater = SelfUpdate(app: self, version: latest, page: page, force: force)
+                            self.updater?.start()
+                        }
+                    } else if let url = URL(string: (r["download"] as? String) ?? page) { NSWorkspace.shared.open(url) }
                 } else if !manual {
                     UserDefaults.standard.set(latest, forKey: "skipVersion")   // non lo ripropongo a ogni avvio
                 }
@@ -1500,6 +1716,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let w = self.main.window { a.beginSheetModal(for: w, completionHandler: go) } else { go(a.runModal()) }
         }
     }
+
+    var updater: SelfUpdate?
 
     func alert(_ title: String, _ info: String) {
         let a = NSAlert()
