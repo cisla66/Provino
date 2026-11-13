@@ -340,7 +340,7 @@ class ProvinoApp(Adw.Application):
                   "un_b": "Tolgo Provino dalle applicazioni, cancello impostazioni e registri e metto il programma nel Cestino.\n\nLe foto scaricate (%(photos)s) non vengono toccate.",
                   "un_yes": "Disinstalla",
                   "upd_h": "Aggiornare Provino?",
-                  "upd_b": "In %(dir)s c'è già Provino (%(old)s). Metto questa versione al suo posto e la vecchia nel Cestino. Impostazioni e foto restano come sono.",
+                  "upd_b": "Provino è già installato (%(old)s). Metto questa versione in %(dir)s al suo posto e la vecchia nel Cestino. Impostazioni e foto restano come sono.",
                   "upd_yes": "Aggiorna", "upd_done": "Provino è aggiornato",
                   "upd_check": "Controlla aggiornamenti…", "upd_err": "Non riesco a controllare gli aggiornamenti adesso",
                   "upd_none": "Provino è aggiornato (%(c)s)", "upd_new": "È disponibile Provino %(v)s",
@@ -394,7 +394,7 @@ class ProvinoApp(Adw.Application):
                   "un_b": "I'll remove Provino from your applications, delete its settings and logs and move the program to the Trash.\n\nYour downloaded photos (%(photos)s) are not touched.",
                   "un_yes": "Uninstall",
                   "upd_h": "Update Provino?",
-                  "upd_b": "Provino is already in %(dir)s (%(old)s). I'll put this version in its place and move the old one to the Trash. Settings and photos stay as they are.",
+                  "upd_b": "Provino is already installed (%(old)s). I'll put this version in %(dir)s in its place and move the old one to the Trash. Settings and photos stay as they are.",
                   "upd_yes": "Update", "upd_done": "Provino is up to date",
                   "upd_check": "Check for Updates…", "upd_err": "Can't check for updates right now",
                   "upd_none": "Provino is up to date (%(c)s)", "upd_new": "Provino %(v)s is available",
@@ -1132,14 +1132,19 @@ class ProvinoApp(Adw.Application):
         if cur and os.path.isfile(cur) and not os.path.samefile(cur, img):
             self._offer_update(img, cur)          # nuova versione aperta, quella installata c'e' ancora
             return False
-        if cur:
+        S = self.core[0].settings
+        if cur and (in_apps_dir(img) or S.get("menu_entry_stay") == img):
             install_menu_entry()   # aggiorna percorso e icona (una nuova versione puo' avere un'icona nuova)
             return False
-        S = self.core[0].settings
-        if S.get("menu_entry_asked"):
-            return False
-        S["menu_entry_asked"] = True
-        self.core[0].save_settings()
+        # 1.1.3: la voce nel menu c'e', ma questa versione e' fuori dalla cartella delle applicazioni (per esempio
+        # in Scaricati, con la vecchia gia' cancellata): si propone di nuovo di spostarla, invece di puntare la
+        # voce a un file che poi rischia di essere cancellato con i download
+        stray = bool(cur)
+        if not stray:
+            if S.get("menu_entry_asked"):
+                return False
+            S["menu_entry_asked"] = True
+            self.core[0].save_settings()
         move = not in_apps_dir(img)
         dlg = Adw.AlertDialog(heading=self.t("inst_h"),
                               body=self.t("inst_b_move" if move else "inst_b") % {"dir": self._nice(apps_dir())})
@@ -1151,6 +1156,10 @@ class ProvinoApp(Adw.Application):
 
         def done(_d, resp):
             if resp != "yes":
+                if stray:               # resta dov'e': la voce punta li' e non lo si chiede piu' per questo file
+                    S["menu_entry_stay"] = img
+                    self.core[0].save_settings()
+                    install_menu_entry()
                 return
             try:
                 path = move_to_apps(img) if move else img
@@ -1167,7 +1176,7 @@ class ProvinoApp(Adw.Application):
     def _offer_update(self, img, old):
         """Si apre una versione nuova mentre quella installata e' ancora in ~/Applicazioni: propone di sostituirla."""
         dlg = Adw.AlertDialog(heading=self.t("upd_h"),
-                              body=self.t("upd_b") % {"old": os.path.basename(old), "dir": self._nice(os.path.dirname(old))})
+                              body=self.t("upd_b") % {"old": os.path.basename(old), "dir": self._nice(apps_dir())})
         dlg.add_response("no", self.t("inst_no"))
         dlg.add_response("yes", self.t("upd_yes"))
         dlg.set_response_appearance("yes", Adw.ResponseAppearance.SUGGESTED)
@@ -1179,7 +1188,8 @@ class ProvinoApp(Adw.Application):
                 return
             ok = False
             try:
-                d = os.path.dirname(old)
+                d = apps_dir()            # la nuova versione va sempre nella cartella delle applicazioni
+                os.makedirs(d, exist_ok=True)
                 dest = os.path.join(d, os.path.basename(img))
                 if os.path.realpath(os.path.dirname(img)) != os.path.realpath(d):
                     if os.path.exists(dest) and not os.path.samefile(dest, img):
@@ -1242,8 +1252,9 @@ class ProvinoApp(Adw.Application):
         def done(_d, resp):
             if resp == "get":
                 img = appimage_path()
-                if img and r.get("download") and os.access(os.path.dirname(img), os.W_OK):
-                    self._self_update(r, img)
+                folder = self._update_folder(img) if img else None
+                if img and r.get("download") and folder:
+                    self._self_update(r, img, folder)
                 else:
                     Gtk.UriLauncher.new(r.get("download") or r.get("url")).launch(self.win, None, None)
             elif not manual:
@@ -1255,7 +1266,17 @@ class ProvinoApp(Adw.Application):
 
     # 1.1.2: l'aggiornamento si scarica dentro Provino (barra di avanzamento), prende il posto della versione
     # vecchia e propone di riavviare. Se qualcosa non va, si torna alla pagina dei download nel browser.
-    def _self_update(self, r, img):
+    def _update_folder(self, img):
+        """Dove mettere la nuova versione: nella cartella delle applicazioni se Provino e' installato
+        (voce nel menu), altrimenti accanto a quella in uso. None se non ci si puo' scrivere."""
+        d = apps_dir() if (menu_entry_path() or in_apps_dir(img)) else os.path.dirname(img)
+        try:
+            os.makedirs(d, exist_ok=True)
+        except OSError:
+            return None
+        return d if os.access(d, os.W_OK) else None
+
+    def _self_update(self, r, img, folder):
         v = r.get("latest") or ""
         dlg = Adw.AlertDialog(heading=self.t("upd_dl") % {"v": v})
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=320)
@@ -1276,7 +1297,7 @@ class ProvinoApp(Adw.Application):
                 pv.UPDATER.cancel()
         dlg.connect("response", closed)
         mb = lambda n: ("%.1f" % (n / 1048576.0)).replace(".", "," if self.lang == "it" else ".")
-        pv.UPDATER.start("linux", os.path.dirname(img), bool(os.environ.get("PROVINO_UPDATE_TEST")))
+        pv.UPDATER.start("linux", folder, bool(os.environ.get("PROVINO_UPDATE_TEST")))
 
         def tick():
             if not state["open"]:
