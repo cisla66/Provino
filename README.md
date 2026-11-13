@@ -9,22 +9,22 @@
 
 Provino nasce dalla mia passione per la fotografia e per il mondo Fujifilm, e da un bisogno molto semplice: scaricare le foto sul computer in modo agevole, con il cavo o in rete, senza dover aprire programmi di ritocco fotografico solo per copiarle.
 Credo nell'open source, per questo metto a disposizione i sorgenti di Provino insieme alle app pronte per macOS e Linux (Fedora e Ubuntu), sperando che possa essere utile anche ad altri fotografi.
-Per ora Provino supporta la X-Pro3 e la X100VI: sono le mie fotocamere, quelle con cui ho potuto sviluppare e provare ogni funzione. Se in futuro potrò mettere le mani su altri modelli Fujifilm, aggiungerò sicuramente anche il loro supporto.
+Con il lettore di schede Provino funziona con le foto di qualsiasi Fujifilm. Il collegamento diretto, con il cavo USB e via Wi-Fi, per ora è disponibile per la X-Pro3 e la X100VI: sono le mie fotocamere, quelle con cui ho potuto sviluppare e provare ogni funzione. Se in futuro potrò mettere le mani su altri modelli, aggiungerò anche il loro collegamento diretto.
 Suggerimenti e segnalazioni di bug sono benvenuti: usate pure le [Issues](../../issues) qui su GitHub.
 — Marco Cislaghi
 
 *Provino grew out of my passion for photography and for the Fujifilm world, and out of a simple need: getting photos onto my computer easily, by cable or over the network, without opening a photo editing program just to copy them.
 I believe in open source, so I'm sharing Provino's source code along with ready-to-use apps for macOS and Linux (Fedora and Ubuntu), hoping other photographers find it useful too.
-For now Provino supports the X-Pro3 and the X100VI: they're my own cameras, the ones I could build and test every feature with. If I get my hands on other Fujifilm models in the future, I'll definitely add support for them too.
+With a card reader, Provino works with photos from any Fujifilm. The direct connection, over USB cable and Wi-Fi, is available for the X-Pro3 and the X100VI for now: they're my own cameras, the ones I could build and test every feature with. If I get my hands on other models in the future, I'll add their direct connection too.
 Suggestions and bug reports are welcome: just use the [Issues](../../issues) here on GitHub.*
 
 ---
 
-**Scegli dal computer le foto della tua Fujifilm X-Pro3 o X100VI e scarica solo quelle.**
-Via Wi-Fi o con il cavo USB, su Mac e Linux. Provino legge soltanto: non tocca mai la scheda.
+**Scegli dal computer le foto della tua Fujifilm e scarica solo quelle.**
+Con il lettore di schede funziona con qualsiasi Fujifilm; con la X-Pro3 e la X100VI anche con il cavo USB e via Wi-Fi. Su Mac e Linux. Provino legge soltanto: non tocca mai la scheda.
 
-**Pick photos from your Fujifilm X-Pro3 or X100VI on your computer and download only those.**
-Over Wi-Fi or USB cable, on Mac and Linux. Provino is read-only: it never touches your card.
+**Pick photos from your Fujifilm on your computer and download only those.**
+With a card reader it works with any Fujifilm; with the X-Pro3 and X100VI also over USB cable and Wi-Fi. On Mac and Linux. Provino is read-only: it never touches your card.
 
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
