@@ -200,3 +200,12 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:rgba(255
 .news li{margin:4px 0}
 .news li b{color:var(--ink)}
 @media (max-width:860px){ .flow{grid-template-columns:1fr} }
+
+/* ---------- stati compatibilità ---------- */
+.st{display:inline-block;padding:3px 11px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.st.ok{background:rgba(95,211,138,.15);color:#5fd38a}
+.st.wip{background:rgba(47,140,255,.15);color:#6fb0ff}
+.st.need{background:rgba(255,255,255,.09);color:var(--ink2)}
+.st.bad{background:rgba(224,27,36,.15);color:#ff6b72}
+.g-body ul{padding-left:20px}
+.g-body ul li{margin-bottom:8px}

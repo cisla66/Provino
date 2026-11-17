@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="it" data-lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compatibilità e roadmap · Provino</title>
+<meta name="description" content="Quali Fujifilm sono verificate con Provino, come contribuire con i file della tua fotocamera e cosa stiamo valutando per le prossime versioni.">
+<link rel="icon" href="img/favicon-64.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav aria-label="Principale">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="img/favicon-64.png" alt="" width="30" height="30">Provino</a>
+    <div class="links">
+      <a href="index.html#funzioni"><span lang="it">Funzioni</span><span lang="en">Features</span></a>
+      <a href="guida.html"><span lang="it">Guida</span><span lang="en">Guide</span></a>
+      <a href="compatibilita.html" aria-current="page" style="color:var(--ink)"><span lang="it">Compatibilità</span><span lang="en">Compatibility</span></a>
+      <a href="https://github.com/cisla66/Provino">GitHub</a>
+    </div>
+    <div class="lang" role="group" aria-label="Lingua / Language">
+      <button type="button" data-set="it" aria-pressed="true">IT</button>
+      <button type="button" data-set="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</nav>
+
+<header class="wrap g-hero">
+  <p class="eyebrow"><span lang="it">Compatibilità e roadmap</span><span lang="en">Compatibility and roadmap</span></p>
+  <h1><span lang="it">La tua Fujifilm è nell'elenco?</span><span lang="en">Is your Fujifilm on the list?</span></h1>
+  <p class="tag"><span lang="it">Qui vedi quali modelli sono stati provati con Provino su file reali, quali stiamo provando adesso e come puoi aiutarci a coprire anche la tua fotocamera.</span><span lang="en">Here you can see which models have been tested with Provino on real files, which ones we are testing now, and how you can help us cover your camera too.</span></p>
+</header>
+
+<div class="wrap g-layout">
+  <aside class="toc" aria-label="Indice">
+    <p><span lang="it">In questa pagina</span><span lang="en">On this page</span></p>
+    <ol>
+      <li><a href="#modelli"><span lang="it">Modelli</span><span lang="en">Models</span></a></li>
+      <li><a href="#contribuire"><span lang="it">Come contribuire</span><span lang="en">How to contribute</span></a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+    </ol>
+  </aside>
+
+  <main class="g-body">
+
+    <section id="modelli">
+      <h2><span lang="it">Modelli</span><span lang="en">Models</span></h2>
+      <p><span lang="it">Con il lettore di schede Provino funziona con qualsiasi Fujifilm. Questa tabella dice per quali modelli lo abbiamo anche <strong>verificato su file reali</strong>.</span><span lang="en">With a card reader Provino works with any Fujifilm. This table shows which models we have also <strong>verified on real files</strong>.</span></p>
+      <table>
+        <thead><tr><th><span lang="it">Modello</span><span lang="en">Model</span></th><th><span lang="it">Lettore di schede</span><span lang="en">Card reader</span></th><th><span lang="it">Cavo / Wi-Fi diretto</span><span lang="en">Direct cable / Wi-Fi</span></th><th><span lang="it">Stato</span><span lang="en">Status</span></th></tr></thead>
+        <tbody>
+          <tr><td>X-Pro1 · X-T1 · X100T · X-T2 · X100F</td><td><span lang="it">sì</span><span lang="en">yes</span></td><td class="no">—</td><td><span class="st ok"><span lang="it">Verificato</span><span lang="en">Verified</span></span></td></tr>
+          <tr><td>X-Pro3 · X100VI</td><td><span lang="it">sì</span><span lang="en">yes</span></td><td><span lang="it">sì</span><span lang="en">yes</span></td><td><span class="st ok"><span lang="it">Verificato</span><span lang="en">Verified</span></span></td></tr>
+          <tr><td>X-T3 (<span lang="it">RAF compresso incluso</span><span lang="en">compressed RAF included</span>)</td><td><span lang="it">atteso</span><span lang="en">expected</span></td><td class="no">—</td><td><span class="st need"><span lang="it">Servono file</span><span lang="en">Files needed</span></span></td></tr>
+          <tr><td>X-T4</td><td><span lang="it">atteso</span><span lang="en">expected</span></td><td class="no">—</td><td><span class="st need"><span lang="it">Servono file</span><span lang="en">Files needed</span></span></td></tr>
+          <tr><td><span lang="it">Tutti gli altri modelli</span><span lang="en">All other models</span></td><td><span lang="it">atteso</span><span lang="en">expected</span></td><td class="no">—</td><td><span class="st need"><span lang="it">Servono file</span><span lang="en">Files needed</span></span></td></tr>
+        </tbody>
+      </table>
+      <p class="note"><span lang="it">Aggiornato il 17 novembre 2026.</span><span lang="en">Updated 17 November 2026.</span></p>
+      <h3><span lang="it">Cosa significano gli stati</span><span lang="en">What the statuses mean</span></h3>
+      <ul>
+        <li><span class="st ok"><span lang="it">Verificato</span><span lang="en">Verified</span></span> <span lang="it">provato su file reali: anteprime, lettura della ricetta e copia identica del file.</span><span lang="en">tested on real files: previews, recipe reading and identical file copy.</span></li>
+        <li><span class="st wip"><span lang="it">In prova</span><span lang="en">Testing</span></span> <span lang="it">abbiamo ricevuto i file e li stiamo provando. Non servono altri invii, salvo firmware o opzioni RAW diverse.</span><span lang="en">files received and being tested. No more files needed, unless a different firmware or RAW option.</span></li>
+        <li><span class="st need"><span lang="it">Servono file</span><span lang="en">Files needed</span></span> <span lang="it">non abbiamo ancora provato questo modello: il tuo contributo è benvenuto.</span><span lang="en">we haven't tested this model yet: your help is welcome.</span></li>
+        <li><span class="st bad"><span lang="it">Problema noto</span><span lang="en">Known issue</span></span> <span lang="it">provato, c'è qualcosa che non va e lo stiamo correggendo.</span><span lang="en">tested, something doesn't work and we are fixing it.</span></li>
+      </ul>
+    </section>
+
+    <section id="contribuire">
+      <h2><span lang="it">Come contribuire</span><span lang="en">How to contribute</span></h2>
+      <p><span lang="it">La tua fotocamera non è nell'elenco? Ci pensiamo noi a tutte le prove. A te chiediamo solo pochi file, scattati sempre allo stesso modo, così ogni modello viene provato nello stesso modo.</span><span lang="en">Your camera isn't on the list? We do all the testing. All we ask is a few files, always shot the same way, so every model is tested the same way.</span></p>
+      <ol class="steps">
+        <li><b><span lang="it">Scatta la stessa scena in più formati</span><span lang="en">Shoot the same scene in several formats</span></b><span lang="it">Stessa inquadratura, senza volti riconoscibili: JPG, RAF (ogni opzione di registrazione RAW che il menu offre), RAW+JPG insieme, e uno scatto con una ricetta applicata. Se la tua macchina lo offre, anche uno scatto HEIF (.HIF).</span><span lang="en">Same framing, no recognisable faces: JPG, RAF (every RAW recording option your menu offers), RAW+JPG together, and one shot with a recipe applied. If your camera offers it, also one HEIF (.HIF) shot.</span></li>
+        <li><b><span lang="it">Scrivi i dati</span><span lang="en">Write down the details</span></b><span lang="it">Modello e versione del firmware, più i valori della ricetta (simulazione pellicola, grana, Color Chrome, bilanciamento del bianco e così via).</span><span lang="en">Camera model and firmware version, plus the recipe settings (film simulation, grain, Color Chrome, white balance and so on).</span></li>
+        <li><b><span lang="it">Metti i file in una cartella condivisa</span><span lang="en">Put the files in a shared folder</span></b><span lang="it">Gli originali, intatti e con i nomi originali (non aprirli né esportarli da nessun programma). Niente zip, programmi o altro: solo .RAF, .JPG, .HIF e un breve .txt con i dati.</span><span lang="en">The originals, untouched and with their original names (don't open or export them from any program). No zip files, programs or anything else: only .RAF, .JPG, .HIF and a short .txt with the details.</span></li>
+        <li><b><span lang="it">Scrivimi in privato su Reddit</span><span lang="en">Send me a private message on Reddit</span></b><span lang="it">Con il link alla cartella (Google Drive, Dropbox, WeTransfer…), non come allegato e non nei commenti pubblici.</span><span lang="en">With the link to the folder (Google Drive, Dropbox, WeTransfer…), not as an attachment and not in public comments.</span></li>
+      </ol>
+      <p style="margin-top:16px"><span lang="it">Un solo set di file per modello basta: se il tuo è già «In prova», serve un altro invio solo con un firmware molto diverso o con un'opzione RAW non ancora coperta.</span><span lang="en">One set of files per model is enough: if yours is already "Testing", send more only for a very different firmware or a RAW option not yet covered.</span></p>
+    </section>
+
+    <section id="privacy">
+      <h2>Privacy</h2>
+      <div class="callout info"><span lang="it"><b>I tuoi file restano tuoi.</b> Li usiamo soltanto per provare Provino e poi li cancelliamo. Foto e numeri di serie non vengono mai pubblicati né aggiunti al repository. Pubblichiamo solo l'esito per modello: compatibile o no, senza foto.</span><span lang="en"><b>Your files stay yours.</b> We use them only to test Provino and then delete them. Photos and serial numbers are never published or added to the repository. We publish only the per-model result: compatible or not, with no photos.</span></div>
+      <p><span lang="it">Per sicurezza accettiamo solo file originali .RAF, .JPG, .HIF e un breve .txt. Tutto il resto (archivi zip, programmi, script) viene cancellato senza essere aperto, e non eseguiamo mai nulla che ci viene inviato. I file si controllano su un account separato, con uno script pubblico: <a href="https://github.com/cisla66/Provino/blob/main/tools/verifica_file.py">verifica_file.py</a>.</span><span lang="en">For safety we accept only original .RAF, .JPG, .HIF files and a short .txt. Everything else (zip archives, programs, scripts) is deleted unopened, and we never run anything we are sent. Files are checked on a separate account, with a public script: <a href="https://github.com/cisla66/Provino/blob/main/tools/verifica_file.py">verifica_file.py</a>.</span></p>
+    </section>
+
+    <section id="roadmap">
+      <h2>Roadmap</h2>
+      <div class="callout info"><span lang="it"><b>Cosa resta Provino.</b> Uno strumento snello per quello che succede <i>prima</i> del ritocco: guardare, controllare, organizzare e scaricare le foto Fujifilm. Non diventerà un editor né un sostituto di Lightroom. Le idee che non rientrano in questo ambito non verranno prese in considerazione.</span><span lang="en"><b>What Provino stays.</b> A lightweight tool for what happens <i>before</i> editing: browse, check, organise and download your Fujifilm photos. It won't become an editor or a Lightroom replacement. Ideas outside that scope won't be considered.</span></div>
+      <h3><span lang="it">In valutazione</span><span lang="en">Under consideration</span></h3>
+      <p><span lang="it">Sono idee, non promesse: non sono decise e non hanno una data.</span><span lang="en">These are ideas, not promises: nothing is decided and there are no dates.</span></p>
+      <ul>
+        <li><span lang="it">Zoom oltre il 100% nella foto grande</span><span lang="en">Zoom beyond 100% in the large photo</span></li>
+        <li><span lang="it">Scegliere direttamente una cartella già esistente come destinazione</span><span lang="en">Pick an already existing folder directly as the destination</span></li>
+        <li><span lang="it">«Apri in…» dopo lo scarico, verso il programma che preferisci</span><span lang="en">"Open in…" after download, to the app you prefer</span></li>
+        <li><span lang="it">Visualizzazione RAW al 100% reale su Mac</span><span lang="en">True 100% RAW view on Mac</span></li>
+        <li><span lang="it">Altri modelli verificati, grazie ai file che ci mandate</span><span lang="en">More verified models, thanks to the files you send us</span></li>
+      </ul>
+      <h3><span lang="it">Sondaggi</span><span lang="en">Polls</span></h3>
+      <p><span lang="it">Quando Provino avrà abbastanza utenti, faremo dei piccoli sondaggi per scegliere insieme le prossime funzioni, con un campo libero per le tue idee. Per ora puoi scrivere su <a href="https://github.com/cisla66/Provino/issues">GitHub</a>.</span><span lang="en">When Provino has enough users, we'll run small polls to choose the next features together, with a free field for your ideas. For now you can write on <a href="https://github.com/cisla66/Provino/issues">GitHub</a>.</span></p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p><b style="color:var(--ink)">Provino</b> · <span lang="it">open source, licenza MIT</span><span lang="en">open source, MIT license</span> · <a href="https://github.com/cisla66/Provino">GitHub</a></p>
+      <p><span lang="it">Protocollo Wi-Fi basato sul lavoro open source di</span><span lang="en">Wi-Fi protocol based on the open-source work of</span> <a href="https://github.com/petabyt/libfuji">libfuji</a> (petabyt).</p>
+    </div>
+    <div>
+      <p><span lang="it">Progetto indipendente, non affiliato a FUJIFILM Corporation.</span><span lang="en">Independent project, not affiliated with FUJIFILM Corporation.</span></p>
+      <p><span lang="it">Fujifilm, X-Pro3 e X100VI sono marchi dei rispettivi proprietari.</span><span lang="en">Fujifilm, X-Pro3 and X100VI are trademarks of their respective owners.</span></p>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
