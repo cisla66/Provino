@@ -32,7 +32,18 @@ class CardError(Exception):
 
 
 def _exif_date(buf):
-    """DateTimeOriginal (o DateTime) dall'inizio di un JPEG -> 'YYYYMMDDTHHMMSS' o None."""
+    """Data dello scatto (DateTimeOriginal) dall'inizio di un JPEG -> 'YYYYMMDDTHHMMSS' o None.
+
+    Un JPEG rielaborato da un altro programma ha anche la data di modifica (DateTime), che nel file
+    puo' comparire per prima: la si usa solo se manca la data dello scatto."""
+    try:
+        import provino_meta
+        d = provino_meta.parse(buf[:0x20000]).get("date") or ""
+    except Exception:  # noqa: BLE001
+        d = ""
+    m = re.match(r"(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})", d)
+    if m:
+        return "%s%s%sT%s%s%s" % m.groups()
     m = re.search(rb"(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})\x00", buf[:0x10000])
     return (b"%s%s%sT%s%s%s" % m.groups()).decode() if m else None
 
