@@ -71,7 +71,7 @@ Dai sorgenti: `python3 provino_finestra.py` (finestra GNOME) oppure `python3 pro
 
 ### Compatibilità e roadmap
 
-Con il lettore di schede Provino funziona con qualsiasi Fujifilm. Verificato su file reali: X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3, X100VI (cavo e Wi-Fi diretti solo per X-Pro3 e X100VI). Servono file di prova per X-T3 (anche RAF compresso), X-T4 e tutti gli altri modelli: come contribuire, stato di ogni modello e idee per le prossime versioni sono sulla [pagina Compatibilità e roadmap](https://cisla66.github.io/Provino/compatibilita.html). Foto e numeri di serie non vengono mai pubblicati.
+Con il lettore di schede Provino funziona con qualsiasi Fujifilm. Verificato su file reali: X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3, X100VI (cavo e Wi-Fi diretti solo per X-Pro3 e X100VI). In prova (anteprime e ricette letti correttamente su file di prova, manca ancora la prova di copia identica): X-T3, X-T4, X-T5, X-H2, X-H2S, X100V, X-S10, X-S20, X-T30 II, X-T30 III, X-T50, X-E5, X-M5, GFX 50S, GFX 50R, GFX50S II, GFX 100, GFX 100S, GFX100S II, GFX100RF. Servono file di prova per tutti gli altri modelli: come contribuire, stato di ogni modello e idee per le prossime versioni sono sulla [pagina Compatibilità e roadmap](https://cisla66.github.io/Provino/compatibilita.html). Foto e numeri di serie non vengono mai pubblicati.
 
 ### Sicurezza
 Provino non cancella, non modifica e non formatta mai nulla sulla scheda. Non sovrascrive file sul computer senza chiederlo. Nella cartella `log` c'è un file per ogni avvio, utile se qualcosa non va. Dettagli e controlli fatti: [SECURITY.md](SECURITY.md).
@@ -113,7 +113,7 @@ From source: `python3 provino_finestra.py` (GNOME window) or `python3 provino.py
 
 ### Compatibility and roadmap
 
-With a card reader Provino works with any Fujifilm. Verified on real files: X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3, X100VI (direct cable and Wi-Fi only for X-Pro3 and X100VI). Sample files are needed for the X-T3 (including compressed RAF), X-T4 and all other models: how to contribute, each model's status and ideas for upcoming versions are on the [Compatibility and roadmap page](https://cisla66.github.io/Provino/compatibilita.html). Photos and serial numbers are never published.
+With a card reader Provino works with any Fujifilm. Verified on real files: X-Pro1, X-T1, X100T, X-T2, X100F, X-Pro3, X100VI (direct cable and Wi-Fi only for X-Pro3 and X100VI). Testing (previews and recipes read correctly on sample files, identical-copy test still to do): X-T3, X-T4, X-T5, X-H2, X-H2S, X100V, X-S10, X-S20, X-T30 II, X-T30 III, X-T50, X-E5, X-M5, GFX 50S, GFX 50R, GFX50S II, GFX 100, GFX 100S, GFX100S II, GFX100RF. Sample files are needed for all other models: how to contribute, each model's status and ideas for upcoming versions are on the [Compatibility and roadmap page](https://cisla66.github.io/Provino/compatibilita.html). Photos and serial numbers are never published.
 
 ### Safety
 Provino never deletes, changes or formats anything on the card. It never overwrites files on your computer without asking. The `log` folder has one file per run, useful if something goes wrong. Details and checks: [SECURITY.md](SECURITY.md).
