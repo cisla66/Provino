@@ -209,3 +209,6 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:rgba(255
 .st.bad{background:rgba(224,27,36,.15);color:#ff6b72}
 .g-body ul{padding-left:20px}
 .g-body ul li{margin-bottom:8px}
+
+.mp{color:var(--ink3);font-size:12px;font-weight:500}
+.nw{white-space:nowrap}
