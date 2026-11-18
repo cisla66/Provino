@@ -189,7 +189,13 @@ body.vdrag, body.vdrag *{cursor:col-resize!important;user-select:none!important;
 /* le voci del menu: nella finestra GNOME (WebKitGTK) il menu nativo e' chiaro, quindi testo scuro su chiaro */
 .filmsel option{background:#fbfaf6;color:#1d1d1b}
 .filmsel option:checked{background:var(--pencil);color:#fff}
-.cap .film{display:block;flex-basis:100%;color:var(--ink-soft);font-size:12px;margin-top:-2px;min-height:1em}
+.cap .film{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-basis:100%;color:var(--ink-soft);font-size:12px;margin-top:-2px;min-height:1em}
+.cap .film .fn,.cap .film .fm{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cap .film .fn{min-width:0}
+.cap .film .fm{flex:none;margin-left:auto}
+.cap .film .tx{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cap .film svg{flex:none;width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.cap .film svg .dot{fill:currentColor;stroke:none}
 .cap{flex-wrap:wrap}
 .kind.meta{margin-left:auto;letter-spacing:.06em}
 .vtabs{display:none}

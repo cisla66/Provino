@@ -196,7 +196,11 @@ function paint(){
     fr.classList.toggle("sel", any);
     fr.classList.toggle("cur", fr.dataset.b===cur);
     const fm2 = META[g.base], fc = fr.querySelector(".film");
-    if(fc){ const txt = fm2 && fm2.film ? filmName(fm2.film) : ""; if(fc.textContent!==txt) fc.textContent = txt; }
+    if(fc){
+      const txt = fm2 && fm2.film ? filmName(fm2.film) : "", mdl = fm2 && fm2.model ? fm2.model.replace(/^FUJIFILM\s+/i,"") : "";
+      const key = txt + "\u0001" + mdl;
+      if(fc.dataset.k!==key){ fc.dataset.k = key; fc.innerHTML = (txt? `<span class="fn">${FILM_ICON}<span class="tx">${esc(txt)}</span></span>` : "<span class=\"fn\"></span>") + (mdl? `<span class="fm">${CAM_ICON}<span class="tx">${esc(mdl)}</span></span>` : ""); }
+    }
     fr.hidden = wanted(g).length===0;
     for(const k of fr.querySelectorAll(".kind:not(.meta)")){ const f = fm.get(+k.dataset.h); k.hidden = filter!=="both" && f && f.kind!==filter; }
   }
@@ -586,6 +590,7 @@ function langSeg(attr, current, label){
 }
 // icone generiche, come nella barra laterale del Finder: una fotocamera uguale per tutte, la scheda SD per il lettore
 const CAM_ICON = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 11.5a2.5 2.5 0 0 1 2.5-2.5h3.2l1.8-2.6h9l1.8 2.6h3.2a2.5 2.5 0 0 1 2.5 2.5v12a2.5 2.5 0 0 1-2.5 2.5h-19A2.5 2.5 0 0 1 4 23.5z"/><circle cx="16" cy="17" r="5.2"/><circle cx="24.2" cy="12.6" r=".9" class="dot"/></svg>`;
+const FILM_ICON = `<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="6.5" width="25" height="19" rx="2.5"/><rect x="10" y="11" width="12" height="10" rx="1"/><path d="M6.5 10v1.5M6.5 14.5V16M6.5 19.5V21M25.5 10v1.5M25.5 14.5V16M25.5 19.5V21"/></svg>`;
 const SD_ICON = `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10.5 4h11a2.5 2.5 0 0 1 2.5 2.5v19a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 6 25.5V10z"/><path d="M12 8v4.5M15 8v4.5M18 8v4.5M21 8v4.5"/></svg>`;
 // cosa c'e' collegato adesso (fotocamere sul cavo, schede nel lettore): un pallino verde sulla scelta
 let DEV = {usb:[], cards:[]}, devTimer = 0;
