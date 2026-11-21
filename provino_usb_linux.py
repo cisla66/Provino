@@ -119,6 +119,16 @@ def release_from_gnome(log=None):
 
 def _exif_date(buf):
     """DateTimeOriginal (o DateTime) da un JPEG -> 'YYYYMMDDTHHMMSS' o None."""
+    # 1.1.4: prima la data di scatto (DateTimeOriginal) letta dai metadati; la prima data nel file puo' essere quella di una modifica
+    try:
+        import provino_meta
+        d = provino_meta.parse(buf[:0x20000]).get("date")
+        if d:
+            d = re.sub(r"\D", "", d)
+            if len(d) >= 14:
+                return d[:8] + "T" + d[8:14]
+    except Exception:
+        pass
     m = re.search(rb"(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})\x00", buf[:0x10000])
     return (b"%s%s%sT%s%s%s" % m.groups()).decode() if m else None
 

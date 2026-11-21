@@ -11,6 +11,8 @@ let META = {}, metaN = -1, filmFilter = "", pendingKey = "", multiSlot = false; 
 // ---------------------------------------------------------------- testi
 function t(key, vars){
   let s = (I18N[LANG] && I18N[LANG][key]) ?? I18N.en[key] ?? key;
+  // 1.1.4: plurali "{n|photo|photos}" (singolare se n vale 1)
+  if(vars) s = s.replace(/\{(\w+)\|([^|}]*)\|([^|}]*)\}/g, (m,k,one,many)=> String(vars[k])==="1" ? one : many);
   if(vars) for(const k in vars) s = s.split("{"+k+"}").join(vars[k]);
   return s.replace(/\{([A-Z_]+)\}/g, (m,k)=> CAMS && CAMS.menus[k] ? M(k) : m);
 }
@@ -1298,10 +1300,11 @@ function metaHTML(g){
   const m = META[g.base];
   if(!m) return `<p class="soon">${t("meta.loading")}</p>`;
   const dl = rows => `<dl>${rows.map(([k,v,c])=>`<dt>${esc(t(k))}</dt><dd${c?` class="${c}"`:""}>${esc(v)}</dd>`).join("")}</dl>`;
+  const rr = recipeRows(m), hasRecipe = rr.length>0;   // 1.1.4: senza ricetta il tasto "Copia ricetta" resta ma grigio e non cliccabile
   return `<div class="histo" aria-label="${esc(t("meta.histo"))}"><canvas width="512" height="140"></canvas></div>
-    <h3>${t("meta.recipe")}</h3>${dl(recipeRows(m))}
+    ${hasRecipe ? `<h3>${t("meta.recipe")}</h3>${dl(rr)}` : ""}
     <h3>${t("meta.shot")}</h3>${dl(shotRows(m).concat(pixelRow(m), slotRow(g)))}
-    <div class="mfoot"><button class="quiet" data-copy="${esc(g.base)}">${t("meta.copy")}</button><span>${esc(t("meta.readFrom",{f:m.from||""}))}</span></div>
+    <div class="mfoot"><button class="quiet" data-copy="${esc(g.base)}"${hasRecipe ? "" : " disabled"}>${t("meta.copy")}</button><span>${esc(t("meta.readFrom",{f:m.from||""}))}</span></div>
 `;
 }
 const metaAsked = new Set();

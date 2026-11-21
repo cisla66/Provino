@@ -32,6 +32,8 @@ button:focus-visible,.frame:focus-visible{outline:2px solid var(--ink);outline-o
 .go:disabled{background:var(--fill);color:var(--ink-soft);cursor:default}
 .quiet{background:none;border:1px solid var(--line);border-radius:6px;padding:7px 12px;color:var(--ink-soft)}
 .quiet:hover{color:var(--ink);border-color:var(--ink-soft)}
+.quiet:disabled,.quiet:disabled:hover{color:var(--ink-soft);opacity:.4;cursor:default;border-color:var(--line)}
+html.native .vcap .quiet:disabled,html.native .fcap .quiet:disabled,html.native .metapane button:disabled{opacity:.4;background:var(--fill)}
 .row2{flex-basis:100%;display:flex;align-items:center;gap:12px 28px;flex-wrap:wrap}
 .grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lbl{color:var(--ink-soft);font-size:13px;margin-right:2px}

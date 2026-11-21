@@ -29,8 +29,8 @@ With a card reader it works with any Fujifilm; with the X-Pro3 and X100VI also o
 > Progetto indipendente, non affiliato a FUJIFILM Corporation.
 > Independent project, not affiliated with FUJIFILM Corporation.
 
-**Stato / Status:** versione **1.1.3**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage). Novità: colore per ogni giornata, scelta per data, cartella per l'evento, coda «Mostra tutti».
-Version **1.1.3**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage). New: a color for each day, pick by date, one folder per event, "Show all" queue.
+**Stato / Status:** versione **1.1.4**: app native per Mac (`.dmg`) e GNOME/Linux (AppImage). Novità: colore per ogni giornata, scelta per data, cartella per l'evento, coda «Mostra tutti».
+Version **1.1.4**: native apps for Mac (`.dmg`) and GNOME/Linux (AppImage). New: a color for each day, pick by date, one folder per event, "Show all" queue.
 
 [Italiano](#italiano) · [English](#english) · Sito e guida / Website and guide: [cisla66.github.io/Provino](https://cisla66.github.io/Provino/)
 
