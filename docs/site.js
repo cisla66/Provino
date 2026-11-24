@@ -20,3 +20,12 @@
   var io=new IntersectionObserver(function(es){es.forEach(function(e){ if(e.isIntersecting){ links.forEach(function(a){a.classList.remove('on');}); var a=map[e.target.id]; if(a) a.classList.add('on'); } });},{rootMargin:'-20% 0px -70% 0px'});
   Object.keys(map).forEach(function(id){var s=document.getElementById(id); if(s) io.observe(s);});
 })();
+
+(function(){
+  var nav=document.querySelector('nav'), btn=document.querySelector('.burger'); if(!nav||!btn) return;
+  function set(o){nav.classList.toggle('open',o); btn.setAttribute('aria-expanded',String(o));}
+  btn.addEventListener('click',function(){set(!nav.classList.contains('open'));});
+  nav.querySelectorAll('.links a').forEach(function(a){a.addEventListener('click',function(){set(false);});});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
+  window.addEventListener('resize',function(){if(window.innerWidth>860)set(false);});
+})();
